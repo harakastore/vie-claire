@@ -554,52 +554,52 @@ export default function Goals() {
 
       {showSports && (
         <Card className="glass-card">
-          <CardContent className="pt-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr>
-                    {DAY_NAMES.map((d, i) => (
-                      <th key={i} className={cn(
-                        "border border-border/50 px-2 py-2 text-xs font-semibold text-center min-w-[120px]",
-                        isSameDay(weekDays[i], now) && "bg-primary/10 text-primary"
-                      )}>
-                        {d}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {DAY_NAMES.map((_, i) => {
-                      const sp = weeklySports.find((s: any) => s.day_index === i);
-                      return (
-                        <td key={i} className="border border-border/50 p-1 align-top">
-                          <Textarea
-                            placeholder="Programme..."
-                            value={sp?.program || ""}
-                            onChange={(e) => {
-                              // Optimistic UI update
-                              setWeeklySports((prev) => {
-                                const idx = prev.findIndex((s: any) => s.day_index === i);
-                                if (idx >= 0) {
-                                  const updated = [...prev];
-                                  updated[idx] = { ...updated[idx], program: e.target.value };
-                                  return updated;
-                                }
-                                return [...prev, { day_index: i, program: e.target.value }];
-                              });
-                            }}
-                            onBlur={(e) => saveSportsProgram(i, e.target.value)}
-                            className="min-h-[80px] text-xs resize-none border-0 bg-transparent p-1 focus-visible:ring-0"
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <CardContent className="pt-4 space-y-2">
+            {DAY_NAMES.map((d, i) => {
+              const sp = weeklySports.find((s: any) => s.day_index === i);
+              const hasProgram = !!(sp?.program?.trim());
+              return (
+                <div key={i} className={cn(
+                  "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+                  isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
+                  hasProgram && "bg-muted/20"
+                )}>
+                  <div className="flex flex-col items-center gap-1 pt-1">
+                    <Checkbox
+                      checked={hasProgram}
+                      className="h-5 w-5"
+                      disabled
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={cn(
+                        "text-sm font-bold",
+                        isSameDay(weekDays[i], now) ? "text-primary" : "text-foreground"
+                      )}>{d}</span>
+                      <span className="text-xs text-muted-foreground">{format(weekDays[i], "d MMM", { locale: fr })}</span>
+                    </div>
+                    <Textarea
+                      placeholder="Programme sport du jour..."
+                      value={sp?.program || ""}
+                      onChange={(e) => {
+                        setWeeklySports((prev) => {
+                          const idx = prev.findIndex((s: any) => s.day_index === i);
+                          if (idx >= 0) {
+                            const updated = [...prev];
+                            updated[idx] = { ...updated[idx], program: e.target.value };
+                            return updated;
+                          }
+                          return [...prev, { day_index: i, program: e.target.value }];
+                        });
+                      }}
+                      onBlur={(e) => saveSportsProgram(i, e.target.value)}
+                      className="min-h-[50px] text-xs resize-none border-dashed bg-transparent p-1.5 focus-visible:ring-1"
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       )}
