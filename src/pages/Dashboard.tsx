@@ -107,15 +107,40 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Tableau de bord" description={`${format(now, "MMMM yyyy", { locale: fr })} — Vue d'ensemble`}>
-        <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les secteurs</SelectItem>
-            <SelectItem value="perso">Vie Perso</SelectItem>
-            <SelectItem value="cabinet">Cabinet</SelectItem>
-          </SelectContent>
-        </Select>
+      <PageHeader title="Tableau de bord" description={`${format(dateFrom, "d MMM", { locale: fr })} — ${format(dateTo, "d MMM yyyy", { locale: fr })}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateFrom, "dd/MM/yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={(d) => d && setDateFrom(d)} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <span className="text-sm text-muted-foreground">→</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateTo, "dd/MM/yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={(d) => d && setDateTo(d)} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <Select value={sectorFilter} onValueChange={setSectorFilter}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les secteurs</SelectItem>
+              <SelectItem value="perso">Vie Perso</SelectItem>
+              <SelectItem value="cabinet">Cabinet</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </PageHeader>
 
       {/* KPIs */}
