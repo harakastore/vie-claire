@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SectorBadge } from "@/components/SectorBadge";
 import { AutocompleteInput, saveAutocomplete } from "@/components/AutocompleteInput";
+import { ManageChoices } from "@/components/ManageChoices";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/hooks/use-toast";
@@ -149,7 +150,8 @@ function ExpensesTab() {
                 <div className="space-y-2"><Label>Secteur</Label>
                   <Select value={sector} onValueChange={setSector}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="perso">Vie Perso</SelectItem><SelectItem value="cabinet">Cabinet</SelectItem></SelectContent></Select>
                 </div>
-                <div className="space-y-2"><Label>Catégorie</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1"><Label>Catégorie</Label><ManageChoices fieldType="expense_category" label="Catégories dépenses" /></div>
                   <AutocompleteInput fieldType="expense_category" value={category} onChange={setCategory} placeholder="Ex: Électricité, Loyer..." />
                 </div>
                 <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
@@ -270,7 +272,8 @@ function RevenuesTab() {
                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2"><Label>Catégorie</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1"><Label>Catégorie</Label><ManageChoices fieldType="revenue_category" label="Catégories revenus" /></div>
                   <AutocompleteInput fieldType="revenue_category" value={category} onChange={setCategory} placeholder="Ex: Consultation, Prothèse..." />
                 </div>
                 <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
