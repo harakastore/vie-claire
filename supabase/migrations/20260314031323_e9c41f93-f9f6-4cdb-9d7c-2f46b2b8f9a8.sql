@@ -1,0 +1,2 @@
+ALTER TABLE public.credits DROP CONSTRAINT credits_status_check;
+ALTER TABLE public.credits ADD CONSTRAINT credits_status_check CHECK (status = ANY (ARRAY['active', 'settled', 'late', 'en_cours', 'rembourse', 'partiel']));
