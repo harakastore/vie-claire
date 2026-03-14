@@ -20,18 +20,18 @@ export function AutocompleteInput({ fieldType, value, onChange, placeholder, cla
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user || !value || value.length < 1) {
-      setSuggestions([]);
-      return;
-    }
+    if (!user) { setSuggestions([]); return; }
     const timer = setTimeout(async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("autocomplete_library")
         .select("value")
         .eq("field_type", fieldType)
-        .ilike("value", `%${value}%`)
         .order("last_used_at", { ascending: false })
-        .limit(8);
+        .limit(15);
+      if (value && value.length >= 1) {
+        q = q.ilike("value", `%${value}%`);
+      }
+      const { data } = await q;
       setSuggestions(data?.map((d) => d.value) || []);
     }, 150);
     return () => clearTimeout(timer);

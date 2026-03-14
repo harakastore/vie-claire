@@ -272,7 +272,8 @@ function RevenuesTab() {
                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={date} onSelect={(d) => d && setDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                   </Popover>
                 </div>
-                <div className="space-y-2"><Label>Catégorie</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1"><Label>Catégorie</Label><ManageChoices fieldType="revenue_category" label="Catégories revenus" /></div>
                   <AutocompleteInput fieldType="revenue_category" value={category} onChange={setCategory} placeholder="Ex: Consultation, Prothèse..." />
                 </div>
                 <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
