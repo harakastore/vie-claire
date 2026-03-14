@@ -44,6 +44,7 @@ export default function Payments() {
   const [pStatus, setPStatus] = useState("pending");
   const [invoiceCount, setInvoiceCount] = useState("");
   const [pNotes, setPNotes] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
 
   const fetchData = async () => {
     if (!user) return;
