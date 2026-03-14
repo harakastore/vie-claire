@@ -4,11 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Receipt, CreditCard, CheckSquare, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { Receipt, CreditCard, CheckSquare, TrendingUp, TrendingDown, Users, CalendarIcon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, endOfWeek, isWithinInterval } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = [
