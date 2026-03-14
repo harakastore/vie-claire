@@ -147,7 +147,7 @@ export default function Payments() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Date</TableHead><TableHead>Fournisseur</TableHead><TableHead>Montant</TableHead>
-                  <TableHead>Factures</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Facture reçue</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {payments.map((p) => (
