@@ -72,12 +72,12 @@ export default function Dashboard() {
   const totalHabits = habits.length;
 
   // Weekly chart
-  const weeks = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 1 });
+  const weeks = eachWeekOfInterval({ start: dateFrom, end: dateTo }, { weekStartsOn: 1 });
   const weeklyData = weeks.map((weekStart, i) => {
     const wEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     const wExpenses = filteredExpenses.filter((e) => {
       const d = new Date(e.date);
-      return isWithinInterval(d, { start: weekStart, end: wEnd > monthEnd ? monthEnd : wEnd });
+      return isWithinInterval(d, { start: weekStart, end: wEnd > dateTo ? dateTo : wEnd });
     });
     return {
       name: `S${i + 1}`,
