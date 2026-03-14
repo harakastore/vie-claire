@@ -137,9 +137,9 @@ export default function Payments() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Payments Table */}
-        <Card className="glass-card lg:col-span-1">
+        <Card className="glass-card">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Historique</CardTitle></CardHeader>
           <CardContent className="p-0">
             {loading ? <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div> :
