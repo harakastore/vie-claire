@@ -113,6 +113,12 @@ export default function Payments() {
                 <AutocompleteInput fieldType="supplier_name" value={supplierName} onChange={setSupplierName} placeholder="Nom du fournisseur" />
               </div>
               <div className="space-y-2"><Label>Montant (MAD)</Label><Input type="number" step="0.01" value={pAmount} onChange={(e) => setPAmount(e.target.value)} required /></div>
+              <div className="space-y-2"><Label>Montant payé (MAD)</Label><Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0" /></div>
+              {pAmount && (
+                <div className="text-sm px-1">
+                  Reste : <span className={cn("font-semibold tabular-nums", (parseFloat(pAmount) - (parseFloat(paidAmount) || 0)) > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{(parseFloat(pAmount) - (parseFloat(paidAmount) || 0)).toLocaleString("fr-FR")} MAD</span>
+                </div>
+              )}
               <div className="space-y-2"><Label>Date</Label>
                 <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(pDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={pDate} onSelect={(d) => d && setPDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
