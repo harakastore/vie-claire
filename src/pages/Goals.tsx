@@ -56,6 +56,8 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dragOverBlock, setDragOverBlock] = useState<string | null>(null);
   const [weeklySports, setWeeklySports] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
