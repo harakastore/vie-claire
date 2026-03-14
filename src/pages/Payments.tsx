@@ -91,13 +91,13 @@ export default function Payments() {
   };
 
   // Stats
-  const totalCredit = payments.filter((p) => p.status !== "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const totalCredit = payments.filter((p) => p.status !== "paid").reduce((s, p) => s + (Number(p.amount) - Number(p.paid_amount || 0)), 0);
 
   // Pie data by supplier
   const supplierMap: Record<string, number> = {};
   payments.filter((p) => p.status !== "paid").forEach((p) => {
     const name = p.supplier_name || "Inconnu";
-    supplierMap[name] = (supplierMap[name] || 0) + Number(p.amount);
+    supplierMap[name] = (supplierMap[name] || 0) + (Number(p.amount) - Number(p.paid_amount || 0));
   });
   const pieData = Object.entries(supplierMap).map(([name, value]) => ({ name, value }));
 
