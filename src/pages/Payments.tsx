@@ -44,6 +44,7 @@ export default function Payments() {
   const [pStatus, setPStatus] = useState("pending");
   const [invoiceCount, setInvoiceCount] = useState("");
   const [pNotes, setPNotes] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
 
   const fetchData = async () => {
     if (!user) return;
@@ -56,13 +57,14 @@ export default function Payments() {
   useEffect(() => { fetchData(); }, [user]);
 
   const resetForm = () => {
-    setSupplierName(""); setPAmount(""); setPDate(new Date()); setPRef(""); setPStatus("pending"); setInvoiceCount(""); setPNotes(""); setEditId(null);
+    setSupplierName(""); setPAmount(""); setPDate(new Date()); setPRef(""); setPStatus("pending"); setInvoiceCount(""); setPNotes(""); setPaidAmount(""); setEditId(null);
   };
 
   const openEdit = (p: any) => {
     setEditId(p.id); setSupplierName(p.supplier_name || ""); setPAmount(String(p.amount));
     setPDate(new Date(p.date)); setPRef(p.reference || ""); setPStatus(p.status);
     setInvoiceCount(String(p.invoice_count || 0)); setPNotes(p.notes || "");
+    setPaidAmount(String(p.paid_amount || 0));
     setSheetOpen(true);
   };
 
@@ -72,6 +74,7 @@ export default function Payments() {
     setSaving(true);
     const payload: any = {
       user_id: user.id, supplier_name: supplierName.trim(), amount: parseFloat(pAmount),
+      paid_amount: parseFloat(paidAmount) || 0,
       date: format(pDate, "yyyy-MM-dd"), reference: pRef.trim() || null, status: pStatus,
       invoice_count: parseInt(invoiceCount) || 0, notes: pNotes.trim() || null,
     };
@@ -88,13 +91,13 @@ export default function Payments() {
   };
 
   // Stats
-  const totalCredit = payments.filter((p) => p.status !== "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const totalCredit = payments.filter((p) => p.status !== "paid").reduce((s, p) => s + (Number(p.amount) - Number(p.paid_amount || 0)), 0);
 
   // Pie data by supplier
   const supplierMap: Record<string, number> = {};
   payments.filter((p) => p.status !== "paid").forEach((p) => {
     const name = p.supplier_name || "Inconnu";
-    supplierMap[name] = (supplierMap[name] || 0) + Number(p.amount);
+    supplierMap[name] = (supplierMap[name] || 0) + (Number(p.amount) - Number(p.paid_amount || 0));
   });
   const pieData = Object.entries(supplierMap).map(([name, value]) => ({ name, value }));
 
@@ -110,6 +113,12 @@ export default function Payments() {
                 <AutocompleteInput fieldType="supplier_name" value={supplierName} onChange={setSupplierName} placeholder="Nom du fournisseur" />
               </div>
               <div className="space-y-2"><Label>Montant (MAD)</Label><Input type="number" step="0.01" value={pAmount} onChange={(e) => setPAmount(e.target.value)} required /></div>
+              <div className="space-y-2"><Label>Montant payé (MAD)</Label><Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0" /></div>
+              {pAmount && (
+                <div className="text-sm px-1">
+                  Reste : <span className={cn("font-semibold tabular-nums", (parseFloat(pAmount) - (parseFloat(paidAmount) || 0)) > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{(parseFloat(pAmount) - (parseFloat(paidAmount) || 0)).toLocaleString("fr-FR")} MAD</span>
+                </div>
+              )}
               <div className="space-y-2"><Label>Date</Label>
                 <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(pDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={pDate} onSelect={(d) => d && setPDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
@@ -147,21 +156,27 @@ export default function Payments() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Date</TableHead><TableHead>Fournisseur</TableHead><TableHead>Montant</TableHead>
+                  <TableHead>Payé</TableHead><TableHead>Reste</TableHead>
                   <TableHead>Facture reçue</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {payments.map((p) => (
+                  {payments.map((p) => {
+                    const reste = Number(p.amount) - Number(p.paid_amount || 0);
+                    return (
                     <TableRow key={p.id}>
                       <TableCell className="text-sm">{format(new Date(p.date), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="text-sm">{p.supplier_name || "—"}</TableCell>
                       <TableCell className="font-medium tabular-nums">{Number(p.amount).toLocaleString("fr-FR")} MAD</TableCell>
+                      <TableCell className="tabular-nums text-sm">{Number(p.paid_amount || 0).toLocaleString("fr-FR")} MAD</TableCell>
+                      <TableCell className={cn("font-medium tabular-nums", reste > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{reste.toLocaleString("fr-FR")} MAD</TableCell>
                       <TableCell className="text-sm">{p.invoice_count || 0}</TableCell>
                       <TableCell><StatusBadge status={p.status} /></TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             }
