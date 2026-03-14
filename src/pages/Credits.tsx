@@ -104,8 +104,8 @@ export default function Credits() {
     fetchCredits();
   };
 
-  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
-  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
+  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
+  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
