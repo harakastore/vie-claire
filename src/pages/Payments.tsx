@@ -35,6 +35,7 @@ export default function Payments() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [detailPayment, setDetailPayment] = useState<any>(null);
 
   // Form
   const [supplierName, setSupplierName] = useState("");
