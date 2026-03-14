@@ -156,14 +156,19 @@ export default function Payments() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Date</TableHead><TableHead>Fournisseur</TableHead><TableHead>Montant</TableHead>
+                  <TableHead>Payé</TableHead><TableHead>Reste</TableHead>
                   <TableHead>Facture reçue</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {payments.map((p) => (
+                  {payments.map((p) => {
+                    const reste = Number(p.amount) - Number(p.paid_amount || 0);
+                    return (
                     <TableRow key={p.id}>
                       <TableCell className="text-sm">{format(new Date(p.date), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="text-sm">{p.supplier_name || "—"}</TableCell>
                       <TableCell className="font-medium tabular-nums">{Number(p.amount).toLocaleString("fr-FR")} MAD</TableCell>
+                      <TableCell className="tabular-nums text-sm">{Number(p.paid_amount || 0).toLocaleString("fr-FR")} MAD</TableCell>
+                      <TableCell className={cn("font-medium tabular-nums", reste > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{reste.toLocaleString("fr-FR")} MAD</TableCell>
                       <TableCell className="text-sm">{p.invoice_count || 0}</TableCell>
                       <TableCell><StatusBadge status={p.status} /></TableCell>
                       <TableCell className="text-right">
