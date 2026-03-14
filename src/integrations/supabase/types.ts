@@ -130,6 +130,7 @@ export type Database = {
       }
       daily_tasks: {
         Row: {
+          block: string
           completed: boolean
           created_at: string
           day_date: string
@@ -138,6 +139,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          block?: string
           completed?: boolean
           created_at?: string
           day_date: string
@@ -146,6 +148,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          block?: string
           completed?: boolean
           created_at?: string
           day_date?: string
@@ -426,6 +429,48 @@ export type Database = {
           notes?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      salat_times: {
+        Row: {
+          asr: string
+          created_at: string
+          dhuhr: string
+          fajr: string
+          id: string
+          isha: string
+          maghrib: string
+          month: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          asr?: string
+          created_at?: string
+          dhuhr?: string
+          fajr?: string
+          id?: string
+          isha?: string
+          maghrib?: string
+          month: number
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          asr?: string
+          created_at?: string
+          dhuhr?: string
+          fajr?: string
+          id?: string
+          isha?: string
+          maghrib?: string
+          month?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
         }
         Relationships: []
       }
