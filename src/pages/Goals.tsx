@@ -24,6 +24,7 @@ export default function Goals() {
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const [showAllDays, setShowAllDays] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
