@@ -39,6 +39,7 @@ export default function Credits() {
   const [personName, setPersonName] = useState("");
   const [creditType, setCreditType] = useState("they_owe");
   const [amount, setAmount] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
   const [creditDate, setCreditDate] = useState<Date>(new Date());
   const [status, setStatus] = useState("en_cours");
   const [notes, setNotes] = useState("");
