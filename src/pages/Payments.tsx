@@ -57,7 +57,7 @@ export default function Payments() {
   useEffect(() => { fetchData(); }, [user]);
 
   const resetForm = () => {
-    setSupplierName(""); setPAmount(""); setPDate(new Date()); setPRef(""); setPStatus("pending"); setInvoiceCount(""); setPNotes(""); setEditId(null);
+    setSupplierName(""); setPAmount(""); setPDate(new Date()); setPRef(""); setPStatus("pending"); setInvoiceCount(""); setPNotes(""); setPaidAmount(""); setEditId(null);
   };
 
   const openEdit = (p: any) => {
