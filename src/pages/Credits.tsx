@@ -54,7 +54,7 @@ export default function Credits() {
 
   useEffect(() => { fetchCredits(); }, [user]);
 
-  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
+  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setPaidAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
 
   const openEdit = (c: any) => {
     setEditId(c.id); setPersonName(c.person_name || c.lender || ""); setCreditType(c.credit_type || "they_owe");
