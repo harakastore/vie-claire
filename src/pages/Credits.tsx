@@ -68,17 +68,23 @@ export default function Credits() {
     e.preventDefault();
     if (!user || !personName.trim() || !amount) return;
     setSaving(true);
+    const paidVal = parseFloat(paidAmount) || 0;
+    const amountVal = parseFloat(amount);
     const payload: any = {
-      user_id: user.id, person_name: personName.trim(), credit_type: creditType,
-      amount: parseFloat(amount), credit_date: format(creditDate, "yyyy-MM-dd"),
+      person_name: personName.trim(), credit_type: creditType,
+      amount: amountVal, paid_amount: paidVal,
+      credit_date: format(creditDate, "yyyy-MM-dd"),
       status, notes: notes.trim() || null,
-      // Keep required old columns with defaults
-      name: personName.trim(), lender: personName.trim(), total_amount: parseFloat(amount),
+      name: personName.trim(), lender: personName.trim(), total_amount: amountVal,
       monthly_payment: 0, start_date: format(creditDate, "yyyy-MM-dd"), end_date: format(creditDate, "yyyy-MM-dd"),
     };
-    const { error } = editId
-      ? await supabase.from("credits").update(payload).eq("id", editId)
-      : await supabase.from("credits").insert(payload);
+    let error;
+    if (editId) {
+      ({ error } = await supabase.from("credits").update(payload as any).eq("id", editId));
+    } else {
+      payload.user_id = user.id;
+      ({ error } = await supabase.from("credits").insert(payload));
+    }
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
     else {
       saveAutocomplete(user.id, "credit_person", personName.trim());
