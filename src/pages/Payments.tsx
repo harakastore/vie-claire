@@ -130,7 +130,7 @@ export default function Payments() {
       </PageHeader>
 
       {/* Total */}
-      <Card style={{ backgroundColor: "hsl(var(--kpi-suppliers))" }} className="border-0 shadow-md">
+      <Card style={{ backgroundColor: "hsl(10, 70%, 62%)" }} className="border-0 shadow-md">
         <CardContent className="p-5">
           <p className="text-sm text-white/80">Total crédit fournisseurs</p>
           <p className="text-2xl font-semibold tabular-nums mt-1 text-white">{totalCredit.toLocaleString("fr-FR")} MAD</p>
