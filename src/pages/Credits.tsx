@@ -173,6 +173,8 @@ export default function Credits() {
                   <TableHead>Personne</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Montant</TableHead>
+                  <TableHead>Payé</TableHead>
+                  <TableHead>Reste</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
