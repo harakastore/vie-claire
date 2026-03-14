@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay } from "date-fns";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3 } from "lucide-react";
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,6 +46,8 @@ export default function Goals() {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const [showAllDays, setShowAllDays] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
+  const [showSports, setShowSports] = useState(false);
+  const [showDiscipline, setShowDiscipline] = useState(false);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
@@ -53,6 +56,8 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [weeklySports, setWeeklySports] = useState<any[]>([]);
+  const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // New inputs
@@ -60,12 +65,17 @@ export default function Goals() {
   const [newMonthly, setNewMonthly] = useState("");
   const [newWeekly, setNewWeekly] = useState("");
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
+  const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newHabit, setNewHabit] = useState("");
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editingHabitTitle, setEditingHabitTitle] = useState("");
   const [habitsSheetOpen, setHabitsSheetOpen] = useState(false);
   const [salatSheetOpen, setSalatSheetOpen] = useState(false);
   const [salatForm, setSalatForm] = useState(DEFAULT_SALAT);
+
+  // Discipline filter
+  const [disciplineFrom, setDisciplineFrom] = useState(() => format(subDays(now, 6), "yyyy-MM-dd"));
+  const [disciplineTo, setDisciplineTo] = useState(() => format(now, "yyyy-MM-dd"));
 
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
@@ -80,19 +90,23 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gm, gw, dt, dh, stRes] = await Promise.all([
+    const [g90, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "weekly").eq("week_start", format(currentWeekStart, "yyyy-MM-dd")).order("created_at"),
       (supabase.from("daily_tasks" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr).order("created_at"),
       (supabase.from("daily_habits" as any) as any).select("*").eq("active", true).order("sort_order"),
       (supabase.from("salat_times" as any) as any).select("*").eq("month", currentMonth).eq("year", currentYear).maybeSingle(),
+      (supabase.from("weekly_sports" as any) as any).select("*").eq("week_start", wsStr),
+      (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
     ]);
     setGoals90(g90.data || []);
     setGoalsMonthly(gm.data || []);
     setGoalsWeekly(gw.data || []);
     setDailyTasks(dt.data || []);
     setDailyHabits(dh.data || []);
+    setWeeklySports(spRes.data || []);
+    setHabitLogs(hlRes.data || []);
     if (stRes.data) {
       setSalatTimes(stRes.data);
       setSalatForm({ fajr: stRes.data.fajr?.slice(0, 5) || DEFAULT_SALAT.fajr, dhuhr: stRes.data.dhuhr?.slice(0, 5) || DEFAULT_SALAT.dhuhr, asr: stRes.data.asr?.slice(0, 5) || DEFAULT_SALAT.asr, maghrib: stRes.data.maghrib?.slice(0, 5) || DEFAULT_SALAT.maghrib, isha: stRes.data.isha?.slice(0, 5) || DEFAULT_SALAT.isha });
@@ -100,7 +114,7 @@ export default function Goals() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, [user, currentWeekStart]);
+  useEffect(() => { fetchAll(); }, [user, currentWeekStart, disciplineFrom, disciplineTo]);
 
   // Salat times save
   const saveSalatTimes = async () => {
@@ -157,6 +171,16 @@ export default function Goals() {
     else { setNewBlockTexts((prev) => ({ ...prev, [key]: "" })); fetchAll(); }
   };
 
+  // Simple daily task (PC mode, no block)
+  const addSimpleDailyTask = async (dayDate: string) => {
+    if (!user) return;
+    const text = newTaskText[dayDate];
+    if (!text?.trim()) return;
+    const { error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr" });
+    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    else { setNewTaskText((prev) => ({ ...prev, [dayDate]: "" })); fetchAll(); }
+  };
+
   const toggleDailyTask = async (id: string, completed: boolean) => {
     await (supabase.from("daily_tasks" as any) as any).update({ completed: !completed }).eq("id", id);
     fetchAll();
@@ -189,11 +213,41 @@ export default function Goals() {
     fetchAll();
   };
 
+  // Habit log toggle
+  const toggleHabitLog = async (habitId: string, dayDate: string) => {
+    if (!user) return;
+    const existing = habitLogs.find((l: any) => l.habit_id === habitId && l.day_date === dayDate);
+    if (existing) {
+      await (supabase.from("daily_habit_logs" as any) as any).update({ completed: !existing.completed } as any).eq("id", existing.id);
+    } else {
+      await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: habitId, day_date: dayDate, completed: true });
+    }
+    fetchAll();
+  };
+
+  const isHabitCompleted = (habitId: string, dayDate: string) => {
+    return habitLogs.some((l: any) => l.habit_id === habitId && l.day_date === dayDate && l.completed);
+  };
+
+  // Sports program
+  const saveSportsProgram = async (dayIndex: number, program: string) => {
+    if (!user) return;
+    const wsStr = format(currentWeekStart, "yyyy-MM-dd");
+    const existing = weeklySports.find((s: any) => s.day_index === dayIndex);
+    if (existing) {
+      await (supabase.from("weekly_sports" as any) as any).update({ program } as any).eq("id", existing.id);
+    } else {
+      await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program });
+    }
+    fetchAll();
+  };
+
   const visibleDays = isMobile && !showAllDays
     ? weekDays.filter((d) => isSameDay(d, now))
     : weekDays;
 
-  const renderDayCard = (day: Date) => {
+  // === MOBILE: Day card with salat blocks ===
+  const renderMobileDayCard = (day: Date) => {
     const dateStr = format(day, "yyyy-MM-dd");
     const isToday = isSameDay(day, now);
     const dayTasks = dailyTasks.filter((t: any) => t.day_date === dateStr);
@@ -204,7 +258,6 @@ export default function Goals() {
         "overflow-hidden transition-all",
         isToday ? "border-primary border-2 shadow-lg" : "border-border/50"
       )}>
-        {/* Day header */}
         <div className={cn(
           "px-4 py-3 flex items-center justify-between",
           isToday ? "bg-primary/10" : "bg-muted/30"
@@ -223,7 +276,6 @@ export default function Goals() {
         </div>
 
         <CardContent className="p-0">
-          {/* Non-negotiable habits */}
           {dailyHabits.length > 0 && (
             <div className="px-4 py-3 bg-muted/20 border-b border-dashed">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
@@ -231,14 +283,17 @@ export default function Goals() {
               </p>
               {dailyHabits.map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox className="h-4 w-4" />
-                  <span className="text-sm font-medium">{h.title}</span>
+                  <Checkbox
+                    checked={isHabitCompleted(h.id, dateStr)}
+                    onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
+                    className="h-4 w-4"
+                  />
+                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Salat blocks */}
           {BLOCKS.map((block) => {
             const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
             const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
@@ -248,7 +303,6 @@ export default function Goals() {
 
             return (
               <div key={block.key} className="border-b last:border-b-0">
-                {/* Block header */}
                 <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
@@ -260,16 +314,10 @@ export default function Goals() {
                     {duration && <span className="font-semibold ml-1">({duration})</span>}
                   </div>
                 </div>
-
-                {/* Block tasks */}
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   {blockTasks.map((t: any) => (
                     <div key={t.id} className="flex items-start gap-2 group">
-                      <Checkbox
-                        checked={t.completed}
-                        onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
-                        className="mt-0.5 h-4 w-4"
-                      />
+                      <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
                       <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
@@ -292,6 +340,83 @@ export default function Goals() {
     );
   };
 
+  // === PC: Day card simple (all tasks grouped) ===
+  const renderDesktopDayCard = (day: Date) => {
+    const dateStr = format(day, "yyyy-MM-dd");
+    const isToday = isSameDay(day, now);
+    const dayTasks = dailyTasks.filter((t: any) => t.day_date === dateStr);
+    const dayIndex = weekDays.findIndex((d) => isSameDay(d, day));
+
+    return (
+      <Card key={dateStr} className={cn(
+        "overflow-hidden transition-all",
+        isToday ? "border-primary border-2 shadow-lg" : "border-border/50"
+      )}>
+        <div className={cn(
+          "px-4 py-3 flex items-center justify-between",
+          isToday ? "bg-primary/10" : "bg-muted/30"
+        )}>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
+              {DAY_NAMES[dayIndex]}
+            </span>
+            <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
+          </div>
+          {isToday && (
+            <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+              Aujourd'hui
+            </span>
+          )}
+        </div>
+
+        <CardContent className="p-3 space-y-1.5">
+          {/* Habits */}
+          {dailyHabits.length > 0 && (
+            <div className="pb-2 mb-2 border-b border-dashed">
+              {dailyHabits.map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox
+                    checked={isHabitCompleted(h.id, dateStr)}
+                    onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* All tasks flat */}
+          {dayTasks.map((t: any) => (
+            <div key={t.id} className="flex items-start gap-2 group">
+              <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
+              <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+              <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          <Input
+            placeholder="+ tâche"
+            value={newTaskText[dateStr] || ""}
+            onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
+            className="h-7 text-xs border-dashed bg-transparent"
+          />
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Discipline date range days
+  const disciplineDays = (() => {
+    try {
+      const from = parseISO(disciplineFrom);
+      const to = parseISO(disciplineTo);
+      return eachDayOfInterval({ start: from, end: to });
+    } catch { return []; }
+  })();
+
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -306,11 +431,7 @@ export default function Goals() {
       <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />
 
       {/* Toggle goals visibility */}
-      <Button
-        variant="outline"
-        className="w-full justify-between"
-        onClick={() => setShowGoals(!showGoals)}
-      >
+      <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
         <span className="flex items-center gap-2">
           <Target className="h-4 w-4" />
           Objectifs (90 jours, mois, semaine)
@@ -422,7 +543,153 @@ export default function Goals() {
         </>
       )}
 
-      {/* Daily tasks with salat blocks */}
+      {/* === Programme Sport === */}
+      <Button variant="outline" className="w-full justify-between" onClick={() => setShowSports(!showSports)}>
+        <span className="flex items-center gap-2">
+          <Dumbbell className="h-4 w-4" />
+          Programme Sport de la semaine
+        </span>
+        {showSports ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </Button>
+
+      {showSports && (
+        <Card className="glass-card">
+          <CardContent className="pt-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr>
+                    {DAY_NAMES.map((d, i) => (
+                      <th key={i} className={cn(
+                        "border border-border/50 px-2 py-2 text-xs font-semibold text-center min-w-[120px]",
+                        isSameDay(weekDays[i], now) && "bg-primary/10 text-primary"
+                      )}>
+                        {d}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {DAY_NAMES.map((_, i) => {
+                      const sp = weeklySports.find((s: any) => s.day_index === i);
+                      return (
+                        <td key={i} className="border border-border/50 p-1 align-top">
+                          <Textarea
+                            placeholder="Programme..."
+                            value={sp?.program || ""}
+                            onChange={(e) => {
+                              // Optimistic UI update
+                              setWeeklySports((prev) => {
+                                const idx = prev.findIndex((s: any) => s.day_index === i);
+                                if (idx >= 0) {
+                                  const updated = [...prev];
+                                  updated[idx] = { ...updated[idx], program: e.target.value };
+                                  return updated;
+                                }
+                                return [...prev, { day_index: i, program: e.target.value }];
+                              });
+                            }}
+                            onBlur={(e) => saveSportsProgram(i, e.target.value)}
+                            className="min-h-[80px] text-xs resize-none border-0 bg-transparent p-1 focus-visible:ring-0"
+                          />
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* === Dashboard Discipline === */}
+      <Button variant="outline" className="w-full justify-between" onClick={() => setShowDiscipline(!showDiscipline)}>
+        <span className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" />
+          Dashboard Discipline (Habitudes)
+        </span>
+        {showDiscipline ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </Button>
+
+      {showDiscipline && (
+        <Card className="glass-card">
+          <CardContent className="pt-4 space-y-4">
+            {/* Date filter */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap">Du</Label>
+                <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap">Au</Label>
+                <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
+              </div>
+            </div>
+
+            {dailyHabits.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
+                      {disciplineDays.map((d) => (
+                        <th key={format(d, "yyyy-MM-dd")} className={cn(
+                          "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
+                          isSameDay(d, now) && "bg-primary/10 text-primary"
+                        )}>
+                          <div>{format(d, "EEE", { locale: fr })}</div>
+                          <div>{format(d, "d")}</div>
+                        </th>
+                      ))}
+                      <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dailyHabits.map((h: any) => {
+                      const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
+                      const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
+                      return (
+                        <tr key={h.id}>
+                          <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
+                          {disciplineDays.map((d) => {
+                            const dateStr = format(d, "yyyy-MM-dd");
+                            const done = isHabitCompleted(h.id, dateStr);
+                            return (
+                              <td key={dateStr} className="border border-border/50 text-center p-0">
+                                <button
+                                  onClick={() => toggleHabitLog(h.id, dateStr)}
+                                  className={cn(
+                                    "w-full h-8 text-sm transition-colors",
+                                    done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
+                                  )}
+                                >
+                                  {done ? "✓" : ""}
+                                </button>
+                              </td>
+                            );
+                          })}
+                          <td className={cn(
+                            "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
+                            pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
+                          )}>
+                            {pct}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Daily tasks */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
@@ -431,9 +698,11 @@ export default function Goals() {
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
               </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
-                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
-              </Button>
+              {isMobile && (
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
+                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+                </Button>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
@@ -453,7 +722,7 @@ export default function Goals() {
             "grid gap-4",
             isMobile ? "grid-cols-1" : "grid-cols-2 xl:grid-cols-3"
           )}>
-            {visibleDays.map((day) => renderDayCard(day))}
+            {visibleDays.map((day) => isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day))}
           </div>
 
           {isMobile && (
