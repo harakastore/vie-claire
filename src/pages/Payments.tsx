@@ -177,8 +177,10 @@ export default function Payments() {
                       <TableCell className={cn("font-medium tabular-nums", reste > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{reste.toLocaleString("fr-FR")} MAD</TableCell>
                       <TableCell className="text-sm">{p.invoice_count || 0}</TableCell>
                       <TableCell><StatusBadge status={p.status} /></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex gap-1 justify-end">
+                        <Button variant="ghost" size="icon" onClick={() => setDetailPayment(p)}><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
                     );
