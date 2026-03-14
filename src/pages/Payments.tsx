@@ -64,6 +64,7 @@ export default function Payments() {
     setEditId(p.id); setSupplierName(p.supplier_name || ""); setPAmount(String(p.amount));
     setPDate(new Date(p.date)); setPRef(p.reference || ""); setPStatus(p.status);
     setInvoiceCount(String(p.invoice_count || 0)); setPNotes(p.notes || "");
+    setPaidAmount(String(p.paid_amount || 0));
     setSheetOpen(true);
   };
 
