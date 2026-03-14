@@ -4,11 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Receipt, CreditCard, CheckSquare, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { Receipt, CreditCard, CheckSquare, TrendingUp, TrendingDown, Users, CalendarIcon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, endOfWeek, isWithinInterval } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const COLORS = [
@@ -29,15 +33,17 @@ export default function Dashboard() {
   const [payments, setPayments] = useState<any[]>([]);
 
   const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(now));
+  const [dateTo, setDateTo] = useState<Date>(endOfMonth(now));
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
+    const fromStr = format(dateFrom, "yyyy-MM-dd");
+    const toStr = format(dateTo, "yyyy-MM-dd");
     Promise.all([
-      supabase.from("expenses").select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
-      supabase.from("revenues" as any).select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
+      supabase.from("expenses").select("*").gte("date", fromStr).lte("date", toStr),
+      supabase.from("revenues" as any).select("*").gte("date", fromStr).lte("date", toStr),
       supabase.from("credits").select("*"),
       supabase.from("habits").select("*").eq("active", true),
       supabase.from("habit_logs").select("*").eq("month", now.getMonth() + 1).eq("year", now.getFullYear()),
@@ -51,7 +57,7 @@ export default function Dashboard() {
       setPayments(payRes.data || []);
       setLoading(false);
     });
-  }, [user]);
+  }, [user, dateFrom, dateTo]);
 
   const filteredExpenses = sectorFilter === "all" ? expenses : expenses.filter((e) => e.sector === sectorFilter);
   const totalExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -66,12 +72,12 @@ export default function Dashboard() {
   const totalHabits = habits.length;
 
   // Weekly chart
-  const weeks = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 1 });
+  const weeks = eachWeekOfInterval({ start: dateFrom, end: dateTo }, { weekStartsOn: 1 });
   const weeklyData = weeks.map((weekStart, i) => {
     const wEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
     const wExpenses = filteredExpenses.filter((e) => {
       const d = new Date(e.date);
-      return isWithinInterval(d, { start: weekStart, end: wEnd > monthEnd ? monthEnd : wEnd });
+      return isWithinInterval(d, { start: weekStart, end: wEnd > dateTo ? dateTo : wEnd });
     });
     return {
       name: `S${i + 1}`,
@@ -101,15 +107,40 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Tableau de bord" description={`${format(now, "MMMM yyyy", { locale: fr })} — Vue d'ensemble`}>
-        <Select value={sectorFilter} onValueChange={setSectorFilter}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les secteurs</SelectItem>
-            <SelectItem value="perso">Vie Perso</SelectItem>
-            <SelectItem value="cabinet">Cabinet</SelectItem>
-          </SelectContent>
-        </Select>
+      <PageHeader title="Tableau de bord" description={`${format(dateFrom, "d MMM", { locale: fr })} — ${format(dateTo, "d MMM yyyy", { locale: fr })}`}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateFrom, "dd/MM/yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={(d) => d && setDateFrom(d)} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <span className="text-sm text-muted-foreground">→</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(dateTo, "dd/MM/yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={(d) => d && setDateTo(d)} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <Select value={sectorFilter} onValueChange={setSectorFilter}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les secteurs</SelectItem>
+              <SelectItem value="perso">Vie Perso</SelectItem>
+              <SelectItem value="cabinet">Cabinet</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </PageHeader>
 
       {/* KPIs */}
