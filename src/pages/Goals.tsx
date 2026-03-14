@@ -191,8 +191,12 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
     fetchAll();
   };
+  const moveTaskToBlock = async (id: string, newBlock: string) => {
+    await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
+    fetchAll();
+  };
 
-  // Daily habits CRUD
+
   const addDailyHabit = async () => {
     if (!user || !newHabit.trim()) return;
     const { error } = await (supabase.from("daily_habits" as any) as any).insert({
