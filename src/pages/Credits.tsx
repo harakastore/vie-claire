@@ -58,7 +58,8 @@ export default function Credits() {
 
   const openEdit = (c: any) => {
     setEditId(c.id); setPersonName(c.person_name || c.lender || ""); setCreditType(c.credit_type || "they_owe");
-    setAmount(String(c.amount || c.total_amount || 0)); setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
+    setAmount(String(c.amount || c.total_amount || 0)); setPaidAmount(String(c.paid_amount || 0));
+    setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
     setStatus(c.status); setNotes(c.notes || "");
     setSheetOpen(true);
   };
