@@ -189,6 +189,8 @@ export default function Credits() {
                       <TableCell className="font-medium">{c.person_name || c.lender || c.name}</TableCell>
                       <TableCell className="text-sm">{type === "i_owe" ? "Je dois" : "On me doit"}</TableCell>
                       <TableCell className="font-medium tabular-nums">{Number(c.amount || c.total_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
+                      <TableCell className="tabular-nums">{Number(c.paid_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
+                      <TableCell className={cn("font-medium tabular-nums", (Number(c.amount || 0) - Number(c.paid_amount || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)).toLocaleString("fr-FR")} DH</TableCell>
                       <TableCell className="text-sm">{c.credit_date || c.start_date ? format(new Date(c.credit_date || c.start_date), "dd/MM/yyyy") : "—"}</TableCell>
                       <TableCell>
                         <Select value={c.status} onValueChange={(v) => quickStatus(c.id, v)}>
