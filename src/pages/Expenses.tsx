@@ -150,7 +150,8 @@ function ExpensesTab() {
                 <div className="space-y-2"><Label>Secteur</Label>
                   <Select value={sector} onValueChange={setSector}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="perso">Vie Perso</SelectItem><SelectItem value="cabinet">Cabinet</SelectItem></SelectContent></Select>
                 </div>
-                <div className="space-y-2"><Label>Catégorie</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1"><Label>Catégorie</Label><ManageChoices fieldType="expense_category" label="Catégories dépenses" /></div>
                   <AutocompleteInput fieldType="expense_category" value={category} onChange={setCategory} placeholder="Ex: Électricité, Loyer..." />
                 </div>
                 <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
