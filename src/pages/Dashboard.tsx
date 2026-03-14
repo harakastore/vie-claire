@@ -113,48 +113,50 @@ export default function Dashboard() {
       </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <KPICard
-          title="Dépenses du mois"
-          value={`${totalExpenses.toLocaleString("fr-FR")} MAD`}
-          icon={<Receipt className="h-5 w-5" />}
-          bgColor="hsl(var(--kpi-expenses))"
-          onClick={() => navigate("/depenses")}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KPICard
           title="Chiffre d'affaires"
           value={`${totalRevenue.toLocaleString("fr-FR")} MAD`}
           icon={<TrendingUp className="h-5 w-5" />}
-          bgColor="hsl(var(--kpi-revenue))"
+          bgColor="hsl(220, 10%, 55%)"
           onClick={() => navigate("/depenses")}
         />
         <KPICard
           title="Profit net"
           value={`${netProfit.toLocaleString("fr-FR")} MAD`}
           icon={netProfit >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
-          bgColor={netProfit >= 0 ? "hsl(var(--kpi-profit))" : "hsl(var(--kpi-expenses))"}
+          bgColor="hsl(150, 70%, 42%)"
           onClick={() => navigate("/depenses")}
-        />
-        <KPICard
-          title="Total qu'on me doit"
-          value={`${totalOwedToMe.toLocaleString("fr-FR")} MAD`}
-          icon={<CreditCard className="h-5 w-5" />}
-          bgColor="hsl(var(--kpi-credits))"
-          onClick={() => navigate("/credits")}
-        />
-        <KPICard
-          title="Dû fournisseurs"
-          value={`${totalSupplierDebt.toLocaleString("fr-FR")} MAD`}
-          icon={<Users className="h-5 w-5" />}
-          bgColor="hsl(var(--kpi-suppliers))"
-          onClick={() => navigate("/paiements")}
         />
         <KPICard
           title="Habitudes"
           value={`${completedHabits}/${totalHabits}`}
           icon={<CheckSquare className="h-5 w-5" />}
-          bgColor="hsl(var(--kpi-habits))"
+          bgColor="hsl(150, 45%, 55%)"
           onClick={() => navigate("/habitudes")}
+        />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <KPICard
+          title="Dû fournisseurs"
+          value={`${totalSupplierDebt.toLocaleString("fr-FR")} MAD`}
+          icon={<Users className="h-5 w-5" />}
+          bgColor="hsl(10, 70%, 62%)"
+          onClick={() => navigate("/paiements")}
+        />
+        <KPICard
+          title="Total qu'on me doit"
+          value={`${totalOwedToMe.toLocaleString("fr-FR")} MAD`}
+          icon={<CreditCard className="h-5 w-5" />}
+          bgColor="hsl(10, 70%, 62%)"
+          onClick={() => navigate("/credits")}
+        />
+        <KPICard
+          title="Dépenses du mois"
+          value={`${totalExpenses.toLocaleString("fr-FR")} MAD`}
+          icon={<Receipt className="h-5 w-5" />}
+          bgColor="hsl(10, 70%, 62%)"
+          onClick={() => navigate("/depenses")}
         />
       </div>
 
