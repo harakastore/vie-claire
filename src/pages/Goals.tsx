@@ -238,7 +238,7 @@ export default function Goals() {
   const saveSportsProgram = async (dayIndex: number, program: string) => {
     if (!user) return;
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
-    const existing = weeklySports.find((s: any) => s.day_index === dayIndex);
+    const existing = weeklySports.find((s: any) => s.day_index === dayIndex && s.id);
     if (existing) {
       await (supabase.from("weekly_sports" as any) as any).update({ program } as any).eq("id", existing.id);
     } else {
