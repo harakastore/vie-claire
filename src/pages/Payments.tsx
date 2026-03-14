@@ -74,6 +74,7 @@ export default function Payments() {
     setSaving(true);
     const payload: any = {
       user_id: user.id, supplier_name: supplierName.trim(), amount: parseFloat(pAmount),
+      paid_amount: parseFloat(paidAmount) || 0,
       date: format(pDate, "yyyy-MM-dd"), reference: pRef.trim() || null, status: pStatus,
       invoice_count: parseInt(invoiceCount) || 0, notes: pNotes.trim() || null,
     };
