@@ -719,8 +719,8 @@ export default function Goals() {
         </CardHeader>
         <CardContent>
           <div className={cn(
-            "grid gap-4",
-            isMobile ? "grid-cols-1" : "grid-cols-2 xl:grid-cols-3"
+            "grid gap-3",
+            isMobile ? "grid-cols-1" : "grid-cols-7"
           )}>
             {visibleDays.map((day) => isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day))}
           </div>
