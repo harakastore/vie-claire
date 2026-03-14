@@ -40,45 +40,84 @@ export type Database = {
       }
       credits: {
         Row: {
+          amount: number | null
           created_at: string
-          end_date: string
+          credit_date: string | null
+          credit_type: string
+          end_date: string | null
           id: string
-          lender: string
-          monthly_payment: number
-          name: string
+          lender: string | null
+          monthly_payment: number | null
+          name: string | null
           notes: string | null
-          start_date: string
+          person_name: string | null
+          start_date: string | null
           status: string
-          total_amount: number
+          total_amount: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
-          end_date: string
+          credit_date?: string | null
+          credit_type?: string
+          end_date?: string | null
           id?: string
-          lender: string
-          monthly_payment: number
-          name: string
+          lender?: string | null
+          monthly_payment?: number | null
+          name?: string | null
           notes?: string | null
-          start_date: string
+          person_name?: string | null
+          start_date?: string | null
           status?: string
-          total_amount: number
+          total_amount?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
-          end_date?: string
+          credit_date?: string | null
+          credit_type?: string
+          end_date?: string | null
           id?: string
-          lender?: string
-          monthly_payment?: number
-          name?: string
+          lender?: string | null
+          monthly_payment?: number | null
+          name?: string | null
           notes?: string | null
-          start_date?: string
+          person_name?: string | null
+          start_date?: string | null
           status?: string
-          total_amount?: number
+          total_amount?: number | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          day_date: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          day_date: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          day_date?: string
+          id?: string
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -119,6 +158,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vendor?: string | null
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          created_at: string
+          id: string
+          month: number | null
+          progress: number
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+          week_start: string | null
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month?: number | null
+          progress?: number
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+          week_start?: string | null
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number | null
+          progress?: number
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          week_start?: string | null
+          year?: number | null
         }
         Relationships: []
       }
@@ -202,9 +283,12 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          invoice_count: number | null
+          notes: string | null
           reference: string | null
           status: string
-          supplier_id: string
+          supplier_id: string | null
+          supplier_name: string | null
           updated_at: string
           user_id: string
         }
@@ -213,9 +297,12 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          invoice_count?: number | null
+          notes?: string | null
           reference?: string | null
           status?: string
-          supplier_id: string
+          supplier_id?: string | null
+          supplier_name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -224,9 +311,12 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          invoice_count?: number | null
+          notes?: string | null
           reference?: string | null
           status?: string
-          supplier_id?: string
+          supplier_id?: string | null
+          supplier_name?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -265,6 +355,39 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      revenues: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
           updated_at?: string
           user_id?: string
         }
