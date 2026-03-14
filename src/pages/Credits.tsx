@@ -124,6 +124,8 @@ export default function Credits() {
                 </Select>
               </div>
               <div className="space-y-2"><Label>Montant (DH)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required /></div>
+              <div className="space-y-2"><Label>Montant payé (DH)</Label><Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0" /></div>
+              {amount && <div className="text-sm">Reste : <span className={cn("font-semibold", (parseFloat(amount) - (parseFloat(paidAmount) || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(parseFloat(amount) - (parseFloat(paidAmount) || 0)).toLocaleString("fr-FR")} DH</span></div>}
               <div className="space-y-2"><Label>Date</Label>
                 <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(creditDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={creditDate} onSelect={(d) => d && setCreditDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
