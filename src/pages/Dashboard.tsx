@@ -144,7 +144,7 @@ export default function Dashboard() {
       </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KPICard
           title="Chiffre d'affaires"
           value={`${totalRevenue.toLocaleString("fr-FR")} MAD`}
@@ -165,22 +165,6 @@ export default function Dashboard() {
           icon={<CheckSquare className="h-5 w-5" />}
           bgColor="hsl(150, 45%, 55%)"
           onClick={() => navigate("/habitudes")}
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KPICard
-          title="Dû fournisseurs"
-          value={`${totalSupplierDebt.toLocaleString("fr-FR")} MAD`}
-          icon={<Users className="h-5 w-5" />}
-          bgColor="hsl(10, 70%, 62%)"
-          onClick={() => navigate("/paiements")}
-        />
-        <KPICard
-          title="Total qu'on me doit"
-          value={`${totalOwedToMe.toLocaleString("fr-FR")} MAD`}
-          icon={<CreditCard className="h-5 w-5" />}
-          bgColor="hsl(10, 70%, 62%)"
-          onClick={() => navigate("/credits")}
         />
         <KPICard
           title="Dépenses du mois"
