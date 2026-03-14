@@ -50,6 +50,7 @@ export type Database = {
           monthly_payment: number | null
           name: string | null
           notes: string | null
+          paid_amount: number | null
           person_name: string | null
           start_date: string | null
           status: string
@@ -68,6 +69,7 @@ export type Database = {
           monthly_payment?: number | null
           name?: string | null
           notes?: string | null
+          paid_amount?: number | null
           person_name?: string | null
           start_date?: string | null
           status?: string
@@ -86,6 +88,7 @@ export type Database = {
           monthly_payment?: number | null
           name?: string | null
           notes?: string | null
+          paid_amount?: number | null
           person_name?: string | null
           start_date?: string | null
           status?: string

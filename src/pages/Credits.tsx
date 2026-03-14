@@ -39,6 +39,7 @@ export default function Credits() {
   const [personName, setPersonName] = useState("");
   const [creditType, setCreditType] = useState("they_owe");
   const [amount, setAmount] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
   const [creditDate, setCreditDate] = useState<Date>(new Date());
   const [status, setStatus] = useState("en_cours");
   const [notes, setNotes] = useState("");
@@ -53,11 +54,12 @@ export default function Credits() {
 
   useEffect(() => { fetchCredits(); }, [user]);
 
-  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
+  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setPaidAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
 
   const openEdit = (c: any) => {
     setEditId(c.id); setPersonName(c.person_name || c.lender || ""); setCreditType(c.credit_type || "they_owe");
-    setAmount(String(c.amount || c.total_amount || 0)); setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
+    setAmount(String(c.amount || c.total_amount || 0)); setPaidAmount(String(c.paid_amount || 0));
+    setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
     setStatus(c.status); setNotes(c.notes || "");
     setSheetOpen(true);
   };
@@ -66,17 +68,23 @@ export default function Credits() {
     e.preventDefault();
     if (!user || !personName.trim() || !amount) return;
     setSaving(true);
+    const paidVal = parseFloat(paidAmount) || 0;
+    const amountVal = parseFloat(amount);
     const payload: any = {
-      user_id: user.id, person_name: personName.trim(), credit_type: creditType,
-      amount: parseFloat(amount), credit_date: format(creditDate, "yyyy-MM-dd"),
+      person_name: personName.trim(), credit_type: creditType,
+      amount: amountVal, paid_amount: paidVal,
+      credit_date: format(creditDate, "yyyy-MM-dd"),
       status, notes: notes.trim() || null,
-      // Keep required old columns with defaults
-      name: personName.trim(), lender: personName.trim(), total_amount: parseFloat(amount),
+      name: personName.trim(), lender: personName.trim(), total_amount: amountVal,
       monthly_payment: 0, start_date: format(creditDate, "yyyy-MM-dd"), end_date: format(creditDate, "yyyy-MM-dd"),
     };
-    const { error } = editId
-      ? await supabase.from("credits").update(payload).eq("id", editId)
-      : await supabase.from("credits").insert(payload);
+    let error;
+    if (editId) {
+      ({ error } = await supabase.from("credits").update(payload as any).eq("id", editId));
+    } else {
+      payload.user_id = user.id;
+      ({ error } = await supabase.from("credits").insert(payload));
+    }
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
     else {
       saveAutocomplete(user.id, "credit_person", personName.trim());
@@ -96,8 +104,8 @@ export default function Credits() {
     fetchCredits();
   };
 
-  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
-  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
+  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
+  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -116,6 +124,8 @@ export default function Credits() {
                 </Select>
               </div>
               <div className="space-y-2"><Label>Montant (DH)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required /></div>
+              <div className="space-y-2"><Label>Montant payé (DH)</Label><Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0" /></div>
+              {amount && <div className="text-sm">Reste : <span className={cn("font-semibold", (parseFloat(amount) - (parseFloat(paidAmount) || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(parseFloat(amount) - (parseFloat(paidAmount) || 0)).toLocaleString("fr-FR")} DH</span></div>}
               <div className="space-y-2"><Label>Date</Label>
                 <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(creditDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={creditDate} onSelect={(d) => d && setCreditDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
@@ -163,6 +173,8 @@ export default function Credits() {
                   <TableHead>Personne</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Montant</TableHead>
+                  <TableHead>Payé</TableHead>
+                  <TableHead>Reste</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -177,6 +189,8 @@ export default function Credits() {
                       <TableCell className="font-medium">{c.person_name || c.lender || c.name}</TableCell>
                       <TableCell className="text-sm">{type === "i_owe" ? "Je dois" : "On me doit"}</TableCell>
                       <TableCell className="font-medium tabular-nums">{Number(c.amount || c.total_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
+                      <TableCell className="tabular-nums">{Number(c.paid_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
+                      <TableCell className={cn("font-medium tabular-nums", (Number(c.amount || 0) - Number(c.paid_amount || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)).toLocaleString("fr-FR")} DH</TableCell>
                       <TableCell className="text-sm">{c.credit_date || c.start_date ? format(new Date(c.credit_date || c.start_date), "dd/MM/yyyy") : "—"}</TableCell>
                       <TableCell>
                         <Select value={c.status} onValueChange={(v) => quickStatus(c.id, v)}>
