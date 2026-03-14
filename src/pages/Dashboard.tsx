@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/PageHeader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SectorBadge } from "@/components/SectorBadge";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Receipt, CreditCard, CheckSquare, ListTodo, TrendingDown, TrendingUp } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachWeekOfInterval, isWithinInterval } from "date-fns";
+import { Receipt, CreditCard, CheckSquare, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachWeekOfInterval, endOfWeek, isWithinInterval } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -23,10 +22,11 @@ export default function Dashboard() {
   const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [revenues, setRevenues] = useState<any[]>([]);
   const [credits, setCredits] = useState<any[]>([]);
   const [habits, setHabits] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -37,39 +37,46 @@ export default function Dashboard() {
     setLoading(true);
     Promise.all([
       supabase.from("expenses").select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
+      supabase.from("revenues" as any).select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
       supabase.from("credits").select("*"),
       supabase.from("habits").select("*").eq("active", true),
       supabase.from("habit_logs").select("*").eq("month", now.getMonth() + 1).eq("year", now.getFullYear()),
-      supabase.from("tasks").select("*").neq("status", "done"),
-    ]).then(([expRes, credRes, habRes, logRes, taskRes]) => {
+      supabase.from("payments").select("*"),
+    ]).then(([expRes, revRes, credRes, habRes, logRes, payRes]) => {
       setExpenses(expRes.data || []);
+      setRevenues((revRes as any).data || []);
       setCredits(credRes.data || []);
       setHabits(habRes.data || []);
       setHabitLogs(logRes.data || []);
-      setTasks(taskRes.data || []);
+      setPayments(payRes.data || []);
       setLoading(false);
     });
   }, [user]);
 
   const filteredExpenses = sectorFilter === "all" ? expenses : expenses.filter((e) => e.sector === sectorFilter);
   const totalExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
-  const totalMonthlyCredits = credits.filter((c) => c.status === "active").reduce((s, c) => s + Number(c.monthly_payment), 0);
+  const totalRevenue = revenues.reduce((s, r) => s + Number(r.amount), 0);
+  const netProfit = totalRevenue - totalExpenses;
+
+  // Credits: total owed to me vs I owe
+  const totalOwedToMe = credits.filter((c: any) => c.credit_type === "they_owe" && c.status !== "rembourse").reduce((s, c: any) => s + Number(c.amount || c.total_amount || 0), 0);
+  const totalSupplierDebt = payments.filter((p: any) => p.status !== "paid").reduce((s, p) => s + Number(p.amount), 0);
+
   const completedHabits = habitLogs.filter((l) => l.completed).length;
   const totalHabits = habits.length;
-  const pendingTasks = tasks.length;
 
-  // Weekly chart data
+  // Weekly chart
   const weeks = eachWeekOfInterval({ start: monthStart, end: monthEnd }, { weekStartsOn: 1 });
   const weeklyData = weeks.map((weekStart, i) => {
-    const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-    const weekExpenses = filteredExpenses.filter((e) => {
+    const wEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+    const wExpenses = filteredExpenses.filter((e) => {
       const d = new Date(e.date);
-      return isWithinInterval(d, { start: weekStart, end: weekEnd > monthEnd ? monthEnd : weekEnd });
+      return isWithinInterval(d, { start: weekStart, end: wEnd > monthEnd ? monthEnd : wEnd });
     });
     return {
       name: `S${i + 1}`,
-      perso: weekExpenses.filter((e) => e.sector === "perso").reduce((s, e) => s + Number(e.amount), 0),
-      cabinet: weekExpenses.filter((e) => e.sector === "cabinet").reduce((s, e) => s + Number(e.amount), 0),
+      perso: wExpenses.filter((e) => e.sector === "perso").reduce((s, e) => s + Number(e.amount), 0),
+      cabinet: wExpenses.filter((e) => e.sector === "cabinet").reduce((s, e) => s + Number(e.amount), 0),
     };
   });
 
@@ -85,12 +92,8 @@ export default function Dashboard() {
     return (
       <div className="space-y-6 animate-fade-in">
         <PageHeader title="Tableau de bord" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-72 rounded-lg" />
-          <Skeleton className="h-72 rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 rounded-lg" />)}
         </div>
       </div>
     );
@@ -110,11 +113,49 @@ export default function Dashboard() {
       </PageHeader>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard title="Dépenses du mois" value={`${totalExpenses.toLocaleString("fr-FR")} MAD`} icon={<Receipt className="h-5 w-5" />} onClick={() => navigate("/depenses")} />
-        <KPICard title="Crédits mensuels" value={`${totalMonthlyCredits.toLocaleString("fr-FR")} MAD`} icon={<CreditCard className="h-5 w-5" />} onClick={() => navigate("/credits")} />
-        <KPICard title="Habitudes" value={`${completedHabits}/${totalHabits}`} icon={<CheckSquare className="h-5 w-5" />} onClick={() => navigate("/habitudes")} />
-        <KPICard title="Tâches en cours" value={String(pendingTasks)} icon={<ListTodo className="h-5 w-5" />} onClick={() => navigate("/engagements")} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <KPICard
+          title="Dépenses du mois"
+          value={`${totalExpenses.toLocaleString("fr-FR")} MAD`}
+          icon={<Receipt className="h-5 w-5" />}
+          bgColor="hsl(var(--kpi-expenses))"
+          onClick={() => navigate("/depenses")}
+        />
+        <KPICard
+          title="Chiffre d'affaires"
+          value={`${totalRevenue.toLocaleString("fr-FR")} MAD`}
+          icon={<TrendingUp className="h-5 w-5" />}
+          bgColor="hsl(var(--kpi-revenue))"
+          onClick={() => navigate("/depenses")}
+        />
+        <KPICard
+          title="Profit net"
+          value={`${netProfit.toLocaleString("fr-FR")} MAD`}
+          icon={netProfit >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+          bgColor={netProfit >= 0 ? "hsl(var(--kpi-profit))" : "hsl(var(--kpi-expenses))"}
+          onClick={() => navigate("/depenses")}
+        />
+        <KPICard
+          title="Total qu'on me doit"
+          value={`${totalOwedToMe.toLocaleString("fr-FR")} MAD`}
+          icon={<CreditCard className="h-5 w-5" />}
+          bgColor="hsl(var(--kpi-credits))"
+          onClick={() => navigate("/credits")}
+        />
+        <KPICard
+          title="Dû fournisseurs"
+          value={`${totalSupplierDebt.toLocaleString("fr-FR")} MAD`}
+          icon={<Users className="h-5 w-5" />}
+          bgColor="hsl(var(--kpi-suppliers))"
+          onClick={() => navigate("/paiements")}
+        />
+        <KPICard
+          title="Habitudes"
+          value={`${completedHabits}/${totalHabits}`}
+          icon={<CheckSquare className="h-5 w-5" />}
+          bgColor="hsl(var(--kpi-habits))"
+          onClick={() => navigate("/habitudes")}
+        />
       </div>
 
       {/* Charts */}
@@ -174,15 +215,19 @@ export default function Dashboard() {
   );
 }
 
-function KPICard({ title, value, icon, onClick }: { title: string; value: string; icon: React.ReactNode; onClick?: () => void }) {
+function KPICard({ title, value, icon, bgColor, onClick }: { title: string; value: string; icon: React.ReactNode; bgColor: string; onClick?: () => void }) {
   return (
-    <Card className="kpi-card cursor-pointer hover:bg-muted/40 transition-colors" onClick={onClick}>
+    <Card
+      className="cursor-pointer hover:scale-[1.02] transition-transform border-0 shadow-md"
+      style={{ backgroundColor: bgColor }}
+      onClick={onClick}
+    >
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
-          <div className="text-muted-foreground">{icon}</div>
+          <div className="text-white/80">{icon}</div>
         </div>
-        <p className="text-2xl font-semibold tabular-nums mt-3">{value}</p>
-        <p className="text-xs text-muted-foreground mt-1">{title}</p>
+        <p className="text-2xl font-semibold tabular-nums mt-3 text-white">{value}</p>
+        <p className="text-xs text-white/80 mt-1">{title}</p>
       </CardContent>
     </Card>
   );

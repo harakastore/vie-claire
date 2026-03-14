@@ -12,6 +12,7 @@ import Payments from "./pages/Payments";
 import Habits from "./pages/Habits";
 import Credits from "./pages/Credits";
 import Engagements from "./pages/Engagements";
+import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/habitudes" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
             <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
             <Route path="/engagements" element={<ProtectedRoute><Engagements /></ProtectedRoute>} />
+            <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

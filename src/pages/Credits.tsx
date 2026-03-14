@@ -9,34 +9,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Progress } from "@/components/ui/progress";
+import { AutocompleteInput, saveAutocomplete } from "@/components/AutocompleteInput";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, CalendarIcon, Loader2 } from "lucide-react";
-import { format, differenceInMonths } from "date-fns";
+import { Plus, Pencil, Trash2, CalendarIcon, Loader2 } from "lucide-react";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+
+const statusConfig: Record<string, { label: string; className: string }> = {
+  en_cours: { label: "En cours", className: "bg-status-partial-bg text-status-partial border-[hsl(var(--status-partial-border))]" },
+  rembourse: { label: "Remboursé", className: "bg-status-paid-bg text-status-paid border-[hsl(var(--status-paid-border))]" },
+  partiel: { label: "Partiel", className: "bg-status-pending-bg text-status-pending border-[hsl(var(--status-pending-border))]" },
+};
 
 export default function Credits() {
   const { user } = useAuth();
   const [credits, setCredits] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Form
-  const [name, setName] = useState("");
-  const [lender, setLender] = useState("");
-  const [totalAmount, setTotalAmount] = useState("");
-  const [monthlyPayment, setMonthlyPayment] = useState("");
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [personName, setPersonName] = useState("");
+  const [creditType, setCreditType] = useState("they_owe");
+  const [amount, setAmount] = useState("");
+  const [creditDate, setCreditDate] = useState<Date>(new Date());
+  const [status, setStatus] = useState("en_cours");
   const [notes, setNotes] = useState("");
-  const [status, setStatus] = useState("active");
 
   const fetchCredits = async () => {
     if (!user) return;
@@ -48,103 +53,155 @@ export default function Credits() {
 
   useEffect(() => { fetchCredits(); }, [user]);
 
+  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
+
+  const openEdit = (c: any) => {
+    setEditId(c.id); setPersonName(c.person_name || c.lender || ""); setCreditType(c.credit_type || "they_owe");
+    setAmount(String(c.amount || c.total_amount || 0)); setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
+    setStatus(c.status); setNotes(c.notes || "");
+    setSheetOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !personName.trim() || !amount) return;
     setSaving(true);
-    const { error } = await supabase.from("credits").insert({
-      user_id: user.id, name: name.trim(), lender: lender.trim(),
-      total_amount: parseFloat(totalAmount), monthly_payment: parseFloat(monthlyPayment),
-      start_date: format(startDate, "yyyy-MM-dd"), end_date: format(endDate, "yyyy-MM-dd"),
-      notes: notes.trim() || null, status,
-    });
+    const payload: any = {
+      user_id: user.id, person_name: personName.trim(), credit_type: creditType,
+      amount: parseFloat(amount), credit_date: format(creditDate, "yyyy-MM-dd"),
+      status, notes: notes.trim() || null,
+      // Keep required old columns with defaults
+      name: personName.trim(), lender: personName.trim(), total_amount: parseFloat(amount),
+      monthly_payment: 0, start_date: format(creditDate, "yyyy-MM-dd"), end_date: format(creditDate, "yyyy-MM-dd"),
+    };
+    const { error } = editId
+      ? await supabase.from("credits").update(payload).eq("id", editId)
+      : await supabase.from("credits").insert(payload);
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { toast({ title: "Crédit ajouté" }); setName(""); setLender(""); setTotalAmount(""); setMonthlyPayment(""); setNotes(""); setSheetOpen(false); fetchCredits(); }
+    else {
+      saveAutocomplete(user.id, "credit_person", personName.trim());
+      toast({ title: editId ? "Crédit modifié" : "Crédit ajouté" });
+      resetForm(); setSheetOpen(false); fetchCredits();
+    }
     setSaving(false);
   };
 
-  const totalMonthly = credits.filter((c) => c.status === "active").reduce((s, c) => s + Number(c.monthly_payment), 0);
+  const handleDelete = async (id: string) => {
+    await supabase.from("credits").delete().eq("id", id);
+    toast({ title: "Crédit supprimé" }); fetchCredits();
+  };
+
+  const quickStatus = async (id: string, newStatus: string) => {
+    await supabase.from("credits").update({ status: newStatus } as any).eq("id", id);
+    fetchCredits();
+  };
+
+  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
+  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + Number(c.amount || c.total_amount || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Crédits" description="Suivi de vos crédits et emprunts">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <PageHeader title="Crédits" description="Dettes et créances entre personnes">
+        <Sheet open={sheetOpen} onOpenChange={(o) => { setSheetOpen(o); if (!o) resetForm(); }}>
           <SheetTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" />Ajouter</Button></SheetTrigger>
           <SheetContent className="overflow-auto">
-            <SheetHeader><SheetTitle>Nouveau crédit</SheetTitle></SheetHeader>
+            <SheetHeader><SheetTitle>{editId ? "Modifier" : "Nouveau crédit"}</SheetTitle></SheetHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-              <div className="space-y-2"><Label>Nom du crédit</Label><Input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ex: Crédit immobilier" /></div>
-              <div className="space-y-2"><Label>Organisme prêteur</Label><Input value={lender} onChange={(e) => setLender(e.target.value)} required placeholder="Ex: CIH Bank" /></div>
-              <div className="space-y-2"><Label>Montant total (MAD)</Label><Input type="number" step="0.01" value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Mensualité (MAD)</Label><Input type="number" step="0.01" value={monthlyPayment} onChange={(e) => setMonthlyPayment(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Date de début</Label>
-                <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(startDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
-                </Popover>
+              <div className="space-y-2"><Label>Nom de la personne</Label>
+                <AutocompleteInput fieldType="credit_person" value={personName} onChange={setPersonName} placeholder="Ex: Khalid, Papa..." />
               </div>
-              <div className="space-y-2"><Label>Date de fin</Label>
-                <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(endDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={endDate} onSelect={(d) => d && setEndDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
+              <div className="space-y-2"><Label>Type</Label>
+                <Select value={creditType} onValueChange={setCreditType}><SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="i_owe">Je dois</SelectItem><SelectItem value="they_owe">On me doit</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Montant (DH)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required /></div>
+              <div className="space-y-2"><Label>Date</Label>
+                <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(creditDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={creditDate} onSelect={(d) => d && setCreditDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
                 </Popover>
               </div>
               <div className="space-y-2"><Label>Statut</Label>
                 <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="active">Actif</SelectItem><SelectItem value="settled">Soldé</SelectItem><SelectItem value="late">En retard</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="en_cours">En cours</SelectItem><SelectItem value="rembourse">Remboursé</SelectItem><SelectItem value="partiel">Partiel</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
-              <Button type="submit" className="w-full" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Ajouter</Button>
+              <Button type="submit" className="w-full" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editId ? "Modifier" : "Ajouter"}</Button>
             </form>
           </SheetContent>
         </Sheet>
       </PageHeader>
 
-      {/* Summary */}
-      <Card className="kpi-card">
-        <CardContent className="p-5">
-          <p className="text-sm text-muted-foreground">Total mensualités actives</p>
-          <p className="text-2xl font-semibold tabular-nums mt-1">{totalMonthly.toLocaleString("fr-FR")} MAD</p>
+      {/* Totals */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card style={{ backgroundColor: "hsl(var(--kpi-revenue))" }} className="border-0 shadow-md">
+          <CardContent className="p-5">
+            <p className="text-sm text-white/80">Total qu'on me doit</p>
+            <p className="text-2xl font-semibold tabular-nums mt-1 text-white">{totalOwedToMe.toLocaleString("fr-FR")} DH</p>
+          </CardContent>
+        </Card>
+        <Card style={{ backgroundColor: "hsl(var(--kpi-expenses))" }} className="border-0 shadow-md">
+          <CardContent className="p-5">
+            <p className="text-sm text-white/80">Total que je dois</p>
+            <p className="text-2xl font-semibold tabular-nums mt-1 text-white">{totalIOwe.toLocaleString("fr-FR")} DH</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Table */}
+      <Card className="glass-card">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
+          ) : credits.length === 0 ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">Aucun crédit enregistré.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Personne</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Montant</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {credits.map((c) => {
+                  const type = c.credit_type || "they_owe";
+                  const st = statusConfig[c.status] || statusConfig.en_cours;
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.person_name || c.lender || c.name}</TableCell>
+                      <TableCell className="text-sm">{type === "i_owe" ? "Je dois" : "On me doit"}</TableCell>
+                      <TableCell className="font-medium tabular-nums">{Number(c.amount || c.total_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
+                      <TableCell className="text-sm">{c.credit_date || c.start_date ? format(new Date(c.credit_date || c.start_date), "dd/MM/yyyy") : "—"}</TableCell>
+                      <TableCell>
+                        <Select value={c.status} onValueChange={(v) => quickStatus(c.id, v)}>
+                          <SelectTrigger className="w-28 h-8 text-xs border-0 p-0">
+                            <Badge variant="outline" className={cn("text-xs", st.className)}>{st.label}</Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en_cours">En cours</SelectItem>
+                            <SelectItem value="rembourse">Remboursé</SelectItem>
+                            <SelectItem value="partiel">Partiel</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
-      {/* Credits list */}
-      {loading ? <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}</div> :
-        credits.length === 0 ? <div className="text-center py-12 text-sm text-muted-foreground">Aucun crédit enregistré.</div> :
-        <div className="space-y-4">
-          {credits.map((c) => {
-            const totalMonths = differenceInMonths(new Date(c.end_date), new Date(c.start_date));
-            const elapsedMonths = Math.max(0, differenceInMonths(new Date(), new Date(c.start_date)));
-            const paidMonths = Math.min(elapsedMonths, totalMonths);
-            const pctRepaid = totalMonths > 0 ? (paidMonths / totalMonths) * 100 : 0;
-            const remainingCapital = Math.max(0, Number(c.total_amount) - (paidMonths * Number(c.monthly_payment)));
-            const remainingMonths = Math.max(0, totalMonths - paidMonths);
-
-            return (
-              <Card key={c.id} className="glass-card">
-                <CardContent className="p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium">{c.name}</h3>
-                      <p className="text-xs text-muted-foreground">{c.lender}</p>
-                    </div>
-                    <StatusBadge status={c.status} />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div><span className="text-muted-foreground text-xs">Capital restant</span><p className="font-semibold tabular-nums">{remainingCapital.toLocaleString("fr-FR")} MAD</p></div>
-                    <div><span className="text-muted-foreground text-xs">Mensualité</span><p className="tabular-nums">{Number(c.monthly_payment).toLocaleString("fr-FR")} MAD</p></div>
-                    <div><span className="text-muted-foreground text-xs">Restant</span><p className="tabular-nums">{remainingMonths} mois</p></div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={pctRepaid} className="h-1.5 flex-1" />
-                    <span className="text-xs text-muted-foreground tabular-nums">{Math.round(pctRepaid)}%</span>
-                  </div>
-                  {c.notes && <p className="text-xs text-muted-foreground truncate">{c.notes}</p>}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      }
     </div>
   );
 }

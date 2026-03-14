@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,11 +18,12 @@ import { Button } from "@/components/ui/button";
 
 const items = [
   { title: "Tableau de bord", url: "/", icon: LayoutDashboard },
-  { title: "Dépenses", url: "/depenses", icon: Receipt },
+  { title: "Dépenses & Revenus", url: "/depenses", icon: Receipt },
   { title: "Paiements", url: "/paiements", icon: Users },
   { title: "Habitudes", url: "/habitudes", icon: CheckSquare },
   { title: "Crédits", url: "/credits", icon: CreditCard },
   { title: "Engagements", url: "/engagements", icon: ListTodo },
+  { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
 ];
 
 export function AppSidebar() {
