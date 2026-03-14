@@ -91,6 +91,11 @@ export default function Payments() {
     setSaving(false);
   };
 
+  const handleDelete = async (id: string) => {
+    await supabase.from("payments").delete().eq("id", id);
+    toast({ title: "Transaction supprimée" }); fetchData();
+  };
+
   // Stats
   const totalCredit = payments.filter((p) => p.status !== "paid").reduce((s, p) => s + (Number(p.amount) - Number(p.paid_amount || 0)), 0);
 
