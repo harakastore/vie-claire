@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3 } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -190,8 +191,12 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
     fetchAll();
   };
+  const moveTaskToBlock = async (id: string, newBlock: string) => {
+    await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
+    fetchAll();
+  };
 
-  // Daily habits CRUD
+
   const addDailyHabit = async () => {
     if (!user || !newHabit.trim()) return;
     const { error } = await (supabase.from("daily_habits" as any) as any).insert({
@@ -319,6 +324,21 @@ export default function Goals() {
                     <div key={t.id} className="flex items-start gap-2 group">
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
                       <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground hover:text-foreground">
+                            <ArrowRightLeft className="h-3.5 w-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {BLOCKS.filter((b) => b.key !== block.key).map((b) => (
+                            <DropdownMenuItem key={b.key} onClick={() => moveTaskToBlock(t.id, b.key)}>
+                              <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: b.color }} />
+                              {b.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
