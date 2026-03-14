@@ -33,15 +33,17 @@ export default function Dashboard() {
   const [payments, setPayments] = useState<any[]>([]);
 
   const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
+  const [dateFrom, setDateFrom] = useState<Date>(startOfMonth(now));
+  const [dateTo, setDateTo] = useState<Date>(endOfMonth(now));
 
   useEffect(() => {
     if (!user) return;
     setLoading(true);
+    const fromStr = format(dateFrom, "yyyy-MM-dd");
+    const toStr = format(dateTo, "yyyy-MM-dd");
     Promise.all([
-      supabase.from("expenses").select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
-      supabase.from("revenues" as any).select("*").gte("date", monthStart.toISOString().split("T")[0]).lte("date", monthEnd.toISOString().split("T")[0]),
+      supabase.from("expenses").select("*").gte("date", fromStr).lte("date", toStr),
+      supabase.from("revenues" as any).select("*").gte("date", fromStr).lte("date", toStr),
       supabase.from("credits").select("*"),
       supabase.from("habits").select("*").eq("active", true),
       supabase.from("habit_logs").select("*").eq("month", now.getMonth() + 1).eq("year", now.getFullYear()),
@@ -55,7 +57,7 @@ export default function Dashboard() {
       setPayments(payRes.data || []);
       setLoading(false);
     });
-  }, [user]);
+  }, [user, dateFrom, dateTo]);
 
   const filteredExpenses = sectorFilter === "all" ? expenses : expenses.filter((e) => e.sector === sectorFilter);
   const totalExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
