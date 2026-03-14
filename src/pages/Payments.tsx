@@ -220,6 +220,33 @@ export default function Payments() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Detail Dialog */}
+      <Dialog open={!!detailPayment} onOpenChange={(o) => !o && setDetailPayment(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Détail de la transaction</DialogTitle></DialogHeader>
+          {detailPayment && (() => {
+            const reste = Number(detailPayment.amount) - Number(detailPayment.paid_amount || 0);
+            return (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><span className="text-muted-foreground">Fournisseur</span><p className="font-medium">{detailPayment.supplier_name || "—"}</p></div>
+                  <div><span className="text-muted-foreground">Date</span><p>{format(new Date(detailPayment.date), "dd/MM/yyyy")}</p></div>
+                  <div><span className="text-muted-foreground">Montant</span><p className="font-semibold tabular-nums">{Number(detailPayment.amount).toLocaleString("fr-FR")} MAD</p></div>
+                  <div><span className="text-muted-foreground">Montant payé</span><p className="tabular-nums">{Number(detailPayment.paid_amount || 0).toLocaleString("fr-FR")} MAD</p></div>
+                  <div><span className="text-muted-foreground">Reste</span><p className={cn("font-semibold tabular-nums", reste > 0 ? "text-destructive" : "text-[hsl(var(--status-paid))]")}>{reste.toLocaleString("fr-FR")} MAD</p></div>
+                  <div><span className="text-muted-foreground">Statut</span><div className="mt-0.5"><StatusBadge status={detailPayment.status} /></div></div>
+                  <div><span className="text-muted-foreground">Facture reçue</span><p>{detailPayment.invoice_count || 0}</p></div>
+                  <div><span className="text-muted-foreground">Référence</span><p>{detailPayment.reference || "—"}</p></div>
+                </div>
+                {detailPayment.notes && (
+                  <div><span className="text-muted-foreground">Notes</span><p className="mt-1 p-2 rounded bg-muted/30 text-sm">{detailPayment.notes}</p></div>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
