@@ -343,6 +343,8 @@ export default function Goals() {
           </CardContent>
         </Card>
       </div>
+      </>
+      )}
 
       {/* Daily tasks — redesigned */}
       <Card className="glass-card">
