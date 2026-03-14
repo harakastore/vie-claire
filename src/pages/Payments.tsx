@@ -116,7 +116,7 @@ export default function Payments() {
                 </Popover>
               </div>
               <div className="space-y-2"><Label>Référence</Label><Input value={pRef} onChange={(e) => setPRef(e.target.value)} placeholder="Réf." /></div>
-              <div className="space-y-2"><Label>Nb factures reçues</Label><Input type="number" value={invoiceCount} onChange={(e) => setInvoiceCount(e.target.value)} placeholder="0" /></div>
+              <div className="space-y-2"><Label>Montant de facture reçu</Label><Input type="number" value={invoiceCount} onChange={(e) => setInvoiceCount(e.target.value)} placeholder="0" /></div>
               <div className="space-y-2"><Label>Statut</Label>
                 <Select value={pStatus} onValueChange={setPStatus}><SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="paid">Payé</SelectItem><SelectItem value="partial">Partiel</SelectItem><SelectItem value="pending">En attente</SelectItem></SelectContent>
@@ -147,7 +147,7 @@ export default function Payments() {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Date</TableHead><TableHead>Fournisseur</TableHead><TableHead>Montant</TableHead>
-                  <TableHead>Factures</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Facture reçue</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {payments.map((p) => (
