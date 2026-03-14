@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ export default function Goals() {
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const [showAllDays, setShowAllDays] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
@@ -228,36 +229,51 @@ export default function Goals() {
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />
 
-      {/* 90-day goals */}
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
-            Objectifs 90 jours
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {goals90.map((g: any) => (
-            <div key={g.id} className="flex items-center gap-2 group">
-              <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todo">À faire</SelectItem>
-                  <SelectItem value="in_progress">En cours</SelectItem>
-                  <SelectItem value="achieved">Atteint</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
-            <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Toggle goals visibility */}
+      <Button
+        variant="outline"
+        className="w-full justify-between"
+        onClick={() => setShowGoals(!showGoals)}
+      >
+        <span className="flex items-center gap-2">
+          <Target className="h-4 w-4" />
+          Objectifs (90 jours, mois, semaine)
+        </span>
+        {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </Button>
+
+      {showGoals && (
+        <>
+          {/* 90-day goals */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
+                Objectifs 90 jours
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {goals90.map((g: any) => (
+                <div key={g.id} className="flex items-center gap-2 group">
+                  <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                    <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todo">À faire</SelectItem>
+                      <SelectItem value="in_progress">En cours</SelectItem>
+                      <SelectItem value="achieved">Atteint</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                </div>
+              ))}
+              <div className="flex gap-2 mt-2">
+                <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
+                <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Monthly & Weekly goals side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -327,6 +343,8 @@ export default function Goals() {
           </CardContent>
         </Card>
       </div>
+      </>
+      )}
 
       {/* Daily tasks — redesigned */}
       <Card className="glass-card">
