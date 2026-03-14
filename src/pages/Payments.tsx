@@ -137,7 +137,7 @@ export default function Payments() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-6">
         {/* Payments Table */}
         <Card className="glass-card lg:col-span-1">
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Historique</CardTitle></CardHeader>
