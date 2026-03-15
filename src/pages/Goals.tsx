@@ -228,11 +228,14 @@ export default function Goals() {
     if (!user) return;
     const existing = habitLogs.find((l: any) => l.habit_id === habitId && l.day_date === dayDate);
     if (existing) {
+      setHabitLogs((prev) => prev.map((l) => l.id === existing.id ? { ...l, completed: !existing.completed } : l));
       await (supabase.from("daily_habit_logs" as any) as any).update({ completed: !existing.completed } as any).eq("id", existing.id);
     } else {
-      await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: habitId, day_date: dayDate, completed: true });
+      const tempId = crypto.randomUUID();
+      setHabitLogs((prev) => [...prev, { id: tempId, habit_id: habitId, day_date: dayDate, completed: true, user_id: user.id }]);
+      const { data } = await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: habitId, day_date: dayDate, completed: true }).select().single();
+      if (data) setHabitLogs((prev) => prev.map((l) => l.id === tempId ? data : l));
     }
-    fetchAll();
   };
 
   const isHabitCompleted = (habitId: string, dayDate: string) => {
