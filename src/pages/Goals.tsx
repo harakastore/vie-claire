@@ -180,19 +180,26 @@ export default function Goals() {
     const key = `${dayDate}_${block}`;
     const text = newBlockTexts[key];
     if (!text?.trim()) return;
-    const { error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewBlockTexts((prev) => ({ ...prev, [key]: "" })); fetchAll(); }
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block, completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewBlockTexts((prev) => ({ ...prev, [key]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
-  // Simple daily task (PC mode, no block)
   const addSimpleDailyTask = async (dayDate: string) => {
     if (!user) return;
     const text = newTaskText[dayDate];
     if (!text?.trim()) return;
-    const { error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr" });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewTaskText((prev) => ({ ...prev, [dayDate]: "" })); fetchAll(); }
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr", completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewTaskText((prev) => ({ ...prev, [dayDate]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr" }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
   const toggleDailyTask = async (id: string, completed: boolean) => {
