@@ -592,12 +592,13 @@ export default function Goals() {
                   isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
                   hasProgram && "bg-muted/20"
                 )}>
-                  <div className="flex flex-col items-center gap-1 pt-1">
-                    <Checkbox
-                      checked={hasProgram}
-                      className="h-5 w-5"
-                      disabled
-                    />
+                  <div className="flex flex-col items-center gap-1 pt-2">
+                    <div className={cn(
+                      "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                      hasProgram ? "border-primary bg-primary/20" : "border-muted-foreground/30"
+                    )}>
+                      {hasProgram && <Dumbbell className="h-3 w-3 text-primary" />}
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
