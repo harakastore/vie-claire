@@ -219,23 +219,27 @@ export default function Goals() {
 
   const addDailyHabit = async () => {
     if (!user || !newHabit.trim()) return;
-    const { error } = await (supabase.from("daily_habits" as any) as any).insert({
+    const tempId = crypto.randomUUID();
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true };
+    setDailyHabits((prev) => [...prev, temp]);
+    setNewHabit("");
+    const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
       user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length,
-    });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewHabit(""); fetchAll(); }
+    }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
   };
 
   const updateDailyHabit = async (id: string, title: string) => {
     if (!title.trim()) return;
-    await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() } as any).eq("id", id);
+    setDailyHabits((prev) => prev.map((h) => h.id === id ? { ...h, title: title.trim() } : h));
     setEditingHabitId(null);
-    fetchAll();
+    await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() } as any).eq("id", id);
   };
 
   const deleteDailyHabit = async (id: string) => {
+    setDailyHabits((prev) => prev.filter((h) => h.id !== id));
     await (supabase.from("daily_habits" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
 
   // Habit log toggle
