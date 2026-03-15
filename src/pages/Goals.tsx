@@ -550,7 +550,7 @@ export default function Goals() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                  Objectifs de la semaine — {goalsWeekly.length}/3
+                  Objectifs de la semaine — {goalsWeekly.length}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
                   Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
