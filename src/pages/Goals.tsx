@@ -519,7 +519,7 @@ export default function Goals() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                  Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}/3
+                  Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
