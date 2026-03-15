@@ -183,17 +183,17 @@ export default function Goals() {
   };
 
   const toggleDailyTask = async (id: string, completed: boolean) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: !completed } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ completed: !completed }).eq("id", id);
-    fetchAll();
   };
 
   const deleteDailyTask = async (id: string) => {
+    setDailyTasks((prev) => prev.filter((t) => t.id !== id));
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
   const moveTaskToBlock = async (id: string, newBlock: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, block: newBlock } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
-    fetchAll();
   };
 
 
