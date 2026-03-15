@@ -250,9 +250,9 @@ export default function Goals() {
     if (existing) {
       await (supabase.from("weekly_sports" as any) as any).update({ program } as any).eq("id", existing.id);
     } else {
-      await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program });
+      const { data } = await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program }).select().single();
+      if (data) setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex && !s.id ? data : s));
     }
-    fetchAll();
   };
 
   const visibleDays = isMobile && !showAllDays
