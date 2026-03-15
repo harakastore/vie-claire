@@ -140,15 +140,23 @@ export default function Goals() {
     if (type === "weekly" && goalsWeekly.length >= 3) {
       toast({ title: "Maximum 3 objectifs par semaine", variant: "destructive" }); return;
     }
+    const tempId = crypto.randomUUID();
     const payload: any = {
-      user_id: user.id, type, title: title.trim(), status: "todo",
+      id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
       month: type === "monthly" ? currentMonth : null,
       year: type === "monthly" ? currentYear : null,
       week_start: type === "weekly" ? format(currentWeekStart, "yyyy-MM-dd") : null,
     };
-    const { error } = await (supabase.from("goals" as any) as any).insert(payload);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { reset(); fetchAll(); }
+    if (type === "90day") setGoals90((prev) => [...prev, payload]);
+    else if (type === "monthly") setGoalsMonthly((prev) => [...prev, payload]);
+    else if (type === "weekly") setGoalsWeekly((prev) => [...prev, payload]);
+    reset();
+    const { data, error } = await (supabase.from("goals" as any) as any).insert({ ...payload, id: undefined }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) {
+      const replace = (list: any[]) => list.map((g) => g.id === tempId ? data : g);
+      setGoals90((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
+    }
   };
 
   const updateGoalStatus = async (id: string, status: string) => {
