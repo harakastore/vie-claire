@@ -134,12 +134,6 @@ export default function Goals() {
   // Goal CRUD
   const addGoal = async (type: string, title: string, reset: () => void) => {
     if (!user || !title.trim()) return;
-    if (type === "monthly" && goalsMonthly.length >= 3) {
-      toast({ title: "Maximum 3 objectifs par mois", variant: "destructive" }); return;
-    }
-    if (type === "weekly" && goalsWeekly.length >= 3) {
-      toast({ title: "Maximum 3 objectifs par semaine", variant: "destructive" }); return;
-    }
     const tempId = crypto.randomUUID();
     const payload: any = {
       id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
@@ -525,7 +519,7 @@ export default function Goals() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                  Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}/3
+                  Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -542,7 +536,7 @@ export default function Goals() {
                     <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                   </div>
                 ))}
-                {goalsMonthly.length < 3 && (
+                {(
                   <div className="flex gap-2 mt-2">
                     <Input placeholder="Objectif mensuel..." value={newMonthly} onChange={(e) => setNewMonthly(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addGoal("monthly", newMonthly, () => setNewMonthly(""))} className="h-8 text-sm" />
@@ -556,7 +550,7 @@ export default function Goals() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                  Objectifs de la semaine — {goalsWeekly.length}/3
+                  Objectifs de la semaine — {goalsWeekly.length}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
                   Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
@@ -577,7 +571,7 @@ export default function Goals() {
                     <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                   </div>
                 ))}
-                {goalsWeekly.length < 3 && (
+                {(
                   <div className="flex gap-2 mt-2">
                     <Input placeholder="Objectif hebdo..." value={newWeekly} onChange={(e) => setNewWeekly(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newWeekly, () => setNewWeekly(""))} className="h-8 text-sm" />
