@@ -134,12 +134,6 @@ export default function Goals() {
   // Goal CRUD
   const addGoal = async (type: string, title: string, reset: () => void) => {
     if (!user || !title.trim()) return;
-    if (type === "monthly" && goalsMonthly.length >= 3) {
-      toast({ title: "Maximum 3 objectifs par mois", variant: "destructive" }); return;
-    }
-    if (type === "weekly" && goalsWeekly.length >= 3) {
-      toast({ title: "Maximum 3 objectifs par semaine", variant: "destructive" }); return;
-    }
     const tempId = crypto.randomUUID();
     const payload: any = {
       id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
