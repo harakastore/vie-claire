@@ -152,13 +152,18 @@ export default function Goals() {
   };
 
   const updateGoalStatus = async (id: string, status: string) => {
+    const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, status } : g);
+    setGoals90((prev) => updateList(prev));
+    setGoalsMonthly((prev) => updateList(prev));
+    setGoalsWeekly((prev) => updateList(prev));
     await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
-    fetchAll();
   };
 
   const deleteGoal = async (id: string) => {
+    setGoals90((prev) => prev.filter((g) => g.id !== id));
+    setGoalsMonthly((prev) => prev.filter((g) => g.id !== id));
+    setGoalsWeekly((prev) => prev.filter((g) => g.id !== id));
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
 
   // Daily tasks with block
