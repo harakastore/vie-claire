@@ -85,14 +85,14 @@ export default function Engagements() {
   };
 
   const deleteTask = async (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
     await supabase.from("tasks").delete().eq("id", id);
     toast({ title: "Tâche supprimée" });
-    fetchTasks();
   };
 
   const quickStatus = async (id: string, newStatus: string) => {
+    setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status: newStatus } : t));
     await supabase.from("tasks").update({ status: newStatus }).eq("id", id);
-    fetchTasks();
   };
 
   const getUrgency = (dueDateStr: string | null) => {

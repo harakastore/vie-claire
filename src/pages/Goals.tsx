@@ -140,25 +140,38 @@ export default function Goals() {
     if (type === "weekly" && goalsWeekly.length >= 3) {
       toast({ title: "Maximum 3 objectifs par semaine", variant: "destructive" }); return;
     }
+    const tempId = crypto.randomUUID();
     const payload: any = {
-      user_id: user.id, type, title: title.trim(), status: "todo",
+      id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
       month: type === "monthly" ? currentMonth : null,
       year: type === "monthly" ? currentYear : null,
       week_start: type === "weekly" ? format(currentWeekStart, "yyyy-MM-dd") : null,
     };
-    const { error } = await (supabase.from("goals" as any) as any).insert(payload);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { reset(); fetchAll(); }
+    if (type === "90day") setGoals90((prev) => [...prev, payload]);
+    else if (type === "monthly") setGoalsMonthly((prev) => [...prev, payload]);
+    else if (type === "weekly") setGoalsWeekly((prev) => [...prev, payload]);
+    reset();
+    const { data, error } = await (supabase.from("goals" as any) as any).insert({ ...payload, id: undefined }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) {
+      const replace = (list: any[]) => list.map((g) => g.id === tempId ? data : g);
+      setGoals90((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
+    }
   };
 
   const updateGoalStatus = async (id: string, status: string) => {
+    const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, status } : g);
+    setGoals90((prev) => updateList(prev));
+    setGoalsMonthly((prev) => updateList(prev));
+    setGoalsWeekly((prev) => updateList(prev));
     await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
-    fetchAll();
   };
 
   const deleteGoal = async (id: string) => {
+    setGoals90((prev) => prev.filter((g) => g.id !== id));
+    setGoalsMonthly((prev) => prev.filter((g) => g.id !== id));
+    setGoalsWeekly((prev) => prev.filter((g) => g.id !== id));
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
 
   // Daily tasks with block
@@ -167,55 +180,66 @@ export default function Goals() {
     const key = `${dayDate}_${block}`;
     const text = newBlockTexts[key];
     if (!text?.trim()) return;
-    const { error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewBlockTexts((prev) => ({ ...prev, [key]: "" })); fetchAll(); }
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block, completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewBlockTexts((prev) => ({ ...prev, [key]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
-  // Simple daily task (PC mode, no block)
   const addSimpleDailyTask = async (dayDate: string) => {
     if (!user) return;
     const text = newTaskText[dayDate];
     if (!text?.trim()) return;
-    const { error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr" });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewTaskText((prev) => ({ ...prev, [dayDate]: "" })); fetchAll(); }
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr", completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewTaskText((prev) => ({ ...prev, [dayDate]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "fajr_dhuhr" }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
   const toggleDailyTask = async (id: string, completed: boolean) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, completed: !completed } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ completed: !completed }).eq("id", id);
-    fetchAll();
   };
 
   const deleteDailyTask = async (id: string) => {
+    setDailyTasks((prev) => prev.filter((t) => t.id !== id));
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
   const moveTaskToBlock = async (id: string, newBlock: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, block: newBlock } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
-    fetchAll();
   };
 
 
   const addDailyHabit = async () => {
     if (!user || !newHabit.trim()) return;
-    const { error } = await (supabase.from("daily_habits" as any) as any).insert({
+    const tempId = crypto.randomUUID();
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true };
+    setDailyHabits((prev) => [...prev, temp]);
+    setNewHabit("");
+    const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
       user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length,
-    });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { setNewHabit(""); fetchAll(); }
+    }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
   };
 
   const updateDailyHabit = async (id: string, title: string) => {
     if (!title.trim()) return;
-    await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() } as any).eq("id", id);
+    setDailyHabits((prev) => prev.map((h) => h.id === id ? { ...h, title: title.trim() } : h));
     setEditingHabitId(null);
-    fetchAll();
+    await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() } as any).eq("id", id);
   };
 
   const deleteDailyHabit = async (id: string) => {
+    setDailyHabits((prev) => prev.filter((h) => h.id !== id));
     await (supabase.from("daily_habits" as any) as any).delete().eq("id", id);
-    fetchAll();
   };
 
   // Habit log toggle
@@ -223,11 +247,14 @@ export default function Goals() {
     if (!user) return;
     const existing = habitLogs.find((l: any) => l.habit_id === habitId && l.day_date === dayDate);
     if (existing) {
+      setHabitLogs((prev) => prev.map((l) => l.id === existing.id ? { ...l, completed: !existing.completed } : l));
       await (supabase.from("daily_habit_logs" as any) as any).update({ completed: !existing.completed } as any).eq("id", existing.id);
     } else {
-      await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: habitId, day_date: dayDate, completed: true });
+      const tempId = crypto.randomUUID();
+      setHabitLogs((prev) => [...prev, { id: tempId, habit_id: habitId, day_date: dayDate, completed: true, user_id: user.id }]);
+      const { data } = await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: habitId, day_date: dayDate, completed: true }).select().single();
+      if (data) setHabitLogs((prev) => prev.map((l) => l.id === tempId ? data : l));
     }
-    fetchAll();
   };
 
   const isHabitCompleted = (habitId: string, dayDate: string) => {
@@ -242,9 +269,9 @@ export default function Goals() {
     if (existing) {
       await (supabase.from("weekly_sports" as any) as any).update({ program } as any).eq("id", existing.id);
     } else {
-      await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program });
+      const { data } = await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program }).select().single();
+      if (data) setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex && !s.id ? data : s));
     }
-    fetchAll();
   };
 
   const visibleDays = isMobile && !showAllDays
@@ -584,12 +611,13 @@ export default function Goals() {
                   isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
                   hasProgram && "bg-muted/20"
                 )}>
-                  <div className="flex flex-col items-center gap-1 pt-1">
-                    <Checkbox
-                      checked={hasProgram}
-                      className="h-5 w-5"
-                      disabled
-                    />
+                  <div className="flex flex-col items-center gap-1 pt-2">
+                    <div className={cn(
+                      "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors",
+                      hasProgram ? "border-primary bg-primary/20" : "border-muted-foreground/30"
+                    )}>
+                      {hasProgram && <Dumbbell className="h-3 w-3 text-primary" />}
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
