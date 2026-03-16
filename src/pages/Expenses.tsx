@@ -22,6 +22,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { CsvUploadDialog } from "@/components/CsvUploadDialog";
 
 interface Expense {
   id: string; user_id: string; amount: number; date: string; category: string | null;
