@@ -22,6 +22,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { CsvUploadDialog } from "@/components/CsvUploadDialog";
 
 interface Expense {
   id: string; user_id: string; amount: number; date: string; category: string | null;
@@ -135,6 +136,33 @@ function ExpensesTab() {
         </Select>
         <Input placeholder="Filtrer par catégorie..." value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-48" />
         <div className="ml-auto flex gap-2">
+          <CsvUploadDialog
+            label="Importer CSV"
+            targetFields={[
+              { value: "amount", label: "Montant" },
+              { value: "date", label: "Date" },
+              { value: "category", label: "Catégorie" },
+              { value: "sector", label: "Secteur" },
+              { value: "notes", label: "Notes" },
+              { value: "vendor", label: "Fournisseur" },
+            ]}
+            requiredFields={["amount"]}
+            onImport={async (rows) => {
+              if (!user) return;
+              const payload = rows.map((r) => ({
+                user_id: user.id,
+                amount: parseFloat(r.amount) || 0,
+                date: r.date || format(new Date(), "yyyy-MM-dd"),
+                category: r.category || null,
+                sector: ["perso", "cabinet"].includes(r.sector?.toLowerCase()) ? r.sector.toLowerCase() : "perso",
+                notes: r.notes || null,
+                vendor: r.vendor || null,
+              }));
+              const { error } = await supabase.from("expenses").insert(payload);
+              if (error) throw new Error(error.message);
+              fetchExpenses();
+            }}
+          />
           <Button variant="outline" size="sm" onClick={exportCSV}><Download className="mr-2 h-4 w-4" />CSV</Button>
           <Sheet open={sheetOpen} onOpenChange={(o) => { setSheetOpen(o); if (!o) resetForm(); }}>
             <SheetTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" />Ajouter</Button></SheetTrigger>
@@ -260,7 +288,30 @@ function RevenuesTab() {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <Input placeholder="Filtrer par catégorie..." value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-48" />
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <CsvUploadDialog
+            label="Importer CSV"
+            targetFields={[
+              { value: "amount", label: "Montant" },
+              { value: "date", label: "Date" },
+              { value: "category", label: "Catégorie" },
+              { value: "notes", label: "Notes" },
+            ]}
+            requiredFields={["amount"]}
+            onImport={async (rows) => {
+              if (!user) return;
+              const payload = rows.map((r) => ({
+                user_id: user.id,
+                amount: parseFloat(r.amount) || 0,
+                date: r.date || format(new Date(), "yyyy-MM-dd"),
+                category: r.category || null,
+                notes: r.notes || null,
+              }));
+              const { error } = await (supabase.from("revenues" as any) as any).insert(payload);
+              if (error) throw new Error(error.message);
+              fetchRevenues();
+            }}
+          />
           <Sheet open={sheetOpen} onOpenChange={(o) => { setSheetOpen(o); if (!o) resetForm(); }}>
             <SheetTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" />Ajouter un revenu</Button></SheetTrigger>
             <SheetContent className="overflow-auto">
