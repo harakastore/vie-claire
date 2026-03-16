@@ -288,7 +288,30 @@ function RevenuesTab() {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <Input placeholder="Filtrer par catégorie..." value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-48" />
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <CsvUploadDialog
+            label="Importer CSV"
+            targetFields={[
+              { value: "amount", label: "Montant" },
+              { value: "date", label: "Date" },
+              { value: "category", label: "Catégorie" },
+              { value: "notes", label: "Notes" },
+            ]}
+            requiredFields={["amount"]}
+            onImport={async (rows) => {
+              if (!user) return;
+              const payload = rows.map((r) => ({
+                user_id: user.id,
+                amount: parseFloat(r.amount) || 0,
+                date: r.date || format(new Date(), "yyyy-MM-dd"),
+                category: r.category || null,
+                notes: r.notes || null,
+              }));
+              const { error } = await (supabase.from("revenues" as any) as any).insert(payload);
+              if (error) throw new Error(error.message);
+              fetchRevenues();
+            }}
+          />
           <Sheet open={sheetOpen} onOpenChange={(o) => { setSheetOpen(o); if (!o) resetForm(); }}>
             <SheetTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" />Ajouter un revenu</Button></SheetTrigger>
             <SheetContent className="overflow-auto">
