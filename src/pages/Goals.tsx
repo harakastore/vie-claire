@@ -503,10 +503,15 @@ export default function Goals() {
         "overflow-hidden transition-all",
         isToday ? "border-primary border-2 shadow-lg" : "border-border/50"
       )}>
-        <div className={cn(
-          "px-4 py-3 flex items-center justify-between",
-          isToday ? "bg-primary/10" : "bg-muted/30"
-        )}>
+        <button
+          type="button"
+          onClick={() => setExpandedDay(dateStr)}
+          className={cn(
+            "px-4 py-3 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-80 transition-opacity",
+            isToday ? "bg-primary/10" : "bg-muted/30"
+          )}
+          title="Cliquer pour vue détaillée avec time-blocking"
+        >
           <div className="flex items-center gap-2">
             <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
               {DAY_NAMES[dayIndex]}
@@ -519,11 +524,9 @@ export default function Goals() {
                 Aujourd'hui
               </span>
             )}
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpandedDay(dateStr)} title="Vue détaillée">
-              <Maximize2 className="h-3.5 w-3.5" />
-            </Button>
+            <Maximize2 className="h-4 w-4 text-muted-foreground" />
           </div>
-        </div>
+        </button>
 
         <CardContent className="p-3 space-y-1.5">
           {/* Habits */}
