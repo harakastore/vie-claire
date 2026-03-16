@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft, Maximize2, Minimize2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -49,6 +49,7 @@ export default function Goals() {
   const [showGoals, setShowGoals] = useState(false);
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
@@ -387,6 +388,115 @@ export default function Goals() {
     const isToday = isSameDay(day, now);
     const dayTasks = dailyTasks.filter((t: any) => t.day_date === dateStr);
     const dayIndex = weekDays.findIndex((d) => isSameDay(d, day));
+    const isExpanded = expandedDay === dateStr;
+
+    if (isExpanded) {
+      // Expanded view: full width with salat time-blocking (like mobile)
+      return (
+        <Card key={dateStr} className="overflow-hidden border-primary border-2 shadow-lg col-span-7">
+          <div className="px-6 py-4 flex items-center justify-between bg-primary/10">
+            <div className="flex items-center gap-3">
+              <span className="text-xl font-bold text-primary">{DAY_NAMES[dayIndex]}</span>
+              <span className="text-2xl font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
+              {isToday && (
+                <span className="text-xs font-medium bg-primary text-primary-foreground px-2.5 py-1 rounded-full">
+                  Aujourd'hui
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setSalatSheetOpen(true)}>
+                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedDay(null)}>
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <CardContent className="p-0">
+            {dailyHabits.length > 0 && (
+              <div className="px-6 py-4 bg-muted/20 border-b border-dashed">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  🔒 Habitudes non négociables
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {dailyHabits.map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-2 py-0.5">
+                      <Checkbox
+                        checked={isHabitCompleted(h.id, dateStr)}
+                        onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
+                        className="h-4 w-4"
+                      />
+                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+              {BLOCKS.map((block) => {
+                const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
+                const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
+                const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+                const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
+                const inputKey = `${dateStr}_${block.key}`;
+
+                return (
+                  <div key={block.key} className="border-b md:border-b-0 md:border-r last:border-r-0">
+                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: block.color }} />
+                        <span className="text-xs font-semibold" style={{ color: block.color }}>{block.label}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>{fromTime} — {toTime}</span>
+                        {duration && <span className="font-semibold ml-1">({duration})</span>}
+                      </div>
+                    </div>
+                    <div className="px-4 py-3 space-y-2 min-h-[100px]">
+                      {blockTasks.map((t: any) => (
+                        <div key={t.id} className="flex items-start gap-2 group">
+                          <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
+                          <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground hover:text-foreground">
+                                <ArrowRightLeft className="h-3.5 w-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {BLOCKS.filter((b) => b.key !== block.key).map((b) => (
+                                <DropdownMenuItem key={b.key} onClick={() => moveTaskToBlock(t.id, b.key)}>
+                                  <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: b.color }} />
+                                  {b.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <Input
+                        placeholder="+ tâche"
+                        value={newBlockTexts[inputKey] || ""}
+                        onChange={(e) => setNewBlockTexts((prev) => ({ ...prev, [inputKey]: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && addDailyTask(dateStr, block.key)}
+                        className="h-7 text-xs border-dashed bg-transparent"
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
 
     return (
       <Card key={dateStr} className={cn(
@@ -403,11 +513,16 @@ export default function Goals() {
             </span>
             <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
           </div>
-          {isToday && (
-            <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-              Aujourd'hui
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            {isToday && (
+              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full mr-1">
+                Aujourd'hui
+              </span>
+            )}
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpandedDay(dateStr)} title="Vue détaillée">
+              <Maximize2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
 
         <CardContent className="p-3 space-y-1.5">
@@ -762,9 +877,11 @@ export default function Goals() {
         <CardContent>
           <div className={cn(
             "grid gap-3",
-            isMobile ? "grid-cols-1" : "grid-cols-7"
+            isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-7"
           )}>
-            {visibleDays.map((day) => isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day))}
+            {(isMobile ? visibleDays : expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays).map((day) =>
+              isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day)
+            )}
           </div>
 
           {isMobile && (
