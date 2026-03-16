@@ -410,10 +410,10 @@ export default function Goals() {
           )}
         </div>
 
-        <CardContent className="p-3 space-y-1.5">
+        <CardContent className="p-0 space-y-0">
           {/* Habits */}
           {dailyHabits.length > 0 && (
-            <div className="pb-2 mb-2 border-b border-dashed">
+            <div className="px-3 py-2 border-b border-dashed bg-muted/20">
               {dailyHabits.map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox
@@ -427,23 +427,42 @@ export default function Goals() {
             </div>
           )}
 
-          {/* All tasks flat */}
-          {dayTasks.map((t: any) => (
-            <div key={t.id} className="flex items-start gap-2 group">
-              <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-              <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
-              <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          <Input
-            placeholder="+ tâche"
-            value={newTaskText[dateStr] || ""}
-            onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
-            onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
-            className="h-7 text-xs border-dashed bg-transparent"
-          />
+          {/* Salat blocks with colors */}
+          {BLOCKS.map((block) => {
+            const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
+            const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
+            const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+
+            return (
+              <div key={block.key} className="border-b last:border-b-0">
+                <div className="px-2 py-1 flex items-center gap-1.5" style={{ backgroundColor: `${block.color}15` }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: block.color }} />
+                  <span className="text-[10px] font-semibold" style={{ color: block.color }}>{block.label}</span>
+                  <span className="text-[9px] text-muted-foreground ml-auto">{fromTime}—{toTime}</span>
+                </div>
+                <div className="px-2 py-1 space-y-0.5 min-h-[24px]">
+                  {blockTasks.map((t: any) => (
+                    <div key={t.id} className="flex items-start gap-1.5 group">
+                      <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-3.5 w-3.5" />
+                      <span className={cn("text-xs flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                      <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          <div className="px-2 py-1">
+            <Input
+              placeholder="+ tâche"
+              value={newTaskText[dateStr] || ""}
+              onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
+              className="h-6 text-xs border-dashed bg-transparent"
+            />
+          </div>
         </CardContent>
       </Card>
     );
