@@ -49,6 +49,7 @@ export default function Goals() {
   const [showGoals, setShowGoals] = useState(false);
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
