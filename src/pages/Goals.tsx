@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, DragEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft, Maximize2, Minimize2 } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft, Maximize2, Minimize2, CheckSquare, ListTodo } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -26,6 +26,7 @@ const BLOCKS = [
   { key: "dhuhr_asr", label: "Dhuhr → Asr", from: "dhuhr", to: "asr", color: "hsl(40, 70%, 50%)" },
   { key: "asr_maghrib", label: "Asr → Maghrib", from: "asr", to: "maghrib", color: "hsl(25, 70%, 55%)" },
   { key: "maghrib_isha", label: "Maghrib → Isha", from: "maghrib", to: "isha", color: "hsl(260, 50%, 55%)" },
+  { key: "isha_fajr", label: "Isha → Fajr", from: "isha", to: "fajr", color: "hsl(230, 45%, 40%)" },
 ];
 
 const DEFAULT_SALAT = { fajr: "06:00", dhuhr: "13:00", asr: "16:30", maghrib: "18:30", isha: "20:00" };
@@ -50,6 +51,7 @@ export default function Goals() {
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [focusTasksOnly, setFocusTasksOnly] = useState(false);
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
@@ -61,6 +63,10 @@ export default function Goals() {
   const [weeklySports, setWeeklySports] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Drag state
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dragOverDay, setDragOverDay] = useState<string | null>(null);
 
   // New inputs
   const [new90, setNew90] = useState("");
@@ -206,11 +212,44 @@ export default function Goals() {
     setDailyTasks((prev) => prev.filter((t) => t.id !== id));
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
   };
+
   const moveTaskToBlock = async (id: string, newBlock: string) => {
     setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, block: newBlock } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
   };
 
+  // Move task to another day (drag & drop)
+  const moveTaskToDay = async (taskId: string, newDate: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, day_date: newDate } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ day_date: newDate } as any).eq("id", taskId);
+  };
+
+  // Drag handlers
+  const handleDragStart = (e: DragEvent, taskId: string) => {
+    setDragTaskId(taskId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", taskId);
+  };
+
+  const handleDragOver = (e: DragEvent, dateStr: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverDay(dateStr);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverDay(null);
+  };
+
+  const handleDrop = (e: DragEvent, dateStr: string) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("text/plain") || dragTaskId;
+    if (taskId) {
+      moveTaskToDay(taskId, dateStr);
+    }
+    setDragTaskId(null);
+    setDragOverDay(null);
+  };
 
   const addDailyHabit = async () => {
     if (!user || !newHabit.trim()) return;
@@ -269,9 +308,39 @@ export default function Goals() {
     }
   };
 
+  const toggleSportCompleted = async (dayIndex: number) => {
+    const existing = weeklySports.find((s: any) => s.day_index === dayIndex);
+    const newCompleted = !(existing?.completed);
+    if (existing) {
+      setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex ? { ...s, completed: newCompleted } : s));
+      if (existing.id) {
+        await (supabase.from("weekly_sports" as any) as any).update({ completed: newCompleted } as any).eq("id", existing.id);
+      }
+    } else {
+      if (!user) return;
+      const wsStr = format(currentWeekStart, "yyyy-MM-dd");
+      const temp = { day_index: dayIndex, program: "", completed: true, user_id: user.id, week_start: wsStr };
+      setWeeklySports((prev) => [...prev, temp]);
+      const { data } = await (supabase.from("weekly_sports" as any) as any).insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program: "", completed: true }).select().single();
+      if (data) setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex && !s.id ? data : s));
+    }
+  };
+
   const visibleDays = isMobile && !showAllDays
     ? weekDays.filter((d) => isSameDay(d, now))
     : weekDays;
+
+  // Navigate expanded day
+  const navigateExpandedDay = (direction: number) => {
+    if (!expandedDay) return;
+    const currentIndex = weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === expandedDay);
+    const newIndex = currentIndex + direction;
+    if (newIndex >= 0 && newIndex < weekDays.length) {
+      setExpandedDay(format(weekDays[newIndex], "yyyy-MM-dd"));
+    }
+  };
+
+  const expandedDayIndex = expandedDay ? weekDays.findIndex((d) => format(d, "yyyy-MM-dd") === expandedDay) : -1;
 
   // === MOBILE: Day card with salat blocks ===
   const renderMobileDayCard = (day: Date) => {
@@ -295,18 +364,24 @@ export default function Goals() {
             </span>
             <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
           </div>
-          {isToday && (
-            <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-              Aujourd'hui
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            {isToday && (
+              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                Aujourd'hui
+              </span>
+            )}
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpandedDay(expandedDay === dateStr ? null : dateStr)}>
+              {expandedDay === dateStr ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         <CardContent className="p-0">
+          {/* Non-négociable habits with light blue background */}
           {dailyHabits.length > 0 && (
-            <div className="px-4 py-3 bg-muted/20 border-b border-dashed">
+            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                🔒 Habitudes non négociables
+                🔒 NON NÉGOCIABLE
               </p>
               {dailyHabits.map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
@@ -382,20 +457,23 @@ export default function Goals() {
     );
   };
 
-  // === PC: Day card simple (all tasks grouped) ===
+  // === PC: Day card ===
   const renderDesktopDayCard = (day: Date) => {
     const dateStr = format(day, "yyyy-MM-dd");
     const isToday = isSameDay(day, now);
     const dayTasks = dailyTasks.filter((t: any) => t.day_date === dateStr);
     const dayIndex = weekDays.findIndex((d) => isSameDay(d, day));
     const isExpanded = expandedDay === dateStr;
+    const isDragOver = dragOverDay === dateStr;
 
     if (isExpanded) {
-      // Expanded view: full width with salat time-blocking (like mobile)
       return (
         <Card key={dateStr} className="overflow-hidden border-primary border-2 shadow-lg col-span-7">
           <div className="px-6 py-4 flex items-center justify-between bg-primary/10">
             <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={expandedDayIndex <= 0} onClick={() => navigateExpandedDay(-1)}>
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
               <span className="text-xl font-bold text-primary">{DAY_NAMES[dayIndex]}</span>
               <span className="text-2xl font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
               {isToday && (
@@ -403,6 +481,9 @@ export default function Goals() {
                   Aujourd'hui
                 </span>
               )}
+              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={expandedDayIndex >= 6} onClick={() => navigateExpandedDay(1)}>
+                <ChevronRight className="h-5 w-5" />
+              </Button>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="h-8" onClick={() => setSalatSheetOpen(true)}>
@@ -416,9 +497,9 @@ export default function Goals() {
 
           <CardContent className="p-0">
             {dailyHabits.length > 0 && (
-              <div className="px-6 py-4 bg-muted/20 border-b border-dashed">
+              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                  🔒 Habitudes non négociables
+                  🔒 NON NÉGOCIABLE
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {dailyHabits.map((h: any) => (
@@ -435,7 +516,7 @@ export default function Goals() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
               {BLOCKS.map((block) => {
                 const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
                 const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
@@ -499,10 +580,17 @@ export default function Goals() {
     }
 
     return (
-      <Card key={dateStr} className={cn(
-        "overflow-hidden transition-all",
-        isToday ? "border-primary border-2 shadow-lg" : "border-border/50"
-      )}>
+      <Card
+        key={dateStr}
+        className={cn(
+          "overflow-hidden transition-all",
+          isToday ? "border-primary border-2 shadow-lg" : "border-border/50",
+          isDragOver && "ring-2 ring-primary ring-offset-2"
+        )}
+        onDragOver={(e) => handleDragOver(e as any, dateStr)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e as any, dateStr)}
+      >
         <button
           type="button"
           onClick={() => setExpandedDay(dateStr)}
@@ -529,9 +617,10 @@ export default function Goals() {
         </button>
 
         <CardContent className="p-3 space-y-1.5">
-          {/* Habits */}
+          {/* Non-négociable habits with light blue bg */}
           {dailyHabits.length > 0 && (
-            <div className="pb-2 mb-2 border-b border-dashed">
+            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">🔒 NON NÉGOCIABLE</p>
               {dailyHabits.map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox
@@ -545,9 +634,14 @@ export default function Goals() {
             </div>
           )}
 
-          {/* All tasks flat */}
+          {/* All tasks flat - draggable */}
           {dayTasks.map((t: any) => (
-            <div key={t.id} className="flex items-start gap-2 group">
+            <div
+              key={t.id}
+              className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
+              draggable
+              onDragStart={(e) => handleDragStart(e as any, t.id)}
+            >
               <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
               <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
               <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
@@ -589,264 +683,280 @@ export default function Goals() {
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />
 
-      {/* Toggle goals visibility */}
-      <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
+      {/* Focus tasks only button */}
+      <Button
+        variant={focusTasksOnly ? "default" : "outline"}
+        className="w-full justify-between"
+        onClick={() => setFocusTasksOnly(!focusTasksOnly)}
+      >
         <span className="flex items-center gap-2">
-          <Target className="h-4 w-4" />
-          Objectifs (90 jours, mois, semaine)
+          <ListTodo className="h-4 w-4" />
+          {focusTasksOnly ? "Afficher tout" : "Voir uniquement les tâches quotidiennes"}
         </span>
-        {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        {focusTasksOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
       </Button>
 
-      {showGoals && (
+      {!focusTasksOnly && (
         <>
-          {/* 90-day goals */}
-          <Card className="glass-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
-                Objectifs 90 jours
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {goals90.map((g: any) => (
-                <div key={g.id} className="flex items-center gap-2 group">
-                  <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                    <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todo">À faire</SelectItem>
-                      <SelectItem value="in_progress">En cours</SelectItem>
-                      <SelectItem value="achieved">Atteint</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                </div>
-              ))}
-              <div className="flex gap-2 mt-2">
-                <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
-                <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Toggle goals visibility */}
+          <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
+            <span className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Objectifs (90 jours, mois, semaine)
+            </span>
+            {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
 
-          {/* Monthly & Weekly goals */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="glass-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                  Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {goalsMonthly.map((g: any) => (
-                  <div key={g.id} className="flex items-center gap-2 group">
-                    <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                      <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="in_progress">En cours</SelectItem>
-                        <SelectItem value="achieved">Atteint</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                  </div>
-                ))}
-                {(
+          {showGoals && (
+            <>
+              {/* 90-day goals */}
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
+                    Objectifs 90 jours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {goals90.map((g: any) => (
+                    <div key={g.id} className="flex items-center gap-2 group">
+                      <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                        <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todo">À faire</SelectItem>
+                          <SelectItem value="in_progress">En cours</SelectItem>
+                          <SelectItem value="achieved">Atteint</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </div>
+                  ))}
                   <div className="flex gap-2 mt-2">
-                    <Input placeholder="Objectif mensuel..." value={newMonthly} onChange={(e) => setNewMonthly(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addGoal("monthly", newMonthly, () => setNewMonthly(""))} className="h-8 text-sm" />
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("monthly", newMonthly, () => setNewMonthly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                    <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
-                )}
+                </CardContent>
+              </Card>
+
+              {/* Monthly & Weekly goals */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="glass-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
+                      Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {goalsMonthly.map((g: any) => (
+                      <div key={g.id} className="flex items-center gap-2 group">
+                        <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                          <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in_progress">En cours</SelectItem>
+                            <SelectItem value="achieved">Atteint</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 mt-2">
+                      <Input placeholder="Objectif mensuel..." value={newMonthly} onChange={(e) => setNewMonthly(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addGoal("monthly", newMonthly, () => setNewMonthly(""))} className="h-8 text-sm" />
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("monthly", newMonthly, () => setNewMonthly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="glass-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
+                      Objectifs de la semaine — {goalsWeekly.length}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">
+                      Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {goalsWeekly.map((g: any) => (
+                      <div key={g.id} className="flex items-center gap-2 group">
+                        <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                          <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="in_progress">En cours</SelectItem>
+                            <SelectItem value="achieved">Atteint</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 mt-2">
+                      <Input placeholder="Objectif hebdo..." value={newWeekly} onChange={(e) => setNewWeekly(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newWeekly, () => setNewWeekly(""))} className="h-8 text-sm" />
+                      <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("weekly", newWeekly, () => setNewWeekly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+
+          {/* === Programme Sport === */}
+          <Button variant="outline" className="w-full justify-between" onClick={() => setShowSports(!showSports)}>
+            <span className="flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" />
+              Programme Sport de la semaine
+            </span>
+            {showSports ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+
+          {showSports && (
+            <Card className="glass-card">
+              <CardContent className="pt-4 space-y-2">
+                {DAY_NAMES.map((d, i) => {
+                  const sp = weeklySports.find((s: any) => s.day_index === i);
+                  const hasProgram = !!(sp?.program?.trim());
+                  const isCompleted = !!(sp?.completed);
+                  return (
+                    <div key={i} className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+                      isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
+                      isCompleted && "border-green-400/50"
+                    )} style={isCompleted ? { backgroundColor: "hsl(150, 50%, 95%)" } : undefined}>
+                      <div className="flex flex-col items-center gap-1 pt-2">
+                        <button
+                          onClick={() => toggleSportCompleted(i)}
+                          className={cn(
+                            "h-6 w-6 rounded border-2 flex items-center justify-center transition-colors",
+                            isCompleted ? "border-green-500 bg-green-500 text-white" : "border-muted-foreground/30 hover:border-green-400"
+                          )}
+                        >
+                          {isCompleted && <CheckSquare className="h-4 w-4" />}
+                        </button>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={cn(
+                            "text-sm font-bold",
+                            isSameDay(weekDays[i], now) ? "text-primary" : "text-foreground"
+                          )}>{d}</span>
+                          <span className="text-xs text-muted-foreground">{format(weekDays[i], "d MMM", { locale: fr })}</span>
+                          {isCompleted && <span className="text-[10px] font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">✓ Fait</span>}
+                        </div>
+                        <Textarea
+                          placeholder="Programme sport du jour..."
+                          value={sp?.program || ""}
+                          onChange={(e) => {
+                            setWeeklySports((prev) => {
+                              const idx = prev.findIndex((s: any) => s.day_index === i);
+                              if (idx >= 0) {
+                                const updated = [...prev];
+                                updated[idx] = { ...updated[idx], program: e.target.value };
+                                return updated;
+                              }
+                              return [...prev, { day_index: i, program: e.target.value, completed: false }];
+                            });
+                          }}
+                          onBlur={(e) => saveSportsProgram(i, e.target.value)}
+                          className="min-h-[50px] text-xs resize-none border-dashed bg-transparent p-1.5 focus-visible:ring-1"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
+          )}
 
+          {/* === Dashboard Discipline === */}
+          <Button variant="outline" className="w-full justify-between" onClick={() => setShowDiscipline(!showDiscipline)}>
+            <span className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard Discipline (Habitudes)
+            </span>
+            {showDiscipline ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
+
+          {showDiscipline && (
             <Card className="glass-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                  Objectifs de la semaine — {goalsWeekly.length}
-                </CardTitle>
-                <p className="text-xs text-muted-foreground">
-                  Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {goalsWeekly.map((g: any) => (
-                  <div key={g.id} className="flex items-center gap-2 group">
-                    <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                      <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todo">À faire</SelectItem>
-                        <SelectItem value="in_progress">En cours</SelectItem>
-                        <SelectItem value="achieved">Atteint</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+              <CardContent className="pt-4 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Du</Label>
+                    <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
                   </div>
-                ))}
-                {(
-                  <div className="flex gap-2 mt-2">
-                    <Input placeholder="Objectif hebdo..." value={newWeekly} onChange={(e) => setNewWeekly(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newWeekly, () => setNewWeekly(""))} className="h-8 text-sm" />
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("weekly", newWeekly, () => setNewWeekly(""))}><Plus className="h-3.5 w-3.5" /></Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
-
-      {/* === Programme Sport === */}
-      <Button variant="outline" className="w-full justify-between" onClick={() => setShowSports(!showSports)}>
-        <span className="flex items-center gap-2">
-          <Dumbbell className="h-4 w-4" />
-          Programme Sport de la semaine
-        </span>
-        {showSports ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </Button>
-
-      {showSports && (
-        <Card className="glass-card">
-          <CardContent className="pt-4 space-y-2">
-            {DAY_NAMES.map((d, i) => {
-              const sp = weeklySports.find((s: any) => s.day_index === i);
-              const hasProgram = !!(sp?.program?.trim());
-              return (
-                <div key={i} className={cn(
-                  "flex items-start gap-3 p-3 rounded-lg border transition-colors",
-                  isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
-                  hasProgram && "bg-muted/20"
-                )}>
-                  <div className="flex flex-col items-center gap-1 pt-2">
-                    <div className={cn(
-                      "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                      hasProgram ? "border-primary bg-primary/20" : "border-muted-foreground/30"
-                    )}>
-                      {hasProgram && <Dumbbell className="h-3 w-3 text-primary" />}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={cn(
-                        "text-sm font-bold",
-                        isSameDay(weekDays[i], now) ? "text-primary" : "text-foreground"
-                      )}>{d}</span>
-                      <span className="text-xs text-muted-foreground">{format(weekDays[i], "d MMM", { locale: fr })}</span>
-                    </div>
-                    <Textarea
-                      placeholder="Programme sport du jour..."
-                      value={sp?.program || ""}
-                      onChange={(e) => {
-                        setWeeklySports((prev) => {
-                          const idx = prev.findIndex((s: any) => s.day_index === i);
-                          if (idx >= 0) {
-                            const updated = [...prev];
-                            updated[idx] = { ...updated[idx], program: e.target.value };
-                            return updated;
-                          }
-                          return [...prev, { day_index: i, program: e.target.value }];
-                        });
-                      }}
-                      onBlur={(e) => saveSportsProgram(i, e.target.value)}
-                      className="min-h-[50px] text-xs resize-none border-dashed bg-transparent p-1.5 focus-visible:ring-1"
-                    />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Au</Label>
+                    <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
                   </div>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* === Dashboard Discipline === */}
-      <Button variant="outline" className="w-full justify-between" onClick={() => setShowDiscipline(!showDiscipline)}>
-        <span className="flex items-center gap-2">
-          <BarChart3 className="h-4 w-4" />
-          Dashboard Discipline (Habitudes)
-        </span>
-        {showDiscipline ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </Button>
-
-      {showDiscipline && (
-        <Card className="glass-card">
-          <CardContent className="pt-4 space-y-4">
-            {/* Date filter */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap">Du</Label>
-                <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label className="text-xs whitespace-nowrap">Au</Label>
-                <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
-              </div>
-            </div>
-
-            {dailyHabits.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr>
-                      <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
-                      {disciplineDays.map((d) => (
-                        <th key={format(d, "yyyy-MM-dd")} className={cn(
-                          "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
-                          isSameDay(d, now) && "bg-primary/10 text-primary"
-                        )}>
-                          <div>{format(d, "EEE", { locale: fr })}</div>
-                          <div>{format(d, "d")}</div>
-                        </th>
-                      ))}
-                      <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyHabits.map((h: any) => {
-                      const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
-                      const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
-                      return (
-                        <tr key={h.id}>
-                          <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
-                          {disciplineDays.map((d) => {
-                            const dateStr = format(d, "yyyy-MM-dd");
-                            const done = isHabitCompleted(h.id, dateStr);
-                            return (
-                              <td key={dateStr} className="border border-border/50 text-center p-0">
-                                <button
-                                  onClick={() => toggleHabitLog(h.id, dateStr)}
-                                  className={cn(
-                                    "w-full h-8 text-sm transition-colors",
-                                    done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
-                                  )}
-                                >
-                                  {done ? "✓" : ""}
-                                </button>
-                              </td>
-                            );
-                          })}
-                          <td className={cn(
-                            "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
-                            pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
-                          )}>
-                            {pct}%
-                          </td>
+                {dailyHabits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
+                          {disciplineDays.map((d) => (
+                            <th key={format(d, "yyyy-MM-dd")} className={cn(
+                              "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
+                              isSameDay(d, now) && "bg-primary/10 text-primary"
+                            )}>
+                              <div>{format(d, "EEE", { locale: fr })}</div>
+                              <div>{format(d, "d")}</div>
+                            </th>
+                          ))}
+                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      </thead>
+                      <tbody>
+                        {dailyHabits.map((h: any) => {
+                          const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
+                          const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
+                          return (
+                            <tr key={h.id}>
+                              <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
+                              {disciplineDays.map((d) => {
+                                const dateStr = format(d, "yyyy-MM-dd");
+                                const done = isHabitCompleted(h.id, dateStr);
+                                return (
+                                  <td key={dateStr} className="border border-border/50 text-center p-0">
+                                    <button
+                                      onClick={() => toggleHabitLog(h.id, dateStr)}
+                                      className={cn(
+                                        "w-full h-8 text-sm transition-colors",
+                                        done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
+                                      )}
+                                    >
+                                      {done ? "✓" : ""}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                              <td className={cn(
+                                "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
+                                pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
+                              )}>
+                                {pct}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Daily tasks */}
@@ -858,11 +968,9 @@ export default function Goals() {
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
               </Button>
-              {isMobile && (
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
-                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
-                </Button>
-              )}
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
+                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+              </Button>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
@@ -878,16 +986,31 @@ export default function Goals() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Mobile expanded day navigation */}
+          {isMobile && expandedDay && (
+            <div className="flex items-center justify-between mb-3">
+              <Button variant="outline" size="sm" disabled={expandedDayIndex <= 0} onClick={() => navigateExpandedDay(-1)}>
+                <ChevronLeft className="h-4 w-4 mr-1" /> Précédent
+              </Button>
+              <Button variant="outline" size="sm" disabled={expandedDayIndex >= 6} onClick={() => navigateExpandedDay(1)}>
+                Suivant <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+
           <div className={cn(
             "grid gap-3",
             isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-7"
           )}>
-            {(isMobile ? visibleDays : expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays).map((day) =>
+            {(isMobile
+              ? (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : visibleDays)
+              : (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays)
+            ).map((day) =>
               isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day)
             )}
           </div>
 
-          {isMobile && (
+          {isMobile && !expandedDay && (
             <Button
               variant="outline"
               className="w-full mt-3"
@@ -898,6 +1021,12 @@ export default function Goals() {
               ) : (
                 <><ChevronDown className="h-4 w-4 mr-2" /> Voir tous les jours de la semaine</>
               )}
+            </Button>
+          )}
+
+          {expandedDay && (
+            <Button variant="outline" className="w-full mt-3" onClick={() => setExpandedDay(null)}>
+              <Minimize2 className="h-4 w-4 mr-2" /> Retour à la vue semaine
             </Button>
           )}
         </CardContent>
