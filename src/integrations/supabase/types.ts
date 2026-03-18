@@ -583,6 +583,7 @@ export type Database = {
       }
       weekly_sports: {
         Row: {
+          completed: boolean
           created_at: string
           day_index: number
           id: string
@@ -592,6 +593,7 @@ export type Database = {
           week_start: string
         }
         Insert: {
+          completed?: boolean
           created_at?: string
           day_index: number
           id?: string
@@ -601,6 +603,7 @@ export type Database = {
           week_start: string
         }
         Update: {
+          completed?: boolean
           created_at?: string
           day_index?: number
           id?: string

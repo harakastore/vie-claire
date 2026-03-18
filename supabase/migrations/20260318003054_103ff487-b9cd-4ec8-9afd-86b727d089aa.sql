@@ -1,0 +1,1 @@
+ALTER TABLE public.weekly_sports ADD COLUMN IF NOT EXISTS completed boolean NOT NULL DEFAULT false;
