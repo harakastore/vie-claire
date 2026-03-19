@@ -308,6 +308,21 @@ export default function Goals() {
     }
   };
 
+  const BASAL_KCAL = 2000;
+
+  const saveSportsKcal = async (dayIndex: number, field: "kcal_eaten" | "kcal_burned", value: number) => {
+    if (!user) return;
+    const wsStr = format(currentWeekStart, "yyyy-MM-dd");
+    const existing = weeklySports.find((s: any) => s.day_index === dayIndex && s.id);
+    if (existing) {
+      await (supabase.from("weekly_sports" as any) as any).update({ [field]: value } as any).eq("id", existing.id);
+    } else {
+      const payload: any = { user_id: user.id, week_start: wsStr, day_index: dayIndex, program: "", [field]: value };
+      const { data } = await (supabase.from("weekly_sports" as any) as any).insert(payload).select().single();
+      if (data) setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex && !s.id ? data : s));
+    }
+  };
+
   const toggleSportCompleted = async (dayIndex: number) => {
     const existing = weeklySports.find((s: any) => s.day_index === dayIndex);
     const newCompleted = !(existing?.completed);
