@@ -587,6 +587,8 @@ export type Database = {
           created_at: string
           day_index: number
           id: string
+          kcal_burned: number | null
+          kcal_eaten: number | null
           program: string
           updated_at: string
           user_id: string
@@ -597,6 +599,8 @@ export type Database = {
           created_at?: string
           day_index: number
           id?: string
+          kcal_burned?: number | null
+          kcal_eaten?: number | null
           program?: string
           updated_at?: string
           user_id: string
@@ -607,6 +611,8 @@ export type Database = {
           created_at?: string
           day_index?: number
           id?: string
+          kcal_burned?: number | null
+          kcal_eaten?: number | null
           program?: string
           updated_at?: string
           user_id?: string
