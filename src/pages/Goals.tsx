@@ -308,6 +308,21 @@ export default function Goals() {
     }
   };
 
+  const BASAL_KCAL = 2000;
+
+  const saveSportsKcal = async (dayIndex: number, field: "kcal_eaten" | "kcal_burned", value: number) => {
+    if (!user) return;
+    const wsStr = format(currentWeekStart, "yyyy-MM-dd");
+    const existing = weeklySports.find((s: any) => s.day_index === dayIndex && s.id);
+    if (existing) {
+      await (supabase.from("weekly_sports" as any) as any).update({ [field]: value } as any).eq("id", existing.id);
+    } else {
+      const payload: any = { user_id: user.id, week_start: wsStr, day_index: dayIndex, program: "", [field]: value };
+      const { data } = await (supabase.from("weekly_sports" as any) as any).insert(payload).select().single();
+      if (data) setWeeklySports((prev) => prev.map((s) => s.day_index === dayIndex && !s.id ? data : s));
+    }
+  };
+
   const toggleSportCompleted = async (dayIndex: number) => {
     const existing = weeklySports.find((s: any) => s.day_index === dayIndex);
     const newCompleted = !(existing?.completed);
@@ -820,8 +835,12 @@ export default function Goals() {
               <CardContent className="pt-4 space-y-2">
                 {DAY_NAMES.map((d, i) => {
                   const sp = weeklySports.find((s: any) => s.day_index === i);
-                  const hasProgram = !!(sp?.program?.trim());
                   const isCompleted = !!(sp?.completed);
+                  const kcalEaten = sp?.kcal_eaten || 0;
+                  const kcalBurned = sp?.kcal_burned || 0;
+                  const netKcal = kcalEaten - BASAL_KCAL - kcalBurned;
+                  const isDeficitGoal = netKcal <= -500;
+                  const isSurplus = netKcal >= 300;
                   return (
                     <div key={i} className={cn(
                       "flex items-start gap-3 p-3 rounded-lg border transition-colors",
@@ -859,12 +878,74 @@ export default function Goals() {
                                 updated[idx] = { ...updated[idx], program: e.target.value };
                                 return updated;
                               }
-                              return [...prev, { day_index: i, program: e.target.value, completed: false }];
+                              return [...prev, { day_index: i, program: e.target.value, completed: false, kcal_eaten: 0, kcal_burned: 0 }];
                             });
                           }}
                           onBlur={(e) => saveSportsProgram(i, e.target.value)}
                           className="min-h-[50px] text-xs resize-none border-dashed bg-transparent p-1.5 focus-visible:ring-1"
                         />
+                        {/* Kcal Tracking */}
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">🍽 Mangé (kcal)</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={kcalEaten || ""}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                setWeeklySports((prev) => {
+                                  const idx = prev.findIndex((s: any) => s.day_index === i);
+                                  if (idx >= 0) {
+                                    const updated = [...prev];
+                                    updated[idx] = { ...updated[idx], kcal_eaten: val };
+                                    return updated;
+                                  }
+                                  return [...prev, { day_index: i, program: "", completed: false, kcal_eaten: val, kcal_burned: 0 }];
+                                });
+                              }}
+                              onBlur={(e) => saveSportsKcal(i, "kcal_eaten", parseInt(e.target.value) || 0)}
+                              className="h-7 text-xs mt-0.5"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">🔥 Brûlé sport (kcal)</Label>
+                            <Input
+                              type="number"
+                              placeholder="0"
+                              value={kcalBurned || ""}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 0;
+                                setWeeklySports((prev) => {
+                                  const idx = prev.findIndex((s: any) => s.day_index === i);
+                                  if (idx >= 0) {
+                                    const updated = [...prev];
+                                    updated[idx] = { ...updated[idx], kcal_burned: val };
+                                    return updated;
+                                  }
+                                  return [...prev, { day_index: i, program: "", completed: false, kcal_eaten: 0, kcal_burned: val }];
+                                });
+                              }}
+                              onBlur={(e) => saveSportsKcal(i, "kcal_burned", parseInt(e.target.value) || 0)}
+                              className="h-7 text-xs mt-0.5"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">📊 Net (base 2000)</Label>
+                            <div className={cn(
+                              "h-7 mt-0.5 flex items-center justify-center rounded-md text-xs font-bold border",
+                              kcalEaten === 0 && kcalBurned === 0
+                                ? "text-muted-foreground border-border/50"
+                                : isDeficitGoal
+                                  ? "text-green-700 bg-green-100 border-green-300"
+                                  : isSurplus
+                                    ? "text-red-700 bg-red-100 border-red-300"
+                                    : "text-amber-700 bg-amber-50 border-amber-300"
+                            )}>
+                              {kcalEaten === 0 && kcalBurned === 0 ? "—" : `${netKcal > 0 ? "+" : ""}${netKcal}`}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
