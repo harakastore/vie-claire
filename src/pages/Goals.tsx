@@ -913,6 +913,30 @@ export default function Goals() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-0">
+                  {/* 3 Priorités de la semaine */}
+                  {(() => {
+                    const priorities = goalsWeekly.filter((g: any) => (g.category || "") === "priority");
+                    return (
+                      <div className="rounded-lg border-2 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10 p-3 mb-4 space-y-2">
+                        <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">⭐ 3 Priorités de la semaine</p>
+                        {priorities.map((g: any, idx: number) => (
+                          <div key={g.id} className="flex items-center gap-2 group">
+                            <span className="text-xs font-bold text-amber-500 w-5">{idx + 1}.</span>
+                            <Checkbox checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "in_progress")} className="h-4 w-4" />
+                            <span className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                          </div>
+                        ))}
+                        {priorities.length < 3 && (
+                          <div className="flex gap-1.5">
+                            <Input placeholder={`Priorité ${priorities.length + 1}...`} value={newPriority} onChange={(e) => setNewPriority(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newPriority, () => setNewPriority(""), "priority")} className="h-7 text-xs" />
+                            <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => addGoal("weekly", newPriority, () => setNewPriority(""), "priority")}><Plus className="h-3 w-3" /></Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                     {GOAL_SECTIONS.map((section) => {
                       const sectionGoals = goalsWeekly.filter((g: any) => (g.category || "islam") === section.key);
