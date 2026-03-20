@@ -53,6 +53,13 @@ export default function Goals() {
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [focusTasksOnly, setFocusTasksOnly] = useState(false);
 
+  const GOAL_SECTIONS = [
+    { key: "islam", label: "🕌 Islam", color: "hsl(160, 50%, 45%)" },
+    { key: "business", label: "💼 Business", color: "hsl(220, 60%, 50%)" },
+    { key: "cabinet", label: "🏥 Cabinet", color: "hsl(280, 50%, 50%)" },
+    { key: "sport", label: "🏋️ Sport & Développement", color: "hsl(30, 70%, 50%)" },
+  ];
+
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
   const [goalsYearly, setGoalsYearly] = useState<any[]>([]);
