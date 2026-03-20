@@ -55,6 +55,7 @@ export default function Goals() {
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
+  const [goalsYearly, setGoalsYearly] = useState<any[]>([]);
   const [goalsMonthly, setGoalsMonthly] = useState<any[]>([]);
   const [goalsWeekly, setGoalsWeekly] = useState<any[]>([]);
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
@@ -70,6 +71,7 @@ export default function Goals() {
 
   // New inputs
   const [new90, setNew90] = useState("");
+  const [newYearly, setNewYearly] = useState("");
   const [newMonthly, setNewMonthly] = useState("");
   const [newWeekly, setNewWeekly] = useState("");
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
@@ -98,8 +100,9 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
+      (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "weekly").eq("week_start", format(currentWeekStart, "yyyy-MM-dd")).order("created_at"),
       (supabase.from("daily_tasks" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr).order("created_at"),
@@ -109,6 +112,7 @@ export default function Goals() {
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
     ]);
     setGoals90(g90.data || []);
+    setGoalsYearly(gy.data || []);
     setGoalsMonthly(gm.data || []);
     setGoalsWeekly(gw.data || []);
     setDailyTasks(dt.data || []);
@@ -142,13 +146,18 @@ export default function Goals() {
   const addGoal = async (type: string, title: string, reset: () => void) => {
     if (!user || !title.trim()) return;
     const tempId = crypto.randomUUID();
+    const today = format(now, "yyyy-MM-dd");
+    const in90 = format(addDays(now, 90), "yyyy-MM-dd");
     const payload: any = {
       id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
       month: type === "monthly" ? currentMonth : null,
-      year: type === "monthly" ? currentYear : null,
+      year: (type === "monthly" || type === "yearly") ? currentYear : null,
       week_start: type === "weekly" ? format(currentWeekStart, "yyyy-MM-dd") : null,
+      start_date: type === "90day" ? today : null,
+      end_date: type === "90day" ? in90 : null,
     };
     if (type === "90day") setGoals90((prev) => [...prev, payload]);
+    else if (type === "yearly") setGoalsYearly((prev) => [...prev, payload]);
     else if (type === "monthly") setGoalsMonthly((prev) => [...prev, payload]);
     else if (type === "weekly") setGoalsWeekly((prev) => [...prev, payload]);
     reset();
@@ -156,13 +165,14 @@ export default function Goals() {
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) {
       const replace = (list: any[]) => list.map((g) => g.id === tempId ? data : g);
-      setGoals90((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
+      setGoals90((prev) => replace(prev)); setGoalsYearly((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
     }
   };
 
   const updateGoalStatus = async (id: string, status: string) => {
     const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, status } : g);
     setGoals90((prev) => updateList(prev));
+    setGoalsYearly((prev) => updateList(prev));
     setGoalsMonthly((prev) => updateList(prev));
     setGoalsWeekly((prev) => updateList(prev));
     await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
@@ -170,9 +180,33 @@ export default function Goals() {
 
   const deleteGoal = async (id: string) => {
     setGoals90((prev) => prev.filter((g) => g.id !== id));
+    setGoalsYearly((prev) => prev.filter((g) => g.id !== id));
     setGoalsMonthly((prev) => prev.filter((g) => g.id !== id));
     setGoalsWeekly((prev) => prev.filter((g) => g.id !== id));
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
+  };
+
+  // Restart a 90-day goal with new dates
+  const restart90DayGoal = async (goal: any) => {
+    if (!user) return;
+    const today = format(now, "yyyy-MM-dd");
+    const in90 = format(addDays(now, 90), "yyyy-MM-dd");
+    await (supabase.from("goals" as any) as any).update({ start_date: today, end_date: in90, status: "in_progress" } as any).eq("id", goal.id);
+    setGoals90((prev) => prev.map((g) => g.id === goal.id ? { ...g, start_date: today, end_date: in90, status: "in_progress" } : g));
+    toast({ title: "Objectif 90 jours relancé", description: `Du ${format(now, "d MMM yyyy", { locale: fr })} au ${format(addDays(now, 90), "d MMM yyyy", { locale: fr })}` });
+  };
+
+  // Check if 90-day goal is expired
+  const is90DayExpired = (goal: any) => {
+    if (!goal.end_date) return false;
+    return new Date(goal.end_date) < now;
+  };
+
+  const get90DayRemaining = (goal: any) => {
+    if (!goal.end_date) return null;
+    const end = new Date(goal.end_date);
+    const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
   };
 
   // Daily tasks with block
@@ -717,23 +751,23 @@ export default function Goals() {
           <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
             <span className="flex items-center gap-2">
               <Target className="h-4 w-4" />
-              Objectifs (90 jours, mois, semaine)
+              Objectifs (Annuel, 90 jours, mois, semaine)
             </span>
             {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
 
           {showGoals && (
             <>
-              {/* 90-day goals */}
+              {/* Annual goals 2026 */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
-                    Objectifs 90 jours
+                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-expenses))" }} />
+                    🎯 Objectifs Annuels {currentYear}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {goals90.map((g: any) => (
+                  {goalsYearly.map((g: any) => (
                     <div key={g.id} className="flex items-center gap-2 group">
                       <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
                         <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -747,6 +781,68 @@ export default function Goals() {
                       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                     </div>
                   ))}
+                  <div className="flex gap-2 mt-2">
+                    <Input placeholder="Nouvel objectif annuel..." value={newYearly} onChange={(e) => setNewYearly(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addGoal("yearly", newYearly, () => setNewYearly(""))} className="h-8 text-sm" />
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("yearly", newYearly, () => setNewYearly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 90-day goals with dates */}
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
+                    Objectifs 90 jours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {goals90.map((g: any) => {
+                    const remaining = get90DayRemaining(g);
+                    const expired = is90DayExpired(g);
+                    return (
+                      <div key={g.id} className="space-y-1">
+                        <div className="flex items-center gap-2 group">
+                          <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                            <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todo">À faire</SelectItem>
+                              <SelectItem value="in_progress">En cours</SelectItem>
+                              <SelectItem value="achieved">Atteint</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                          {expired && (
+                            <Button size="sm" variant="outline" className="h-7 text-[10px] border-amber-400 text-amber-600 hover:bg-amber-50" onClick={() => restart90DayGoal(g)}>
+                              🔄 Relancer 90j
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </div>
+                        {g.start_date && g.end_date && (
+                          <div className="flex items-center gap-2 ml-[104px] text-[10px]">
+                            <span className="text-muted-foreground">
+                              📅 {format(new Date(g.start_date), "d MMM yyyy", { locale: fr })} → {format(new Date(g.end_date), "d MMM yyyy", { locale: fr })}
+                            </span>
+                            {remaining !== null && !expired && (
+                              <span className={cn(
+                                "font-bold px-1.5 py-0.5 rounded-full",
+                                remaining <= 7 ? "bg-red-100 text-red-600" : remaining <= 30 ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
+                              )}>
+                                {remaining}j restants
+                              </span>
+                            )}
+                            {expired && (
+                              <span className="font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                                ⏰ Expiré
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   <div className="flex gap-2 mt-2">
                     <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
