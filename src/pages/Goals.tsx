@@ -81,6 +81,7 @@ export default function Goals() {
   const [newYearly, setNewYearly] = useState("");
   const [newMonthlyBySection, setNewMonthlyBySection] = useState<Record<string, string>>({});
   const [newWeeklyBySection, setNewWeeklyBySection] = useState<Record<string, string>>({});
+  const [newPriority, setNewPriority] = useState("");
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newHabit, setNewHabit] = useState("");
