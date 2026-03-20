@@ -859,69 +859,90 @@ export default function Goals() {
                 </CardContent>
               </Card>
 
-              {/* Monthly & Weekly goals */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="glass-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                      Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {goalsMonthly.map((g: any) => (
-                      <div key={g.id} className="flex items-center gap-2 group">
-                        <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                          <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="in_progress">En cours</SelectItem>
-                            <SelectItem value="achieved">Atteint</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                      </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                      <Input placeholder="Objectif mensuel..." value={newMonthly} onChange={(e) => setNewMonthly(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addGoal("monthly", newMonthly, () => setNewMonthly(""))} className="h-8 text-sm" />
-                      <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("monthly", newMonthly, () => setNewMonthly(""))}><Plus className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </CardContent>
-                </Card>
+              {/* Monthly goals - 4 sections */}
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
+                    Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {GOAL_SECTIONS.map((section) => {
+                      const sectionGoals = goalsMonthly.filter((g: any) => (g.category || "islam") === section.key);
+                      const inputKey = `monthly_${section.key}`;
+                      return (
+                        <div key={section.key} className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${section.color}40` }}>
+                          <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                          {sectionGoals.map((g: any) => (
+                            <div key={g.id} className="flex items-center gap-1.5 group">
+                              <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                                <SelectTrigger className="w-20 h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="in_progress">En cours</SelectItem>
+                                  <SelectItem value="achieved">Atteint</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <span className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                            </div>
+                          ))}
+                          <div className="flex gap-1.5">
+                            <Input placeholder="+ objectif..." value={newMonthlyBySection[section.key] || ""} onChange={(e) => setNewMonthlyBySection((prev) => ({ ...prev, [section.key]: e.target.value }))}
+                              onKeyDown={(e) => e.key === "Enter" && addGoal("monthly", newMonthlyBySection[section.key] || "", () => setNewMonthlyBySection((prev) => ({ ...prev, [section.key]: "" })), section.key)} className="h-7 text-xs" />
+                            <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => addGoal("monthly", newMonthlyBySection[section.key] || "", () => setNewMonthlyBySection((prev) => ({ ...prev, [section.key]: "" })), section.key)}><Plus className="h-3 w-3" /></Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Card className="glass-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                      <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                      Objectifs de la semaine — {goalsWeekly.length}
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">
-                      Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {goalsWeekly.map((g: any) => (
-                      <div key={g.id} className="flex items-center gap-2 group">
-                        <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                          <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="in_progress">En cours</SelectItem>
-                            <SelectItem value="achieved">Atteint</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                      </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                      <Input placeholder="Objectif hebdo..." value={newWeekly} onChange={(e) => setNewWeekly(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newWeekly, () => setNewWeekly(""))} className="h-8 text-sm" />
-                      <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("weekly", newWeekly, () => setNewWeekly(""))}><Plus className="h-3.5 w-3.5" /></Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Weekly goals - 4 sections */}
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
+                    Objectifs de la semaine — {goalsWeekly.length}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {GOAL_SECTIONS.map((section) => {
+                      const sectionGoals = goalsWeekly.filter((g: any) => (g.category || "islam") === section.key);
+                      const inputKey = `weekly_${section.key}`;
+                      return (
+                        <div key={section.key} className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${section.color}40` }}>
+                          <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                          {sectionGoals.map((g: any) => (
+                            <div key={g.id} className="flex items-center gap-1.5 group">
+                              <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                                <SelectTrigger className="w-20 h-6 text-[10px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="in_progress">En cours</SelectItem>
+                                  <SelectItem value="achieved">Atteint</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <span className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+                            </div>
+                          ))}
+                          <div className="flex gap-1.5">
+                            <Input placeholder="+ objectif..." value={newWeeklyBySection[section.key] || ""} onChange={(e) => setNewWeeklyBySection((prev) => ({ ...prev, [section.key]: e.target.value }))}
+                              onKeyDown={(e) => e.key === "Enter" && addGoal("weekly", newWeeklyBySection[section.key] || "", () => setNewWeeklyBySection((prev) => ({ ...prev, [section.key]: "" })), section.key)} className="h-7 text-xs" />
+                            <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => addGoal("weekly", newWeeklyBySection[section.key] || "", () => setNewWeeklyBySection((prev) => ({ ...prev, [section.key]: "" })), section.key)}><Plus className="h-3 w-3" /></Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
 
