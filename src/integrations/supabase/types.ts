@@ -235,9 +235,11 @@ export type Database = {
       goals: {
         Row: {
           created_at: string
+          end_date: string | null
           id: string
           month: number | null
           progress: number
+          start_date: string | null
           status: string
           title: string
           type: string
@@ -248,9 +250,11 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          end_date?: string | null
           id?: string
           month?: number | null
           progress?: number
+          start_date?: string | null
           status?: string
           title: string
           type?: string
@@ -261,9 +265,11 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          end_date?: string | null
           id?: string
           month?: number | null
           progress?: number
+          start_date?: string | null
           status?: string
           title?: string
           type?: string
