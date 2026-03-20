@@ -234,6 +234,7 @@ export type Database = {
       }
       goals: {
         Row: {
+          category: string | null
           created_at: string
           end_date: string | null
           id: string
@@ -249,6 +250,7 @@ export type Database = {
           year: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           end_date?: string | null
           id?: string
@@ -264,6 +266,7 @@ export type Database = {
           year?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           end_date?: string | null
           id?: string
