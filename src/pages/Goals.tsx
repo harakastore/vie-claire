@@ -100,8 +100,9 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
+      (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "weekly").eq("week_start", format(currentWeekStart, "yyyy-MM-dd")).order("created_at"),
       (supabase.from("daily_tasks" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr).order("created_at"),
@@ -111,6 +112,7 @@ export default function Goals() {
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
     ]);
     setGoals90(g90.data || []);
+    setGoalsYearly(gy.data || []);
     setGoalsMonthly(gm.data || []);
     setGoalsWeekly(gw.data || []);
     setDailyTasks(dt.data || []);
