@@ -55,6 +55,7 @@ export default function Goals() {
 
   // Goals
   const [goals90, setGoals90] = useState<any[]>([]);
+  const [goalsYearly, setGoalsYearly] = useState<any[]>([]);
   const [goalsMonthly, setGoalsMonthly] = useState<any[]>([]);
   const [goalsWeekly, setGoalsWeekly] = useState<any[]>([]);
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
