@@ -146,13 +146,18 @@ export default function Goals() {
   const addGoal = async (type: string, title: string, reset: () => void) => {
     if (!user || !title.trim()) return;
     const tempId = crypto.randomUUID();
+    const today = format(now, "yyyy-MM-dd");
+    const in90 = format(addDays(now, 90), "yyyy-MM-dd");
     const payload: any = {
       id: tempId, user_id: user.id, type, title: title.trim(), status: "todo",
       month: type === "monthly" ? currentMonth : null,
-      year: type === "monthly" ? currentYear : null,
+      year: (type === "monthly" || type === "yearly") ? currentYear : null,
       week_start: type === "weekly" ? format(currentWeekStart, "yyyy-MM-dd") : null,
+      start_date: type === "90day" ? today : null,
+      end_date: type === "90day" ? in90 : null,
     };
     if (type === "90day") setGoals90((prev) => [...prev, payload]);
+    else if (type === "yearly") setGoalsYearly((prev) => [...prev, payload]);
     else if (type === "monthly") setGoalsMonthly((prev) => [...prev, payload]);
     else if (type === "weekly") setGoalsWeekly((prev) => [...prev, payload]);
     reset();
@@ -160,7 +165,7 @@ export default function Goals() {
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) {
       const replace = (list: any[]) => list.map((g) => g.id === tempId ? data : g);
-      setGoals90((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
+      setGoals90((prev) => replace(prev)); setGoalsYearly((prev) => replace(prev)); setGoalsMonthly((prev) => replace(prev)); setGoalsWeekly((prev) => replace(prev));
     }
   };
 
