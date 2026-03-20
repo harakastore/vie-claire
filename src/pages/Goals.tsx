@@ -172,6 +172,7 @@ export default function Goals() {
   const updateGoalStatus = async (id: string, status: string) => {
     const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, status } : g);
     setGoals90((prev) => updateList(prev));
+    setGoalsYearly((prev) => updateList(prev));
     setGoalsMonthly((prev) => updateList(prev));
     setGoalsWeekly((prev) => updateList(prev));
     await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
@@ -179,9 +180,33 @@ export default function Goals() {
 
   const deleteGoal = async (id: string) => {
     setGoals90((prev) => prev.filter((g) => g.id !== id));
+    setGoalsYearly((prev) => prev.filter((g) => g.id !== id));
     setGoalsMonthly((prev) => prev.filter((g) => g.id !== id));
     setGoalsWeekly((prev) => prev.filter((g) => g.id !== id));
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
+  };
+
+  // Restart a 90-day goal with new dates
+  const restart90DayGoal = async (goal: any) => {
+    if (!user) return;
+    const today = format(now, "yyyy-MM-dd");
+    const in90 = format(addDays(now, 90), "yyyy-MM-dd");
+    await (supabase.from("goals" as any) as any).update({ start_date: today, end_date: in90, status: "in_progress" } as any).eq("id", goal.id);
+    setGoals90((prev) => prev.map((g) => g.id === goal.id ? { ...g, start_date: today, end_date: in90, status: "in_progress" } : g));
+    toast({ title: "Objectif 90 jours relancé", description: `Du ${format(now, "d MMM yyyy", { locale: fr })} au ${format(addDays(now, 90), "d MMM yyyy", { locale: fr })}` });
+  };
+
+  // Check if 90-day goal is expired
+  const is90DayExpired = (goal: any) => {
+    if (!goal.end_date) return false;
+    return new Date(goal.end_date) < now;
+  };
+
+  const get90DayRemaining = (goal: any) => {
+    if (!goal.end_date) return null;
+    const end = new Date(goal.end_date);
+    const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
   };
 
   // Daily tasks with block
