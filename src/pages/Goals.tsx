@@ -150,7 +150,7 @@ export default function Goals() {
   };
 
   // Goal CRUD
-  const addGoal = async (type: string, title: string, reset: () => void) => {
+  const addGoal = async (type: string, title: string, reset: () => void, category?: string) => {
     if (!user || !title.trim()) return;
     const tempId = crypto.randomUUID();
     const today = format(now, "yyyy-MM-dd");
@@ -162,6 +162,7 @@ export default function Goals() {
       week_start: type === "weekly" ? format(currentWeekStart, "yyyy-MM-dd") : null,
       start_date: type === "90day" ? today : null,
       end_date: type === "90day" ? in90 : null,
+      category: category || "islam",
     };
     if (type === "90day") setGoals90((prev) => [...prev, payload]);
     else if (type === "yearly") setGoalsYearly((prev) => [...prev, payload]);
