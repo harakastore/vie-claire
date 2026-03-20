@@ -751,23 +751,23 @@ export default function Goals() {
           <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
             <span className="flex items-center gap-2">
               <Target className="h-4 w-4" />
-              Objectifs (90 jours, mois, semaine)
+              Objectifs (Annuel, 90 jours, mois, semaine)
             </span>
             {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
 
           {showGoals && (
             <>
-              {/* 90-day goals */}
+              {/* Annual goals 2026 */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
-                    Objectifs 90 jours
+                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-expenses))" }} />
+                    🎯 Objectifs Annuels {currentYear}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {goals90.map((g: any) => (
+                  {goalsYearly.map((g: any) => (
                     <div key={g.id} className="flex items-center gap-2 group">
                       <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
                         <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
@@ -781,6 +781,68 @@ export default function Goals() {
                       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                     </div>
                   ))}
+                  <div className="flex gap-2 mt-2">
+                    <Input placeholder="Nouvel objectif annuel..." value={newYearly} onChange={(e) => setNewYearly(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addGoal("yearly", newYearly, () => setNewYearly(""))} className="h-8 text-sm" />
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("yearly", newYearly, () => setNewYearly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 90-day goals with dates */}
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
+                    Objectifs 90 jours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {goals90.map((g: any) => {
+                    const remaining = get90DayRemaining(g);
+                    const expired = is90DayExpired(g);
+                    return (
+                      <div key={g.id} className="space-y-1">
+                        <div className="flex items-center gap-2 group">
+                          <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
+                            <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todo">À faire</SelectItem>
+                              <SelectItem value="in_progress">En cours</SelectItem>
+                              <SelectItem value="achieved">Atteint</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                          {expired && (
+                            <Button size="sm" variant="outline" className="h-7 text-[10px] border-amber-400 text-amber-600 hover:bg-amber-50" onClick={() => restart90DayGoal(g)}>
+                              🔄 Relancer 90j
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </div>
+                        {g.start_date && g.end_date && (
+                          <div className="flex items-center gap-2 ml-[104px] text-[10px]">
+                            <span className="text-muted-foreground">
+                              📅 {format(new Date(g.start_date), "d MMM yyyy", { locale: fr })} → {format(new Date(g.end_date), "d MMM yyyy", { locale: fr })}
+                            </span>
+                            {remaining !== null && !expired && (
+                              <span className={cn(
+                                "font-bold px-1.5 py-0.5 rounded-full",
+                                remaining <= 7 ? "bg-red-100 text-red-600" : remaining <= 30 ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
+                              )}>
+                                {remaining}j restants
+                              </span>
+                            )}
+                            {expired && (
+                              <span className="font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
+                                ⏰ Expiré
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                   <div className="flex gap-2 mt-2">
                     <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
