@@ -72,6 +72,7 @@ export default function Goals() {
   // New inputs
   const [new90, setNew90] = useState("");
   const [newYearly, setNewYearly] = useState("");
+  const [newMonthly, setNewMonthly] = useState("");
   const [newWeekly, setNewWeekly] = useState("");
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
