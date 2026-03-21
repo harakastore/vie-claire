@@ -452,19 +452,56 @@ export default function Goals() {
         </div>
 
         <CardContent className="p-0">
-          {/* Non-négociable habits with light blue background */}
-          {dailyHabits.length > 0 && (
+          {/* Priority du jour */}
+          {(() => {
+            const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
+            return (
+              <div className="px-4 py-2.5 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ Priorité du jour</p>
+                {priorities.map((t: any) => (
+                  <div key={t.id} className="flex items-center gap-2 py-0.5 group">
+                    <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
+                    <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                    <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                ))}
+                {priorities.length < 1 && (
+                  <Input
+                    placeholder="Quelle est ta priorité aujourd'hui ?"
+                    value={newDayPriority[dateStr] || ""}
+                    onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                    className="h-7 text-xs border-dashed bg-transparent"
+                  />
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Non-négociable Personnel - blue */}
+          {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 🔒 NON NÉGOCIABLE
               </p>
-              {dailyHabits.map((h: any) => (
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox
-                    checked={isHabitCompleted(h.id, dateStr)}
-                    onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
-                    className="h-4 w-4"
-                  />
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Non-négociable Business - orange */}
+          {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
+                💼 NON NÉGOCIABLE BUSINESS
+              </p>
+              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                   <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
                 </div>
               ))}
