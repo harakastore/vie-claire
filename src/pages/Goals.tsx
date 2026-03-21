@@ -296,17 +296,32 @@ export default function Goals() {
     setDragOverDay(null);
   };
 
-  const addDailyHabit = async () => {
+  const addDailyHabit = async (category?: string) => {
     if (!user || !newHabit.trim()) return;
+    const cat = category || newHabitCategory;
     const tempId = crypto.randomUUID();
-    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true };
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat };
     setDailyHabits((prev) => [...prev, temp]);
     setNewHabit("");
     const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
-      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length,
+      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat,
     }).select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
+  };
+
+  // Add/update day priority (stored as daily_task with block "day_priority")
+  const addDayPriority = async (dayDate: string) => {
+    if (!user) return;
+    const text = newDayPriority[dayDate];
+    if (!text?.trim()) return;
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block: "day_priority", completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewDayPriority((prev) => ({ ...prev, [dayDate]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "day_priority" }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
   const updateDailyHabit = async (id: string, title: string) => {
