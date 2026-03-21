@@ -85,8 +85,10 @@ export default function Goals() {
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newHabit, setNewHabit] = useState("");
+  const [newHabitCategory, setNewHabitCategory] = useState<string>("personal");
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editingHabitTitle, setEditingHabitTitle] = useState("");
+  const [newDayPriority, setNewDayPriority] = useState<Record<string, string>>({});
   const [habitsSheetOpen, setHabitsSheetOpen] = useState(false);
   const [salatSheetOpen, setSalatSheetOpen] = useState(false);
   const [salatForm, setSalatForm] = useState(DEFAULT_SALAT);
