@@ -85,8 +85,10 @@ export default function Goals() {
   const [newBlockTexts, setNewBlockTexts] = useState<Record<string, string>>({});
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newHabit, setNewHabit] = useState("");
+  const [newHabitCategory, setNewHabitCategory] = useState<string>("personal");
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editingHabitTitle, setEditingHabitTitle] = useState("");
+  const [newDayPriority, setNewDayPriority] = useState<Record<string, string>>({});
   const [habitsSheetOpen, setHabitsSheetOpen] = useState(false);
   const [salatSheetOpen, setSalatSheetOpen] = useState(false);
   const [salatForm, setSalatForm] = useState(DEFAULT_SALAT);
@@ -294,17 +296,32 @@ export default function Goals() {
     setDragOverDay(null);
   };
 
-  const addDailyHabit = async () => {
+  const addDailyHabit = async (category?: string) => {
     if (!user || !newHabit.trim()) return;
+    const cat = category || newHabitCategory;
     const tempId = crypto.randomUUID();
-    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true };
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat };
     setDailyHabits((prev) => [...prev, temp]);
     setNewHabit("");
     const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
-      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length,
+      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat,
     }).select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
+  };
+
+  // Add/update day priority (stored as daily_task with block "day_priority")
+  const addDayPriority = async (dayDate: string) => {
+    if (!user) return;
+    const text = newDayPriority[dayDate];
+    if (!text?.trim()) return;
+    const tempId = crypto.randomUUID();
+    const tempTask = { id: tempId, user_id: user.id, title: text.trim(), day_date: dayDate, block: "day_priority", completed: false };
+    setDailyTasks((prev) => [...prev, tempTask]);
+    setNewDayPriority((prev) => ({ ...prev, [dayDate]: "" }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert({ user_id: user.id, title: text.trim(), day_date: dayDate, block: "day_priority" }).select().single();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+    else if (data) setDailyTasks((prev) => prev.map((t) => t.id === tempId ? data : t));
   };
 
   const updateDailyHabit = async (id: string, title: string) => {
@@ -435,19 +452,56 @@ export default function Goals() {
         </div>
 
         <CardContent className="p-0">
-          {/* Non-négociable habits with light blue background */}
-          {dailyHabits.length > 0 && (
+          {/* Priority du jour */}
+          {(() => {
+            const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
+            return (
+              <div className="px-4 py-2.5 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ Priorité du jour</p>
+                {priorities.map((t: any) => (
+                  <div key={t.id} className="flex items-center gap-2 py-0.5 group">
+                    <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
+                    <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                    <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                ))}
+                {priorities.length < 1 && (
+                  <Input
+                    placeholder="Quelle est ta priorité aujourd'hui ?"
+                    value={newDayPriority[dateStr] || ""}
+                    onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                    className="h-7 text-xs border-dashed bg-transparent"
+                  />
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Non-négociable Personnel - blue */}
+          {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 🔒 NON NÉGOCIABLE
               </p>
-              {dailyHabits.map((h: any) => (
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox
-                    checked={isHabitCompleted(h.id, dateStr)}
-                    onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
-                    className="h-4 w-4"
-                  />
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Non-négociable Business - orange */}
+          {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
+                💼 NON NÉGOCIABLE BUSINESS
+              </p>
+              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                   <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
                 </div>
               ))}
@@ -554,19 +608,56 @@ export default function Goals() {
           </div>
 
           <CardContent className="p-0">
-            {dailyHabits.length > 0 && (
+            {/* Priority du jour - expanded */}
+            {(() => {
+              const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
+              return (
+                <div className="px-6 py-3 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ Priorité du jour</p>
+                  {priorities.map((t: any) => (
+                    <div key={t.id} className="flex items-center gap-2 py-0.5 group">
+                      <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
+                      <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                      <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </div>
+                  ))}
+                  {priorities.length < 1 && (
+                    <Input placeholder="Quelle est ta priorité aujourd'hui ?" value={newDayPriority[dateStr] || ""}
+                      onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                      className="h-7 text-xs border-dashed bg-transparent" />
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Non-négociable Personnel - blue */}
+            {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   🔒 NON NÉGOCIABLE
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.map((h: any) => (
+                  {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
                     <div key={h.id} className="flex items-center gap-2 py-0.5">
-                      <Checkbox
-                        checked={isHabitCompleted(h.id, dateStr)}
-                        onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
-                        className="h-4 w-4"
-                      />
+                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Non-négociable Business - orange */}
+            {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
+                  💼 NON NÉGOCIABLE BUSINESS
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-2 py-0.5">
+                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                       <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
                     </div>
                   ))}
@@ -675,25 +766,57 @@ export default function Goals() {
         </button>
 
         <CardContent className="p-3 space-y-1.5">
-          {/* Non-négociable habits with light blue bg */}
-          {dailyHabits.length > 0 && (
+          {/* Priority du jour - compact */}
+          {(() => {
+            const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
+            return (
+              <div className="pb-2 mb-2 border-b rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
+                <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ PRIORITÉ</p>
+                {priorities.map((t: any) => (
+                  <div key={t.id} className="flex items-center gap-2 py-0.5 group">
+                    <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
+                    <span className={cn("text-xs font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                    <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3 w-3" /></button>
+                  </div>
+                ))}
+                {priorities.length < 1 && (
+                  <Input placeholder="Priorité..." value={newDayPriority[dateStr] || ""}
+                    onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                    className="h-6 text-[10px] border-dashed bg-transparent" />
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Non-négociable Personnel - blue bg */}
+          {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
             <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">🔒 NON NÉGOCIABLE</p>
-              {dailyHabits.map((h: any) => (
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox
-                    checked={isHabitCompleted(h.id, dateStr)}
-                    onCheckedChange={() => toggleHabitLog(h.id, dateStr)}
-                    className="h-3.5 w-3.5"
-                  />
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
                   <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
                 </div>
               ))}
             </div>
           )}
 
-          {/* All tasks flat - draggable */}
-          {dayTasks.map((t: any) => (
+          {/* Non-négociable Business - orange bg */}
+          {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
+              <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(30, 80%, 40%)" }}>💼 BUSINESS</p>
+              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
+                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* All tasks flat - draggable (exclude priority tasks) */}
+          {dayTasks.filter((t: any) => t.block !== "day_priority").map((t: any) => (
             <div
               key={t.id}
               className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
@@ -1312,43 +1435,65 @@ export default function Goals() {
           <p className="text-sm text-muted-foreground mt-2 mb-4">
             Ces habitudes apparaissent automatiquement chaque jour.
           </p>
-          <div className="space-y-3">
-            {dailyHabits.map((h: any) => (
-              <div key={h.id} className="flex items-center gap-2 group">
-                {editingHabitId === h.id ? (
-                  <Input
-                    autoFocus
-                    value={editingHabitTitle}
-                    onChange={(e) => setEditingHabitTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle);
-                      if (e.key === "Escape") setEditingHabitId(null);
-                    }}
-                    onBlur={() => updateDailyHabit(h.id, editingHabitTitle)}
-                    className="h-9 text-sm"
-                  />
-                ) : (
-                  <>
-                    <span className="flex-1 text-sm font-medium">{h.title}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  </>
-                )}
+          <div className="space-y-4">
+            {/* Personal non-negotiable */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(200, 60%, 50%)" }}>🔒 Non négociable Personnel</p>
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 group mb-1">
+                  {editingHabitId === h.id ? (
+                    <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                      onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm font-medium">{h.title}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Business non-negotiable */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 50%)" }}>💼 Non négociable Business</p>
+              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 group mb-1">
+                  {editingHabitId === h.id ? (
+                    <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                      onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm font-medium">{h.title}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t space-y-2">
+              <Select value={newHabitCategory} onValueChange={setNewHabitCategory}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">🔒 Personnel</SelectItem>
+                  <SelectItem value="business">💼 Business</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nouvelle habitude..."
+                  value={newHabit}
+                  onChange={(e) => setNewHabit(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
+                  className="h-9 text-sm"
+                />
+                <Button size="sm" className="h-9" onClick={() => addDailyHabit()}><Plus className="h-4 w-4" /></Button>
               </div>
-            ))}
-            <div className="flex gap-2 pt-2 border-t">
-              <Input
-                placeholder="Nouvelle habitude..."
-                value={newHabit}
-                onChange={(e) => setNewHabit(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
-                className="h-9 text-sm"
-              />
-              <Button size="sm" className="h-9" onClick={addDailyHabit}><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
         </SheetContent>

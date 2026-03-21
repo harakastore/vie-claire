@@ -136,6 +136,7 @@ export type Database = {
       daily_habits: {
         Row: {
           active: boolean
+          category: string
           created_at: string
           id: string
           sort_order: number
@@ -145,6 +146,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          category?: string
           created_at?: string
           id?: string
           sort_order?: number
@@ -154,6 +156,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          category?: string
           created_at?: string
           id?: string
           sort_order?: number
