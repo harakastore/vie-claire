@@ -1329,43 +1329,65 @@ export default function Goals() {
           <p className="text-sm text-muted-foreground mt-2 mb-4">
             Ces habitudes apparaissent automatiquement chaque jour.
           </p>
-          <div className="space-y-3">
-            {dailyHabits.map((h: any) => (
-              <div key={h.id} className="flex items-center gap-2 group">
-                {editingHabitId === h.id ? (
-                  <Input
-                    autoFocus
-                    value={editingHabitTitle}
-                    onChange={(e) => setEditingHabitTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle);
-                      if (e.key === "Escape") setEditingHabitId(null);
-                    }}
-                    onBlur={() => updateDailyHabit(h.id, editingHabitTitle)}
-                    className="h-9 text-sm"
-                  />
-                ) : (
-                  <>
-                    <span className="flex-1 text-sm font-medium">{h.title}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}>
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  </>
-                )}
+          <div className="space-y-4">
+            {/* Personal non-negotiable */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(200, 60%, 50%)" }}>🔒 Non négociable Personnel</p>
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 group mb-1">
+                  {editingHabitId === h.id ? (
+                    <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                      onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm font-medium">{h.title}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Business non-negotiable */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 50%)" }}>💼 Non négociable Business</p>
+              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 group mb-1">
+                  {editingHabitId === h.id ? (
+                    <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                      onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                  ) : (
+                    <>
+                      <span className="flex-1 text-sm font-medium">{h.title}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2 border-t space-y-2">
+              <Select value={newHabitCategory} onValueChange={setNewHabitCategory}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">🔒 Personnel</SelectItem>
+                  <SelectItem value="business">💼 Business</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nouvelle habitude..."
+                  value={newHabit}
+                  onChange={(e) => setNewHabit(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
+                  className="h-9 text-sm"
+                />
+                <Button size="sm" className="h-9" onClick={() => addDailyHabit()}><Plus className="h-4 w-4" /></Button>
               </div>
-            ))}
-            <div className="flex gap-2 pt-2 border-t">
-              <Input
-                placeholder="Nouvelle habitude..."
-                value={newHabit}
-                onChange={(e) => setNewHabit(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
-                className="h-9 text-sm"
-              />
-              <Button size="sm" className="h-9" onClick={addDailyHabit}><Plus className="h-4 w-4" /></Button>
             </div>
           </div>
         </SheetContent>
