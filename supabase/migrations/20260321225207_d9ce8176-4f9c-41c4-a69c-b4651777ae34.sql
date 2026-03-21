@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_habits ADD COLUMN category text NOT NULL DEFAULT 'personal';
