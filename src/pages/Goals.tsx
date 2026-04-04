@@ -297,6 +297,36 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
   };
 
+  const saveTaskTime = async (id: string, time: string) => {
+    const val = time || null;
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, scheduled_time: val } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ scheduled_time: val } as any).eq("id", id);
+  };
+
+  // Block-level drag handlers
+  const handleBlockDragOver = (e: DragEvent, blockKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverBlock(blockKey);
+  };
+
+  const handleBlockDragLeave = (e: DragEvent) => {
+    e.stopPropagation();
+    setDragOverBlock(null);
+  };
+
+  const handleBlockDrop = (e: DragEvent, blockKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const taskId = e.dataTransfer.getData("text/plain") || dragTaskId;
+    if (taskId) {
+      moveTaskToBlock(taskId, blockKey);
+    }
+    setDragTaskId(null);
+    setDragOverBlock(null);
+  };
+
   // Move task to another day (drag & drop)
   const moveTaskToDay = async (taskId: string, newDate: string) => {
     setDailyTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, day_date: newDate } : t));
