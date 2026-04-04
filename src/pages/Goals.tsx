@@ -75,6 +75,7 @@ export default function Goals() {
   // Drag state
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+  const [dragOverBlock, setDragOverBlock] = useState<string | null>(null);
 
   // New inputs
   const [new90, setNew90] = useState("");
