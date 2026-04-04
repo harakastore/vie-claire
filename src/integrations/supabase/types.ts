@@ -173,6 +173,7 @@ export type Database = {
           created_at: string
           day_date: string
           id: string
+          scheduled_time: string | null
           title: string
           user_id: string
         }
@@ -182,6 +183,7 @@ export type Database = {
           created_at?: string
           day_date: string
           id?: string
+          scheduled_time?: string | null
           title: string
           user_id: string
         }
@@ -191,6 +193,7 @@ export type Database = {
           created_at?: string
           day_date?: string
           id?: string
+          scheduled_time?: string | null
           title?: string
           user_id?: string
         }
