@@ -741,13 +741,6 @@ export default function Goals() {
                         <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                           draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                           <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                          <input
-                            type="time"
-                            value={t.scheduled_time?.slice(0, 5) || ""}
-                            onChange={(e) => saveTaskTime(t.id, e.target.value)}
-                            className="w-[75px] h-6 text-[11px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
-                            title="Horaire prévu"
-                          />
                           <TaskTitle title={t.title} completed={t.completed} />
                           <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                             <Trash2 className="h-3.5 w-3.5" />
