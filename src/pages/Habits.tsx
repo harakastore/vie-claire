@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/EditableText";
 
 export default function Habits() {
   const { user } = useAuth();
@@ -75,6 +76,11 @@ export default function Habits() {
     await supabase.from("habits").update({ active: false }).eq("id", id);
     toast({ title: "Habitude supprimée" });
     fetchData();
+  };
+
+  const renameHabit = async (id: string, newTitle: string) => {
+    setHabits((prev) => prev.map((h) => h.id === id ? { ...h, title: newTitle } : h));
+    await supabase.from("habits").update({ title: newTitle }).eq("id", id);
   };
 
   const prevMonth = () => {
@@ -141,7 +147,7 @@ export default function Habits() {
               <Card key={h.id} className="glass-card">
                 <CardContent className="p-4 flex items-center gap-4">
                   <Checkbox checked={completed} onCheckedChange={() => toggleLog(h.id, completed)} />
-                  <span className={`flex-1 text-sm ${completed ? "line-through text-muted-foreground" : ""}`}>{h.title}</span>
+                  <EditableText value={h.title} onSave={(v) => renameHabit(h.id, v)} className={`flex-1 text-sm ${completed ? "line-through text-muted-foreground" : ""}`} />
                   <SectorBadge sector={h.sector} />
                   <Button variant="ghost" size="icon" onClick={() => deleteHabit(h.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
                 </CardContent>

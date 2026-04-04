@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { EditableText } from "@/components/EditableText";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -47,17 +48,19 @@ function parseNumberedTask(title: string): { number: string | null; text: string
   return { number: null, text: title };
 }
 
-function TaskTitle({ title, completed }: { title: string; completed: boolean }) {
+function TaskTitle({ title, completed, onRename }: { title: string; completed: boolean; onRename?: (v: string) => void }) {
   const { number, text } = parseNumberedTask(title);
   if (number) {
     return (
-      <span className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
         <span className="font-black text-lg mr-1.5" style={{ color: completed ? undefined : "hsl(220, 70%, 50%)" }}>{number}-</span>
         <span className="font-bold text-base">{text}</span>
-      </span>
+      </EditableText>
     );
   }
-  return <span className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")}>{text}</span>;
+  return (
+    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")} />
+  );
 }
 
 export default function Goals() {
@@ -276,6 +279,20 @@ export default function Goals() {
   const deleteDailyTask = async (id: string) => {
     setDailyTasks((prev) => prev.filter((t) => t.id !== id));
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
+  };
+
+  const renameDailyTask = async (id: string, newTitle: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, title: newTitle } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ title: newTitle }).eq("id", id);
+  };
+
+  const renameGoal = async (id: string, newTitle: string) => {
+    const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, title: newTitle } : g);
+    setGoals90((prev) => updateList(prev));
+    setGoalsYearly((prev) => updateList(prev));
+    setGoalsMonthly((prev) => updateList(prev));
+    setGoalsWeekly((prev) => updateList(prev));
+    await (supabase.from("goals" as any) as any).update({ title: newTitle }).eq("id", id);
   };
 
   const moveTaskToBlock = async (id: string, newBlock: string) => {
@@ -511,7 +528,7 @@ export default function Goals() {
                 {priorities.map((t: any) => (
                   <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                     <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
-                    <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                    <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
                     <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                   </div>
                 ))}
@@ -590,7 +607,7 @@ export default function Goals() {
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                       draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                      <TaskTitle title={t.title} completed={t.completed} />
+                     <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -660,7 +677,7 @@ export default function Goals() {
                   {priorities.map((t: any) => (
                     <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
-                      <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                      <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
@@ -741,7 +758,7 @@ export default function Goals() {
                         <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                           draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                           <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                          <TaskTitle title={t.title} completed={t.completed} />
+                          <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
                           <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -811,7 +828,7 @@ export default function Goals() {
                 {priorities.map((t: any) => (
                   <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                     <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
-                    <span className={cn("text-xs font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                    <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-xs font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
                     <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
@@ -860,7 +877,7 @@ export default function Goals() {
               onDragStart={(e) => handleDragStart(e as any, t.id)}
             >
               <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-              <TaskTitle title={t.title} completed={t.completed} />
+              <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
               <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -945,7 +962,7 @@ export default function Goals() {
                           <SelectItem value="achieved">Atteint</SelectItem>
                         </SelectContent>
                       </Select>
-                      <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                      <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
                       <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                     </div>
                   ))}
@@ -980,7 +997,7 @@ export default function Goals() {
                               <SelectItem value="achieved">Atteint</SelectItem>
                             </SelectContent>
                           </Select>
-                          <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                          <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
                           {expired && (
                             <Button size="sm" variant="outline" className="h-7 text-[10px] border-amber-400 text-amber-600 hover:bg-amber-50" onClick={() => restart90DayGoal(g)}>
                               🔄 Relancer 90j
@@ -1044,7 +1061,7 @@ export default function Goals() {
                                   <SelectItem value="achieved">Atteint</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <span className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")} />
                               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           ))}
@@ -1082,7 +1099,7 @@ export default function Goals() {
                           <div key={g.id} className="flex items-center gap-2 group">
                             <span className="text-xs font-bold text-amber-500 w-5">{idx + 1}.</span>
                             <Checkbox checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "in_progress")} className="h-4 w-4" />
-                            <span className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                            <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")} />
                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                           </div>
                         ))}
@@ -1112,7 +1129,7 @@ export default function Goals() {
                                   <SelectItem value="achieved">Atteint</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <span className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")} />
                               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           ))}
