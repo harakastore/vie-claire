@@ -279,6 +279,20 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
   };
 
+  const renameDailyTask = async (id: string, newTitle: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, title: newTitle } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ title: newTitle }).eq("id", id);
+  };
+
+  const renameGoal = async (id: string, newTitle: string) => {
+    const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, title: newTitle } : g);
+    setGoals90((prev) => updateList(prev));
+    setGoalsYearly((prev) => updateList(prev));
+    setGoalsMonthly((prev) => updateList(prev));
+    setGoalsWeekly((prev) => updateList(prev));
+    await (supabase.from("goals" as any) as any).update({ title: newTitle }).eq("id", id);
+  };
+
   const moveTaskToBlock = async (id: string, newBlock: string) => {
     setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, block: newBlock } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
