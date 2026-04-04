@@ -48,17 +48,19 @@ function parseNumberedTask(title: string): { number: string | null; text: string
   return { number: null, text: title };
 }
 
-function TaskTitle({ title, completed }: { title: string; completed: boolean }) {
+function TaskTitle({ title, completed, onRename }: { title: string; completed: boolean; onRename?: (v: string) => void }) {
   const { number, text } = parseNumberedTask(title);
   if (number) {
     return (
-      <span className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
         <span className="font-black text-lg mr-1.5" style={{ color: completed ? undefined : "hsl(220, 70%, 50%)" }}>{number}-</span>
         <span className="font-bold text-base">{text}</span>
-      </span>
+      </EditableText>
     );
   }
-  return <span className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")}>{text}</span>;
+  return (
+    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")} />
+  );
 }
 
 export default function Goals() {
