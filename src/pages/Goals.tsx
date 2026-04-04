@@ -47,25 +47,12 @@ function parseNumberedTask(title: string): { number: string | null; text: string
   return { number: null, text: title };
 }
 
-const NUMBERED_COLORS = [
-  "hsl(220, 70%, 50%)", // blue
-  "hsl(340, 70%, 50%)", // pink
-  "hsl(160, 60%, 40%)", // teal
-  "hsl(30, 80%, 50%)",  // orange
-  "hsl(270, 60%, 55%)", // purple
-  "hsl(0, 70%, 50%)",   // red
-  "hsl(180, 60%, 40%)", // cyan
-  "hsl(45, 80%, 45%)",  // gold
-];
-
 function TaskTitle({ title, completed }: { title: string; completed: boolean }) {
   const { number, text } = parseNumberedTask(title);
   if (number) {
-    const colorIndex = (parseInt(number) - 1) % NUMBERED_COLORS.length;
-    const color = NUMBERED_COLORS[colorIndex];
     return (
       <span className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
-        <span className="font-black text-base mr-1.5" style={{ color: completed ? undefined : color }}>{number}-</span>
+        <span className="font-black text-lg mr-1.5" style={{ color: completed ? undefined : "hsl(220, 70%, 50%)" }}>{number}-</span>
         <span className="font-bold text-base">{text}</span>
       </span>
     );
@@ -603,13 +590,6 @@ export default function Goals() {
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                       draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                      <input
-                        type="time"
-                        value={t.scheduled_time?.slice(0, 5) || ""}
-                        onChange={(e) => saveTaskTime(t.id, e.target.value)}
-                        className="w-[70px] h-5 text-[10px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
-                        title="Horaire prévu"
-                      />
                       <TaskTitle title={t.title} completed={t.completed} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
@@ -761,13 +741,6 @@ export default function Goals() {
                         <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                           draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                           <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                          <input
-                            type="time"
-                            value={t.scheduled_time?.slice(0, 5) || ""}
-                            onChange={(e) => saveTaskTime(t.id, e.target.value)}
-                            className="w-[75px] h-6 text-[11px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
-                            title="Horaire prévu"
-                          />
                           <TaskTitle title={t.title} completed={t.completed} />
                           <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                             <Trash2 className="h-3.5 w-3.5" />
