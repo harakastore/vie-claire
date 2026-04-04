@@ -997,7 +997,7 @@ export default function Goals() {
                               <SelectItem value="achieved">Atteint</SelectItem>
                             </SelectContent>
                           </Select>
-                          <span className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                          <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
                           {expired && (
                             <Button size="sm" variant="outline" className="h-7 text-[10px] border-amber-400 text-amber-600 hover:bg-amber-50" onClick={() => restart90DayGoal(g)}>
                               🔄 Relancer 90j
