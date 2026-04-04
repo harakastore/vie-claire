@@ -41,6 +41,39 @@ function calcDuration(from: string, to: string): string {
   return hours > 0 ? `${hours}h${mins > 0 ? mins.toString().padStart(2, "0") : ""}` : `${mins}min`;
 }
 
+// Parse numbered tasks like "1- Comptabilité" or "2. Marketing"
+function parseNumberedTask(title: string): { number: string | null; text: string } {
+  const match = title.match(/^(\d+)\s*[-.)]\s*(.*)$/);
+  if (match) return { number: match[1], text: match[2] };
+  return { number: null, text: title };
+}
+
+const NUMBERED_COLORS = [
+  "hsl(220, 70%, 50%)", // blue
+  "hsl(340, 70%, 50%)", // pink
+  "hsl(160, 60%, 40%)", // teal
+  "hsl(30, 80%, 50%)",  // orange
+  "hsl(270, 60%, 55%)", // purple
+  "hsl(0, 70%, 50%)",   // red
+  "hsl(180, 60%, 40%)", // cyan
+  "hsl(45, 80%, 45%)",  // gold
+];
+
+function TaskTitle({ title, completed }: { title: string; completed: boolean }) {
+  const { number, text } = parseNumberedTask(title);
+  if (number) {
+    const colorIndex = (parseInt(number) - 1) % NUMBERED_COLORS.length;
+    const color = NUMBERED_COLORS[colorIndex];
+    return (
+      <span className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+        <span className="font-black text-base mr-1.5" style={{ color: completed ? undefined : color }}>{number}-</span>
+        <span className="font-bold text-base">{text}</span>
+      </span>
+    );
+  }
+  return <span className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")}>{text}</span>;
+}
+
 export default function Goals() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
