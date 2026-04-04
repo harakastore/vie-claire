@@ -677,7 +677,7 @@ export default function Goals() {
                   {priorities.map((t: any) => (
                     <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
-                      <span className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+                      <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
