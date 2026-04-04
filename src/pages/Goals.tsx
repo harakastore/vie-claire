@@ -888,7 +888,7 @@ export default function Goals() {
               onDragStart={(e) => handleDragStart(e as any, t.id)}
             >
               <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-              <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+              <TaskTitle title={t.title} completed={t.completed} />
               <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
