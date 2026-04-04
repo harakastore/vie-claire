@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/EditableText";
 
 export default function Habits() {
   const { user } = useAuth();
