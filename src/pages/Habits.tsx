@@ -78,6 +78,11 @@ export default function Habits() {
     fetchData();
   };
 
+  const renameHabit = async (id: string, newTitle: string) => {
+    setHabits((prev) => prev.map((h) => h.id === id ? { ...h, title: newTitle } : h));
+    await supabase.from("habits").update({ title: newTitle }).eq("id", id);
+  };
+
   const prevMonth = () => {
     if (viewMonth === 1) { setViewMonth(12); setViewYear(viewYear - 1); }
     else setViewMonth(viewMonth - 1);
