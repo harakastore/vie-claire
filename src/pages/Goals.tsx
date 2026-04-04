@@ -1061,7 +1061,7 @@ export default function Goals() {
                                   <SelectItem value="achieved">Atteint</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <span className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")} />
                               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           ))}
