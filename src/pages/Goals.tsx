@@ -580,7 +580,14 @@ export default function Goals() {
             const inputKey = `${dateStr}_${block.key}`;
 
             return (
-              <div key={block.key} className="border-b last:border-b-0">
+              <div key={block.key} className={cn(
+                "border-b last:border-b-0 transition-colors",
+                dragOverBlock === block.key && "ring-2 ring-primary ring-inset"
+              )}
+                onDragOver={(e) => handleBlockDragOver(e as any, block.key)}
+                onDragLeave={(e) => handleBlockDragLeave(e as any)}
+                onDrop={(e) => handleBlockDrop(e as any, block.key)}
+              >
                 <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
@@ -594,24 +601,17 @@ export default function Goals() {
                 </div>
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   {blockTasks.map((t: any) => (
-                    <div key={t.id} className="flex items-start gap-2 group">
+                    <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
+                      draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                      <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground hover:text-foreground">
-                            <ArrowRightLeft className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {BLOCKS.filter((b) => b.key !== block.key).map((b) => (
-                            <DropdownMenuItem key={b.key} onClick={() => moveTaskToBlock(t.id, b.key)}>
-                              <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: b.color }} />
-                              {b.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <input
+                        type="time"
+                        value={t.scheduled_time?.slice(0, 5) || ""}
+                        onChange={(e) => saveTaskTime(t.id, e.target.value)}
+                        className="w-[70px] h-5 text-[10px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
+                        title="Horaire prévu"
+                      />
+                      <TaskTitle title={t.title} completed={t.completed} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
