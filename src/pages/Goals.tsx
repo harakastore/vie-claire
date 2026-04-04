@@ -1099,7 +1099,7 @@ export default function Goals() {
                           <div key={g.id} className="flex items-center gap-2 group">
                             <span className="text-xs font-bold text-amber-500 w-5">{idx + 1}.</span>
                             <Checkbox checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "in_progress")} className="h-4 w-4" />
-                            <span className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")}>{g.title}</span>
+                            <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")} />
                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                           </div>
                         ))}
