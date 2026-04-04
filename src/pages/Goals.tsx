@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, DragEvent } from "react";
+import { useEffect, useState, DragEvent } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, ArrowRightLeft, Maximize2, Minimize2, CheckSquare, ListTodo } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -39,6 +38,39 @@ function calcDuration(from: string, to: string): string {
   const hours = Math.floor(diff / 60);
   const mins = diff % 60;
   return hours > 0 ? `${hours}h${mins > 0 ? mins.toString().padStart(2, "0") : ""}` : `${mins}min`;
+}
+
+// Parse numbered tasks like "1- Comptabilité" or "2. Marketing"
+function parseNumberedTask(title: string): { number: string | null; text: string } {
+  const match = title.match(/^(\d+)\s*[-.)]\s*(.*)$/);
+  if (match) return { number: match[1], text: match[2] };
+  return { number: null, text: title };
+}
+
+const NUMBERED_COLORS = [
+  "hsl(220, 70%, 50%)", // blue
+  "hsl(340, 70%, 50%)", // pink
+  "hsl(160, 60%, 40%)", // teal
+  "hsl(30, 80%, 50%)",  // orange
+  "hsl(270, 60%, 55%)", // purple
+  "hsl(0, 70%, 50%)",   // red
+  "hsl(180, 60%, 40%)", // cyan
+  "hsl(45, 80%, 45%)",  // gold
+];
+
+function TaskTitle({ title, completed }: { title: string; completed: boolean }) {
+  const { number, text } = parseNumberedTask(title);
+  if (number) {
+    const colorIndex = (parseInt(number) - 1) % NUMBERED_COLORS.length;
+    const color = NUMBERED_COLORS[colorIndex];
+    return (
+      <span className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+        <span className="font-black text-base mr-1.5" style={{ color: completed ? undefined : color }}>{number}-</span>
+        <span className="font-bold text-base">{text}</span>
+      </span>
+    );
+  }
+  return <span className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")}>{text}</span>;
 }
 
 export default function Goals() {
@@ -75,6 +107,7 @@ export default function Goals() {
   // Drag state
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
+  const [dragOverBlock, setDragOverBlock] = useState<string | null>(null);
 
   // New inputs
   const [new90, setNew90] = useState("");
@@ -261,6 +294,36 @@ export default function Goals() {
   const moveTaskToBlock = async (id: string, newBlock: string) => {
     setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, block: newBlock } : t));
     await (supabase.from("daily_tasks" as any) as any).update({ block: newBlock } as any).eq("id", id);
+  };
+
+  const saveTaskTime = async (id: string, time: string) => {
+    const val = time || null;
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, scheduled_time: val } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ scheduled_time: val } as any).eq("id", id);
+  };
+
+  // Block-level drag handlers
+  const handleBlockDragOver = (e: DragEvent, blockKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverBlock(blockKey);
+  };
+
+  const handleBlockDragLeave = (e: DragEvent) => {
+    e.stopPropagation();
+    setDragOverBlock(null);
+  };
+
+  const handleBlockDrop = (e: DragEvent, blockKey: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const taskId = e.dataTransfer.getData("text/plain") || dragTaskId;
+    if (taskId) {
+      moveTaskToBlock(taskId, blockKey);
+    }
+    setDragTaskId(null);
+    setDragOverBlock(null);
   };
 
   // Move task to another day (drag & drop)
@@ -516,7 +579,14 @@ export default function Goals() {
             const inputKey = `${dateStr}_${block.key}`;
 
             return (
-              <div key={block.key} className="border-b last:border-b-0">
+              <div key={block.key} className={cn(
+                "border-b last:border-b-0 transition-colors",
+                dragOverBlock === block.key && "ring-2 ring-primary ring-inset"
+              )}
+                onDragOver={(e) => handleBlockDragOver(e as any, block.key)}
+                onDragLeave={(e) => handleBlockDragLeave(e as any)}
+                onDrop={(e) => handleBlockDrop(e as any, block.key)}
+              >
                 <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
@@ -530,24 +600,17 @@ export default function Goals() {
                 </div>
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   {blockTasks.map((t: any) => (
-                    <div key={t.id} className="flex items-start gap-2 group">
+                    <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
+                      draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                      <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground hover:text-foreground">
-                            <ArrowRightLeft className="h-3.5 w-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {BLOCKS.filter((b) => b.key !== block.key).map((b) => (
-                            <DropdownMenuItem key={b.key} onClick={() => moveTaskToBlock(t.id, b.key)}>
-                              <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: b.color }} />
-                              {b.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <input
+                        type="time"
+                        value={t.scheduled_time?.slice(0, 5) || ""}
+                        onChange={(e) => saveTaskTime(t.id, e.target.value)}
+                        className="w-[70px] h-5 text-[10px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
+                        title="Horaire prévu"
+                      />
+                      <TaskTitle title={t.title} completed={t.completed} />
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -674,7 +737,14 @@ export default function Goals() {
                 const inputKey = `${dateStr}_${block.key}`;
 
                 return (
-                  <div key={block.key} className="border-b md:border-b-0 md:border-r last:border-r-0">
+                  <div key={block.key} className={cn(
+                    "border-b md:border-b-0 md:border-r last:border-r-0 transition-colors",
+                    dragOverBlock === block.key && "ring-2 ring-primary ring-inset"
+                  )}
+                    onDragOver={(e) => handleBlockDragOver(e as any, block.key)}
+                    onDragLeave={(e) => handleBlockDragLeave(e as any)}
+                    onDrop={(e) => handleBlockDrop(e as any, block.key)}
+                  >
                     <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: block.color }} />
@@ -688,24 +758,17 @@ export default function Goals() {
                     </div>
                     <div className="px-4 py-3 space-y-2 min-h-[100px]">
                       {blockTasks.map((t: any) => (
-                        <div key={t.id} className="flex items-start gap-2 group">
+                        <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
+                          draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                           <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-                          <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="opacity-0 group-hover:opacity-100 shrink-0 text-muted-foreground hover:text-foreground">
-                                <ArrowRightLeft className="h-3.5 w-3.5" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {BLOCKS.filter((b) => b.key !== block.key).map((b) => (
-                                <DropdownMenuItem key={b.key} onClick={() => moveTaskToBlock(t.id, b.key)}>
-                                  <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: b.color }} />
-                                  {b.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <input
+                            type="time"
+                            value={t.scheduled_time?.slice(0, 5) || ""}
+                            onChange={(e) => saveTaskTime(t.id, e.target.value)}
+                            className="w-[75px] h-6 text-[11px] border rounded px-1 bg-transparent text-muted-foreground shrink-0"
+                            title="Horaire prévu"
+                          />
+                          <TaskTitle title={t.title} completed={t.completed} />
                           <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -824,7 +887,7 @@ export default function Goals() {
               onDragStart={(e) => handleDragStart(e as any, t.id)}
             >
               <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-              <span className={cn("text-sm flex-1 leading-snug", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
+              <TaskTitle title={t.title} completed={t.completed} />
               <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

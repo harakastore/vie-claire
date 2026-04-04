@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_tasks ADD COLUMN scheduled_time time without time zone DEFAULT NULL;
