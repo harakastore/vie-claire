@@ -74,6 +74,7 @@ export default function Goals() {
   const [showDiscipline, setShowDiscipline] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [focusTasksOnly, setFocusTasksOnly] = useState(false);
+  const [showNonNego, setShowNonNego] = useState(true);
 
   const GOAL_SECTIONS = [
     { key: "islam", label: "🕌 Islam", color: "hsl(160, 50%, 45%)" },
@@ -546,7 +547,7 @@ export default function Goals() {
           })()}
 
           {/* Non-négociable Personnel - blue */}
-          {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 🔒 NON NÉGOCIABLE
@@ -561,7 +562,7 @@ export default function Goals() {
           )}
 
           {/* Non-négociable Business - orange */}
-          {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
                 💼 NON NÉGOCIABLE BUSINESS
@@ -692,7 +693,7 @@ export default function Goals() {
             })()}
 
             {/* Non-négociable Personnel - blue */}
-            {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   🔒 NON NÉGOCIABLE
@@ -709,7 +710,7 @@ export default function Goals() {
             )}
 
             {/* Non-négociable Business - orange */}
-            {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
                   💼 NON NÉGOCIABLE BUSINESS
@@ -843,7 +844,7 @@ export default function Goals() {
           })()}
 
           {/* Non-négociable Personnel - blue bg */}
-          {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
             <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">🔒 NON NÉGOCIABLE</p>
               {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
@@ -856,7 +857,7 @@ export default function Goals() {
           )}
 
           {/* Non-négociable Business - orange bg */}
-          {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
             <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
               <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(30, 80%, 40%)" }}>💼 BUSINESS</p>
               {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
@@ -914,20 +915,21 @@ export default function Goals() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />
+    <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
+      {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
       {/* Focus tasks only button */}
       <Button
         variant={focusTasksOnly ? "default" : "outline"}
-        className="w-full justify-between"
+        size={focusTasksOnly ? "sm" : "default"}
+        className={cn("justify-between", focusTasksOnly ? "w-auto" : "w-full")}
         onClick={() => setFocusTasksOnly(!focusTasksOnly)}
       >
         <span className="flex items-center gap-2">
           <ListTodo className="h-4 w-4" />
-          {focusTasksOnly ? "Afficher tout" : "Voir uniquement les tâches quotidiennes"}
+          {focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches quotidiennes"}
         </span>
-        {focusTasksOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        {focusTasksOnly ? <Minimize2 className="h-4 w-4 ml-2" /> : <Maximize2 className="h-4 w-4 ml-2" />}
       </Button>
 
       {!focusTasksOnly && (
@@ -1369,9 +1371,13 @@ export default function Goals() {
       {/* Daily tasks */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-base font-semibold">Tâches quotidiennes</CardTitle>
+              <Button variant={showNonNego ? "outline" : "secondary"} size="sm" className="h-7 text-xs" onClick={() => setShowNonNego(!showNonNego)}>
+                {showNonNego ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+                Non-négociable
+              </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
               </Button>
