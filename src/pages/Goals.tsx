@@ -915,20 +915,21 @@ export default function Goals() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />
+    <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
+      {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
       {/* Focus tasks only button */}
       <Button
         variant={focusTasksOnly ? "default" : "outline"}
-        className="w-full justify-between"
+        size={focusTasksOnly ? "sm" : "default"}
+        className={cn("justify-between", focusTasksOnly ? "w-auto" : "w-full")}
         onClick={() => setFocusTasksOnly(!focusTasksOnly)}
       >
         <span className="flex items-center gap-2">
           <ListTodo className="h-4 w-4" />
-          {focusTasksOnly ? "Afficher tout" : "Voir uniquement les tâches quotidiennes"}
+          {focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches quotidiennes"}
         </span>
-        {focusTasksOnly ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+        {focusTasksOnly ? <Minimize2 className="h-4 w-4 ml-2" /> : <Maximize2 className="h-4 w-4 ml-2" />}
       </Button>
 
       {!focusTasksOnly && (
