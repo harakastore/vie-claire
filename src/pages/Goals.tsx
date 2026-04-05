@@ -1370,9 +1370,13 @@ export default function Goals() {
       {/* Daily tasks */}
       <Card className="glass-card">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-base font-semibold">Tâches quotidiennes</CardTitle>
+              <Button variant={showNonNego ? "outline" : "secondary"} size="sm" className="h-7 text-xs" onClick={() => setShowNonNego(!showNonNego)}>
+                {showNonNego ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
+                Non-négociable
+              </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
               </Button>
