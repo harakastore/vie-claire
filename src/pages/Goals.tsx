@@ -693,7 +693,7 @@ export default function Goals() {
             })()}
 
             {/* Non-négociable Personnel - blue */}
-            {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   🔒 NON NÉGOCIABLE
