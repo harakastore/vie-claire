@@ -74,6 +74,7 @@ export default function Goals() {
   const [showDiscipline, setShowDiscipline] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [focusTasksOnly, setFocusTasksOnly] = useState(false);
+  const [showNonNego, setShowNonNego] = useState(true);
 
   const GOAL_SECTIONS = [
     { key: "islam", label: "🕌 Islam", color: "hsl(160, 50%, 45%)" },
