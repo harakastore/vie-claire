@@ -710,7 +710,7 @@ export default function Goals() {
             )}
 
             {/* Non-négociable Business - orange */}
-            {dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
                   💼 NON NÉGOCIABLE BUSINESS
