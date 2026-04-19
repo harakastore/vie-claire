@@ -1594,14 +1594,71 @@ export default function Goals() {
               ))}
             </div>
 
+            {/* Recurring per weekday */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 50%)" }}>📅 Récurrentes (par jour de semaine)</p>
+              {dailyHabits.filter((h: any) => h.category === "recurring").map((h: any) => {
+                const days: number[] = h.days_of_week || [];
+                const dayLabels = ["D", "L", "M", "M", "J", "V", "S"];
+                const toggleDay = async (dow: number) => {
+                  const next = days.includes(dow) ? days.filter((d) => d !== dow) : [...days, dow].sort();
+                  setDailyHabits((prev) => prev.map((x) => x.id === h.id ? { ...x, days_of_week: next } : x));
+                  await (supabase.from("daily_habits" as any) as any).update({ days_of_week: next } as any).eq("id", h.id);
+                };
+                return (
+                  <div key={h.id} className="flex flex-col gap-1 group mb-2 border-b pb-2">
+                    <div className="flex items-center gap-2">
+                      {editingHabitId === h.id ? (
+                        <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                          onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm font-medium">{h.title}</span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {dayLabels.map((lbl, dow) => (
+                        <button key={dow} type="button" onClick={() => toggleDay(dow)}
+                          className={cn(
+                            "h-7 w-7 rounded text-[11px] font-semibold border transition-colors",
+                            days.includes(dow)
+                              ? "bg-[hsl(270,60%,50%)] text-white border-[hsl(270,60%,50%)]"
+                              : "bg-background text-muted-foreground hover:bg-muted"
+                          )}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="pt-2 border-t space-y-2">
               <Select value={newHabitCategory} onValueChange={setNewHabitCategory}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="personal">🔒 Personnel</SelectItem>
                   <SelectItem value="business">💼 Business</SelectItem>
+                  <SelectItem value="recurring">📅 Récurrente (par jour)</SelectItem>
                 </SelectContent>
               </Select>
+              {newHabitCategory === "recurring" && (
+                <div className="flex gap-1">
+                  {["D", "L", "M", "M", "J", "V", "S"].map((lbl, dow) => (
+                    <button key={dow} type="button"
+                      onClick={() => setNewHabitDays((prev) => prev.includes(dow) ? prev.filter((d) => d !== dow) : [...prev, dow].sort())}
+                      className={cn(
+                        "h-7 w-7 rounded text-[11px] font-semibold border transition-colors",
+                        newHabitDays.includes(dow)
+                          ? "bg-[hsl(270,60%,50%)] text-white border-[hsl(270,60%,50%)]"
+                          : "bg-background text-muted-foreground hover:bg-muted"
+                      )}>{lbl}</button>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Input
                   placeholder="Nouvelle habitude..."
@@ -1610,7 +1667,7 @@ export default function Goals() {
                   onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
                   className="h-9 text-sm"
                 />
-                <Button size="sm" className="h-9" onClick={() => addDailyHabit()}><Plus className="h-4 w-4" /></Button>
+                <Button size="sm" className="h-9" onClick={() => { addDailyHabit(); setNewHabitDays([]); }}><Plus className="h-4 w-4" /></Button>
               </div>
             </div>
           </div>
