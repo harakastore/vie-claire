@@ -366,15 +366,24 @@ export default function Goals() {
     setDragOverDay(null);
   };
 
+  // Returns true if a habit should be visible on a given date
+  const habitVisibleOnDate = (h: any, dateStr: string) => {
+    const days = h.days_of_week as number[] | null | undefined;
+    if (!days || days.length === 0) return true; // every day
+    const dow = new Date(dateStr + "T00:00:00").getDay(); // 0=Sun..6=Sat
+    return days.includes(dow);
+  };
+
   const addDailyHabit = async (category?: string) => {
     if (!user || !newHabit.trim()) return;
     const cat = category || newHabitCategory;
+    const days = cat === "recurring" && newHabitDays.length > 0 ? newHabitDays : null;
     const tempId = crypto.randomUUID();
-    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat };
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat, days_of_week: days };
     setDailyHabits((prev) => [...prev, temp]);
     setNewHabit("");
     const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
-      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat,
+      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat, days_of_week: days,
     }).select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
