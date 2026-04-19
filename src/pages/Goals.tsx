@@ -110,6 +110,7 @@ export default function Goals() {
   const [newTaskText, setNewTaskText] = useState<Record<string, string>>({});
   const [newHabit, setNewHabit] = useState("");
   const [newHabitCategory, setNewHabitCategory] = useState<string>("personal");
+  const [newHabitDays, setNewHabitDays] = useState<number[]>([]);
   const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
   const [editingHabitTitle, setEditingHabitTitle] = useState("");
   const [newDayPriority, setNewDayPriority] = useState<Record<string, string>>({});
@@ -364,15 +365,24 @@ export default function Goals() {
     setDragOverDay(null);
   };
 
+  // Returns true if a habit should be visible on a given date
+  const habitVisibleOnDate = (h: any, dateStr: string) => {
+    const days = h.days_of_week as number[] | null | undefined;
+    if (!days || days.length === 0) return true; // every day
+    const dow = new Date(dateStr + "T00:00:00").getDay(); // 0=Sun..6=Sat
+    return days.includes(dow);
+  };
+
   const addDailyHabit = async (category?: string) => {
     if (!user || !newHabit.trim()) return;
     const cat = category || newHabitCategory;
+    const days = cat === "recurring" && newHabitDays.length > 0 ? newHabitDays : null;
     const tempId = crypto.randomUUID();
-    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat };
+    const temp = { id: tempId, user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, active: true, category: cat, days_of_week: days };
     setDailyHabits((prev) => [...prev, temp]);
     setNewHabit("");
     const { data, error } = await (supabase.from("daily_habits" as any) as any).insert({
-      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat,
+      user_id: user.id, title: newHabit.trim(), sort_order: dailyHabits.length, category: cat, days_of_week: days,
     }).select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setDailyHabits((prev) => prev.map((h) => h.id === tempId ? data : h));
@@ -547,12 +557,12 @@ export default function Goals() {
           })()}
 
           {/* Non-négociable Personnel - blue */}
-          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
                 🔒 NON NÉGOCIABLE
               </p>
-              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                   <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -562,12 +572,12 @@ export default function Goals() {
           )}
 
           {/* Non-négociable Business - orange */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
                 💼 NON NÉGOCIABLE BUSINESS
               </p>
-              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+              {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                   <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -575,6 +585,22 @@ export default function Goals() {
               ))}
             </div>
           )}
+
+          {/* Récurrentes par jour - violet */}
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
+            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 40%)" }}>
+                📅 RÉCURRENTES
+              </p>
+              {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           {BLOCKS.map((block) => {
             const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
@@ -693,13 +719,13 @@ export default function Goals() {
             })()}
 
             {/* Non-négociable Personnel - blue */}
-            {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   🔒 NON NÉGOCIABLE
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
+                  {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                     <div key={h.id} className="flex items-center gap-2 py-0.5">
                       <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                       <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -710,13 +736,13 @@ export default function Goals() {
             )}
 
             {/* Non-négociable Business - orange */}
-            {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+            {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
               <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
                   💼 NON NÉGOCIABLE BUSINESS
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+                  {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                     <div key={h.id} className="flex items-center gap-2 py-0.5">
                       <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
                       <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -725,6 +751,24 @@ export default function Goals() {
                 </div>
               </div>
             )}
+
+            {/* Récurrentes par jour - violet */}
+            {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
+              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 40%)" }}>
+                  📅 RÉCURRENTES
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
+                    <div key={h.id} className="flex items-center gap-2 py-0.5">
+                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
               {BLOCKS.map((block) => {
@@ -844,10 +888,10 @@ export default function Goals() {
           })()}
 
           {/* Non-négociable Personnel - blue bg */}
-          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
               <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">🔒 NON NÉGOCIABLE</p>
-              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal").map((h: any) => (
+              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
                   <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -857,10 +901,10 @@ export default function Goals() {
           )}
 
           {/* Non-négociable Business - orange bg */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "business").length > 0 && (
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
               <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(30, 80%, 40%)" }}>💼 BUSINESS</p>
-              {dailyHabits.filter((h: any) => h.category === "business").map((h: any) => (
+              {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
                 <div key={h.id} className="flex items-center gap-2 py-0.5">
                   <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
                   <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
@@ -868,6 +912,20 @@ export default function Goals() {
               ))}
             </div>
           )}
+
+          {/* Récurrentes par jour - violet bg */}
+          {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
+            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
+              <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(270, 60%, 40%)" }}>📅 RÉCURRENTES</p>
+              {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
+                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
+                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
 
           {/* All tasks flat - draggable (exclude priority tasks) */}
           {dayTasks.filter((t: any) => t.block !== "day_priority").map((t: any) => (
@@ -1535,14 +1593,71 @@ export default function Goals() {
               ))}
             </div>
 
+            {/* Recurring per weekday */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 50%)" }}>📅 Récurrentes (par jour de semaine)</p>
+              {dailyHabits.filter((h: any) => h.category === "recurring").map((h: any) => {
+                const days: number[] = h.days_of_week || [];
+                const dayLabels = ["D", "L", "M", "M", "J", "V", "S"];
+                const toggleDay = async (dow: number) => {
+                  const next = days.includes(dow) ? days.filter((d) => d !== dow) : [...days, dow].sort();
+                  setDailyHabits((prev) => prev.map((x) => x.id === h.id ? { ...x, days_of_week: next } : x));
+                  await (supabase.from("daily_habits" as any) as any).update({ days_of_week: next } as any).eq("id", h.id);
+                };
+                return (
+                  <div key={h.id} className="flex flex-col gap-1 group mb-2 border-b pb-2">
+                    <div className="flex items-center gap-2">
+                      {editingHabitId === h.id ? (
+                        <Input autoFocus value={editingHabitTitle} onChange={(e) => setEditingHabitTitle(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") updateDailyHabit(h.id, editingHabitTitle); if (e.key === "Escape") setEditingHabitId(null); }}
+                          onBlur={() => updateDailyHabit(h.id, editingHabitTitle)} className="h-9 text-sm" />
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm font-medium">{h.title}</span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingHabitId(h.id); setEditingHabitTitle(h.title); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteDailyHabit(h.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {dayLabels.map((lbl, dow) => (
+                        <button key={dow} type="button" onClick={() => toggleDay(dow)}
+                          className={cn(
+                            "h-7 w-7 rounded text-[11px] font-semibold border transition-colors",
+                            days.includes(dow)
+                              ? "bg-[hsl(270,60%,50%)] text-white border-[hsl(270,60%,50%)]"
+                              : "bg-background text-muted-foreground hover:bg-muted"
+                          )}>{lbl}</button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="pt-2 border-t space-y-2">
               <Select value={newHabitCategory} onValueChange={setNewHabitCategory}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="personal">🔒 Personnel</SelectItem>
                   <SelectItem value="business">💼 Business</SelectItem>
+                  <SelectItem value="recurring">📅 Récurrente (par jour)</SelectItem>
                 </SelectContent>
               </Select>
+              {newHabitCategory === "recurring" && (
+                <div className="flex gap-1">
+                  {["D", "L", "M", "M", "J", "V", "S"].map((lbl, dow) => (
+                    <button key={dow} type="button"
+                      onClick={() => setNewHabitDays((prev) => prev.includes(dow) ? prev.filter((d) => d !== dow) : [...prev, dow].sort())}
+                      className={cn(
+                        "h-7 w-7 rounded text-[11px] font-semibold border transition-colors",
+                        newHabitDays.includes(dow)
+                          ? "bg-[hsl(270,60%,50%)] text-white border-[hsl(270,60%,50%)]"
+                          : "bg-background text-muted-foreground hover:bg-muted"
+                      )}>{lbl}</button>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2">
                 <Input
                   placeholder="Nouvelle habitude..."
@@ -1551,7 +1666,7 @@ export default function Goals() {
                   onKeyDown={(e) => e.key === "Enter" && addDailyHabit()}
                   className="h-9 text-sm"
                 />
-                <Button size="sm" className="h-9" onClick={() => addDailyHabit()}><Plus className="h-4 w-4" /></Button>
+                <Button size="sm" className="h-9" onClick={() => { addDailyHabit(); setNewHabitDays([]); }}><Plus className="h-4 w-4" /></Button>
               </div>
             </div>
           </div>
