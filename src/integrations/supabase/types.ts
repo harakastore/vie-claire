@@ -138,8 +138,10 @@ export type Database = {
           active: boolean
           category: string
           created_at: string
+          days_of_week: number[] | null
           id: string
           sort_order: number
+          sub_category: string | null
           title: string
           updated_at: string
           user_id: string
@@ -148,8 +150,10 @@ export type Database = {
           active?: boolean
           category?: string
           created_at?: string
+          days_of_week?: number[] | null
           id?: string
           sort_order?: number
+          sub_category?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -158,8 +162,10 @@ export type Database = {
           active?: boolean
           category?: string
           created_at?: string
+          days_of_week?: number[] | null
           id?: string
           sort_order?: number
+          sub_category?: string | null
           title?: string
           updated_at?: string
           user_id?: string
