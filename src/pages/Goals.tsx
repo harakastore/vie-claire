@@ -1179,13 +1179,20 @@ export default function Goals() {
               {/* Weekly goals - 4 sections */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                    Objectifs de la semaine — {goalsWeekly.length}
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
+                        Objectifs de la semaine — {goalsWeekly.length}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateWeeklyToNext}>
+                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → semaine prochaine
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
                   {/* 3 Priorités de la semaine */}
