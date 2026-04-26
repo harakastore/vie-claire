@@ -222,6 +222,40 @@ export default function Goals() {
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
   };
 
+  // Duplicate weekly goals to next week
+  const duplicateWeeklyToNext = async () => {
+    if (!user || goalsWeekly.length === 0) {
+      toast({ title: "Rien à dupliquer", description: "Aucun objectif cette semaine." });
+      return;
+    }
+    const nextWeekStart = format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd");
+    const rows = goalsWeekly.map((g: any) => ({
+      user_id: user.id, type: "weekly", title: g.title, status: "todo", progress: 0,
+      week_start: nextWeekStart, category: g.category || "islam",
+    }));
+    const { error } = await (supabase.from("goals" as any) as any).insert(rows);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Objectifs dupliqués", description: `${rows.length} objectif(s) copiés vers la semaine prochaine.` });
+  };
+
+  // Duplicate monthly goals to next month
+  const duplicateMonthlyToNext = async () => {
+    if (!user || goalsMonthly.length === 0) {
+      toast({ title: "Rien à dupliquer", description: "Aucun objectif ce mois." });
+      return;
+    }
+    let nextMonth = currentMonth + 1;
+    let nextYear = currentYear;
+    if (nextMonth > 12) { nextMonth = 1; nextYear += 1; }
+    const rows = goalsMonthly.map((g: any) => ({
+      user_id: user.id, type: "monthly", title: g.title, status: "todo", progress: 0,
+      month: nextMonth, year: nextYear, category: g.category || "islam",
+    }));
+    const { error } = await (supabase.from("goals" as any) as any).insert(rows);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Objectifs dupliqués", description: `${rows.length} objectif(s) copiés vers le mois prochain.` });
+  };
+
   // Restart a 90-day goal with new dates
   const restart90DayGoal = async (goal: any) => {
     if (!user) return;
