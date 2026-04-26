@@ -1133,10 +1133,15 @@ export default function Goals() {
               {/* Monthly goals - 4 sections */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                    Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
+                      Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
+                    </CardTitle>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateMonthlyToNext}>
+                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → mois prochain
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
