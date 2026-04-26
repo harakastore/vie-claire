@@ -222,6 +222,40 @@ export default function Goals() {
     await (supabase.from("goals" as any) as any).delete().eq("id", id);
   };
 
+  // Duplicate weekly goals to next week
+  const duplicateWeeklyToNext = async () => {
+    if (!user || goalsWeekly.length === 0) {
+      toast({ title: "Rien à dupliquer", description: "Aucun objectif cette semaine." });
+      return;
+    }
+    const nextWeekStart = format(addWeeks(currentWeekStart, 1), "yyyy-MM-dd");
+    const rows = goalsWeekly.map((g: any) => ({
+      user_id: user.id, type: "weekly", title: g.title, status: "todo", progress: 0,
+      week_start: nextWeekStart, category: g.category || "islam",
+    }));
+    const { error } = await (supabase.from("goals" as any) as any).insert(rows);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Objectifs dupliqués", description: `${rows.length} objectif(s) copiés vers la semaine prochaine.` });
+  };
+
+  // Duplicate monthly goals to next month
+  const duplicateMonthlyToNext = async () => {
+    if (!user || goalsMonthly.length === 0) {
+      toast({ title: "Rien à dupliquer", description: "Aucun objectif ce mois." });
+      return;
+    }
+    let nextMonth = currentMonth + 1;
+    let nextYear = currentYear;
+    if (nextMonth > 12) { nextMonth = 1; nextYear += 1; }
+    const rows = goalsMonthly.map((g: any) => ({
+      user_id: user.id, type: "monthly", title: g.title, status: "todo", progress: 0,
+      month: nextMonth, year: nextYear, category: g.category || "islam",
+    }));
+    const { error } = await (supabase.from("goals" as any) as any).insert(rows);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Objectifs dupliqués", description: `${rows.length} objectif(s) copiés vers le mois prochain.` });
+  };
+
   // Restart a 90-day goal with new dates
   const restart90DayGoal = async (goal: any) => {
     if (!user) return;
@@ -1099,10 +1133,15 @@ export default function Goals() {
               {/* Monthly goals - 4 sections */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
-                    Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
-                  </CardTitle>
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
+                      Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
+                    </CardTitle>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateMonthlyToNext}>
+                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → mois prochain
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1140,13 +1179,20 @@ export default function Goals() {
               {/* Weekly goals - 4 sections */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
-                    Objectifs de la semaine — {goalsWeekly.length}
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
+                        Objectifs de la semaine — {goalsWeekly.length}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">
+                        Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateWeeklyToNext}>
+                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → semaine prochaine
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
                   {/* 3 Priorités de la semaine */}
