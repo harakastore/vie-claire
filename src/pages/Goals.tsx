@@ -1008,6 +1008,14 @@ export default function Goals() {
 
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
+      {!focusTasksOnly && (
+        <div
+          className="rounded-lg px-4 py-3 text-center font-bold text-black uppercase tracking-wide shadow-md text-sm sm:text-base"
+          style={{ backgroundColor: "#39FF14" }}
+        >
+          🎯 Objectif ultime : arriver à la liberté financière 5-10K$/mois grâce au business — le cabinet n'est qu'un bonus
+        </div>
+      )}
       {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
       {/* Focus tasks only button */}
