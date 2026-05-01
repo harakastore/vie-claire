@@ -369,6 +369,108 @@ export type Database = {
         }
         Relationships: []
       }
+      hp_challenge: {
+        Row: {
+          challenge_start: string
+          created_at: string
+          day_number: number
+          deficit: boolean
+          fajr: boolean
+          id: string
+          sport: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_start: string
+          created_at?: string
+          day_number: number
+          deficit?: boolean
+          fajr?: boolean
+          id?: string
+          sport?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_start?: string
+          created_at?: string
+          day_number?: number
+          deficit?: boolean
+          fajr?: boolean
+          id?: string
+          sport?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hp_daily: {
+        Row: {
+          cost_per_lead: number | null
+          created_at: string
+          day_date: string
+          deep_work_done: boolean
+          id: string
+          leads_count: number | null
+          no_social_done: boolean
+          notes: string | null
+          priority1_done: boolean
+          priority1_title: string | null
+          priority2_done: boolean
+          priority2_title: string | null
+          priority3_done: boolean
+          priority3_title: string | null
+          revenue: number | null
+          salat_done: boolean
+          sport_done: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost_per_lead?: number | null
+          created_at?: string
+          day_date: string
+          deep_work_done?: boolean
+          id?: string
+          leads_count?: number | null
+          no_social_done?: boolean
+          notes?: string | null
+          priority1_done?: boolean
+          priority1_title?: string | null
+          priority2_done?: boolean
+          priority2_title?: string | null
+          priority3_done?: boolean
+          priority3_title?: string | null
+          revenue?: number | null
+          salat_done?: boolean
+          sport_done?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost_per_lead?: number | null
+          created_at?: string
+          day_date?: string
+          deep_work_done?: boolean
+          id?: string
+          leads_count?: number | null
+          no_social_done?: boolean
+          notes?: string | null
+          priority1_done?: boolean
+          priority1_title?: string | null
+          priority2_done?: boolean
+          priority2_title?: string | null
+          priority3_done?: boolean
+          priority3_title?: string | null
+          revenue?: number | null
+          salat_done?: boolean
+          sport_done?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
