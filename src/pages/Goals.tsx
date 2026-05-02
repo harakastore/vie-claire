@@ -1395,148 +1395,86 @@ export default function Goals() {
             </Card>
           )}
 
-          {/* === Non-négociables & Discipline (section dédiée) === */}
-          <Button variant="outline" className="w-full justify-between" onClick={() => setShowNonNegoSection(!showNonNegoSection)}>
+          {/* === Dashboard Discipline === */}
+          <Button variant="outline" className="w-full justify-between" onClick={() => setShowDiscipline(!showDiscipline)}>
             <span className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              🔒 Non-négociables & Discipline
+              Dashboard Discipline (Habitudes)
             </span>
-            {showNonNegoSection ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showDiscipline ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </Button>
 
-          {showNonNegoSection && (
+          {showDiscipline && (
             <Card className="glass-card">
-              <CardContent className="pt-4 space-y-5">
-                {/* Checklist du jour */}
-                {(() => {
-                  const todayStr = format(now, "yyyy-MM-dd");
-                  const perso = dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, todayStr));
-                  const biz = dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, todayStr));
-                  const recur = dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, todayStr));
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold">Aujourd'hui — {format(now, "EEEE d MMM", { locale: fr })}</p>
-                        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
-                          <Star className="h-3.5 w-3.5 mr-1" /> Gérer
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Perso */}
-                        <div className="rounded-md p-3 border" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
-                          <p className="text-[11px] font-bold uppercase tracking-wider mb-2 text-muted-foreground">🔒 Personnel</p>
-                          {perso.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">Aucun</p>
-                          ) : perso.map((h: any) => (
-                            <div key={h.id} className="flex items-center gap-2 py-0.5">
-                              <Checkbox checked={isHabitCompleted(h.id, todayStr)} onCheckedChange={() => toggleHabitLog(h.id, todayStr)} className="h-4 w-4" />
-                              <span className={cn("text-sm font-medium", isHabitCompleted(h.id, todayStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {/* Business */}
-                        <div className="rounded-md p-3 border" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
-                          <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>💼 Business</p>
-                          {biz.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">Aucun</p>
-                          ) : biz.map((h: any) => (
-                            <div key={h.id} className="flex items-center gap-2 py-0.5">
-                              <Checkbox checked={isHabitCompleted(h.id, todayStr)} onCheckedChange={() => toggleHabitLog(h.id, todayStr)} className="h-4 w-4" />
-                              <span className={cn("text-sm font-medium", isHabitCompleted(h.id, todayStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {/* Récurrentes */}
-                        <div className="rounded-md p-3 border" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
-                          <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 40%)" }}>📅 Récurrentes</p>
-                          {recur.length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">Aucun</p>
-                          ) : recur.map((h: any) => (
-                            <div key={h.id} className="flex items-center gap-2 py-0.5">
-                              <Checkbox checked={isHabitCompleted(h.id, todayStr)} onCheckedChange={() => toggleHabitLog(h.id, todayStr)} className="h-4 w-4" />
-                              <span className={cn("text-sm font-medium", isHabitCompleted(h.id, todayStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Discipline dashboard */}
-                <div className="border-t pt-4 space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <p className="text-sm font-semibold flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Dashboard Discipline</p>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs whitespace-nowrap">Du</Label>
-                        <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs whitespace-nowrap">Au</Label>
-                        <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
-                      </div>
-                    </div>
+              <CardContent className="pt-4 space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Du</Label>
+                    <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
                   </div>
-
-                  {dailyHabits.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr>
-                            <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
-                            {disciplineDays.map((d) => (
-                              <th key={format(d, "yyyy-MM-dd")} className={cn(
-                                "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
-                                isSameDay(d, now) && "bg-primary/10 text-primary"
-                              )}>
-                                <div>{format(d, "EEE", { locale: fr })}</div>
-                                <div>{format(d, "d")}</div>
-                              </th>
-                            ))}
-                            <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dailyHabits.map((h: any) => {
-                            const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
-                            const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
-                            return (
-                              <tr key={h.id}>
-                                <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
-                                {disciplineDays.map((d) => {
-                                  const dateStr = format(d, "yyyy-MM-dd");
-                                  const done = isHabitCompleted(h.id, dateStr);
-                                  return (
-                                    <td key={dateStr} className="border border-border/50 text-center p-0">
-                                      <button
-                                        onClick={() => toggleHabitLog(h.id, dateStr)}
-                                        className={cn(
-                                          "w-full h-8 text-sm transition-colors",
-                                          done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
-                                        )}
-                                      >
-                                        {done ? "✓" : ""}
-                                      </button>
-                                    </td>
-                                  );
-                                })}
-                                <td className={cn(
-                                  "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
-                                  pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
-                                )}>
-                                  {pct}%
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs whitespace-nowrap">Au</Label>
+                    <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
+                  </div>
                 </div>
+
+                {dailyHabits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
+                          {disciplineDays.map((d) => (
+                            <th key={format(d, "yyyy-MM-dd")} className={cn(
+                              "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
+                              isSameDay(d, now) && "bg-primary/10 text-primary"
+                            )}>
+                              <div>{format(d, "EEE", { locale: fr })}</div>
+                              <div>{format(d, "d")}</div>
+                            </th>
+                          ))}
+                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dailyHabits.map((h: any) => {
+                          const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
+                          const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
+                          return (
+                            <tr key={h.id}>
+                              <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
+                              {disciplineDays.map((d) => {
+                                const dateStr = format(d, "yyyy-MM-dd");
+                                const done = isHabitCompleted(h.id, dateStr);
+                                return (
+                                  <td key={dateStr} className="border border-border/50 text-center p-0">
+                                    <button
+                                      onClick={() => toggleHabitLog(h.id, dateStr)}
+                                      className={cn(
+                                        "w-full h-8 text-sm transition-colors",
+                                        done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
+                                      )}
+                                    >
+                                      {done ? "✓" : ""}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                              <td className={cn(
+                                "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
+                                pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
+                              )}>
+                                {pct}%
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
