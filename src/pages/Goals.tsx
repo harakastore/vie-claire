@@ -91,6 +91,9 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [blockOverrides, setBlockOverrides] = useState<Record<string, { start_time: string; end_time: string }>>({});
+  const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [editingBlockTimes, setEditingBlockTimes] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [weeklySports, setWeeklySports] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
