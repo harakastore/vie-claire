@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -824,12 +824,14 @@ export default function Goals() {
       );
     }
 
+    const completedCount = dayTasks.filter((t: any) => t.completed).length;
+    const totalCount = dayTasks.length;
     return (
       <Card
         key={dateStr}
         className={cn(
-          "overflow-hidden transition-all",
-          isToday ? "border-primary border-2 shadow-lg" : "border-border/50",
+          "overflow-hidden transition-all hover:shadow-md",
+          isToday ? "border-primary border-2 shadow-lg ring-2 ring-primary/20" : "border-border/50",
           isDragOver && "ring-2 ring-primary ring-offset-2"
         )}
         onDragOver={(e) => handleDragOver(e as any, dateStr)}
@@ -840,24 +842,36 @@ export default function Goals() {
           type="button"
           onClick={() => setExpandedDay(dateStr)}
           className={cn(
-            "px-4 py-3 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-80 transition-opacity",
-            isToday ? "bg-primary/10" : "bg-muted/30"
+            "px-3 py-2.5 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-90 transition-opacity",
+            isToday
+              ? "bg-gradient-to-r from-primary/20 via-primary/10 to-transparent"
+              : "bg-muted/30"
           )}
           title="Cliquer pour vue détaillée avec time-blocking"
         >
-          <div className="flex items-center gap-2">
-            <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
-              {DAY_NAMES[dayIndex]}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={cn("text-sm font-bold truncate", isToday ? "text-primary" : "text-foreground")}>
+              {DAY_NAMES[dayIndex].slice(0, 3)}
             </span>
             <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {isToday && (
-              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full mr-1">
-                Aujourd'hui
+            {totalCount > 0 && (
+              <span className={cn(
+                "text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums",
+                completedCount === totalCount
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {completedCount}/{totalCount}
               </span>
             )}
-            <Maximize2 className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {isToday && (
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                Auj.
+              </span>
+            )}
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         </button>
 
@@ -947,38 +961,65 @@ export default function Goals() {
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
       {!focusTasksOnly && (
-        <div
-          className="rounded-lg px-4 py-3 text-center font-bold text-black uppercase tracking-wide shadow-md text-sm sm:text-base"
-          style={{ backgroundColor: "#39FF14" }}
-        >
-          🎯 Objectif ultime : arriver à la liberté financière 5-10K$/mois grâce au business — le cabinet n'est qu'un bonus
+        <div className="relative overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/40 p-5 shadow-sm">
+          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-amber-300/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-orange-300/20 blur-3xl pointer-events-none" />
+          <div className="relative flex items-start gap-4">
+            <div className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Trophy className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" /> Mission de vie
+              </p>
+              <p className="text-sm sm:text-base font-bold leading-snug text-foreground">
+                Atteindre la liberté financière <span className="text-amber-600 dark:text-amber-400">5–10K$/mois</span> grâce au business
+                <span className="block text-xs sm:text-sm font-medium text-muted-foreground mt-0.5">— le cabinet n'est qu'un bonus.</span>
+              </p>
+            </div>
+          </div>
         </div>
       )}
       {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
-      {/* Focus tasks only button */}
-      <Button
-        variant={focusTasksOnly ? "default" : "outline"}
-        size={focusTasksOnly ? "sm" : "default"}
-        className={cn("justify-between", focusTasksOnly ? "w-auto" : "w-full")}
-        onClick={() => setFocusTasksOnly(!focusTasksOnly)}
-      >
-        <span className="flex items-center gap-2">
+      {/* Action toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={focusTasksOnly ? "default" : "outline"}
+          size="sm"
+          className={cn("h-9 gap-2", !focusTasksOnly && "bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30 hover:from-primary/20 hover:to-primary/10")}
+          onClick={() => setFocusTasksOnly(!focusTasksOnly)}
+        >
+          {focusTasksOnly ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           <ListTodo className="h-4 w-4" />
-          {focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches quotidiennes"}
-        </span>
-        {focusTasksOnly ? <Minimize2 className="h-4 w-4 ml-2" /> : <Maximize2 className="h-4 w-4 ml-2" />}
-      </Button>
+          <span className="font-medium">{focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches"}</span>
+        </Button>
+      </div>
 
       {!focusTasksOnly && (
         <>
           {/* Toggle goals visibility */}
-          <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
-            <span className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Objectifs (Annuel, 90 jours, mois, semaine)
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-between h-11 rounded-xl transition-all",
+              showGoals
+                ? "bg-gradient-to-r from-primary/15 to-primary/5 border-primary/40"
+                : "bg-gradient-to-r from-muted/40 to-transparent hover:from-muted/60"
+            )}
+            onClick={() => setShowGoals(!showGoals)}
+          >
+            <span className="flex items-center gap-2.5">
+              <span className={cn(
+                "h-7 w-7 rounded-lg flex items-center justify-center transition-colors",
+                showGoals ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>
+                <Target className="h-4 w-4" />
+              </span>
+              <span className="font-semibold">Objectifs</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">Annuel · 90j · Mois · Semaine</span>
             </span>
-            {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showGoals ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
           {showGoals && (
@@ -1204,33 +1245,84 @@ export default function Goals() {
       )}
 
       {/* Daily tasks */}
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="text-base font-semibold">Tâches quotidiennes</CardTitle>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
-                <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
-                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100" onClick={copyTasksFromLastWeek}>
-                <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier tâches semaine précédente
-              </Button>
+      <Card className="glass-card overflow-hidden border-primary/20">
+        {(() => {
+          const weekDateStrs = weekDays.map((d) => format(d, "yyyy-MM-dd"));
+          const tasksThisWeek = dailyTasks.filter((t: any) => weekDateStrs.includes(t.day_date));
+          const totalTasks = tasksThisWeek.length;
+          const doneTasks = tasksThisWeek.filter((t: any) => t.completed).length;
+          const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+          const todayStr = format(now, "yyyy-MM-dd");
+          const isCurrentWeek = weekDateStrs.includes(todayStr);
+          return (
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-b border-primary/10 px-4 sm:px-5 py-4">
+              {/* Top row: title + week navigation */}
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/30">
+                    <CalendarDays className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold leading-tight">Tâches quotidiennes</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {doneTasks}/{totalTasks} accomplies cette semaine
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border bg-background/60 backdrop-blur px-1 py-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs font-semibold whitespace-nowrap px-2">
+                    {format(currentWeekStart, "d MMM", { locale: fr })} → {format(weekEnd, "d MMM", { locale: fr })}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {!isCurrentWeek && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[11px] font-semibold text-primary"
+                      onClick={() => setCurrentWeekStart(startOfWeek(now, { weekStartsOn: 1 }))}
+                    >
+                      Aujourd'hui
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mb-3">
+                <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] font-medium text-muted-foreground">Progression</span>
+                  <span className="text-[10px] font-bold text-primary">{pct}%</span>
+                </div>
+              </div>
+
+              {/* Action chips */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-background/60 backdrop-blur" onClick={() => setHabitsSheetOpen(true)}>
+                  <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-background/60 backdrop-blur" onClick={() => setSalatSheetOpen(true)}>
+                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40 dark:text-blue-300 dark:border-blue-800" onClick={copyTasksFromLastWeek}>
+                  <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier semaine précédente
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                {format(currentWeekStart, "d MMM", { locale: fr })} — {format(weekEnd, "d MMM yyyy", { locale: fr })}
-              </span>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          );
+        })()}
+        <CardHeader className="hidden">
+          <CardTitle />
         </CardHeader>
         <CardContent>
           {/* Mobile expanded day navigation */}
