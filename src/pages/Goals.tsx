@@ -730,12 +730,12 @@ export default function Goals() {
           </div>
 
           <CardContent className="p-0">
-            {/* Priority du jour - expanded */}
+            {/* 2 Priorités du jour - expanded */}
             {(() => {
               const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
               return (
                 <div className="px-6 py-3 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ Priorité du jour</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ 2 Priorités du jour</p>
                   {priorities.map((t: any) => (
                     <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                       <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
@@ -743,11 +743,11 @@ export default function Goals() {
                       <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   ))}
-                  {priorities.length < 1 && (
-                    <Input placeholder="Quelle est ta priorité aujourd'hui ?" value={newDayPriority[dateStr] || ""}
+                  {priorities.length < 2 && (
+                    <Input placeholder={priorities.length === 0 ? "Priorité #1" : "Priorité #2"} value={newDayPriority[dateStr] || ""}
                       onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
                       onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
-                      className="h-7 text-xs border-dashed bg-transparent" />
+                      className="h-7 text-xs border-dashed bg-transparent mt-1" />
                   )}
                 </div>
               );
