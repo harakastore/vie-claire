@@ -52,6 +52,7 @@ const App = () => (
             <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/performance" element={<ProtectedRoute><HighPerformance /></ProtectedRoute>} />
             <Route path="/discipline" element={<ProtectedRoute><Discipline /></ProtectedRoute>} />
+            <Route path="/sport" element={<ProtectedRoute><Sport /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
