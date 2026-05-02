@@ -1231,33 +1231,84 @@ export default function Goals() {
       )}
 
       {/* Daily tasks */}
-      <Card className="glass-card">
-        <CardHeader className="pb-3">
-           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="text-base font-semibold">Tâches quotidiennes</CardTitle>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
-                <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
-                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100" onClick={copyTasksFromLastWeek}>
-                <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier tâches semaine précédente
-              </Button>
+      <Card className="glass-card overflow-hidden border-primary/20">
+        {(() => {
+          const weekDateStrs = weekDays.map((d) => format(d, "yyyy-MM-dd"));
+          const tasksThisWeek = dailyTasks.filter((t: any) => weekDateStrs.includes(t.day_date));
+          const totalTasks = tasksThisWeek.length;
+          const doneTasks = tasksThisWeek.filter((t: any) => t.completed).length;
+          const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+          const todayStr = format(now, "yyyy-MM-dd");
+          const isCurrentWeek = weekDateStrs.includes(todayStr);
+          return (
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-b border-primary/10 px-4 sm:px-5 py-4">
+              {/* Top row: title + week navigation */}
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/30">
+                    <CalendarDays className="h-5 w-5 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold leading-tight">Tâches quotidiennes</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {doneTasks}/{totalTasks} accomplies cette semaine
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 rounded-lg border bg-background/60 backdrop-blur px-1 py-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-xs font-semibold whitespace-nowrap px-2">
+                    {format(currentWeekStart, "d MMM", { locale: fr })} → {format(weekEnd, "d MMM", { locale: fr })}
+                  </span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  {!isCurrentWeek && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[11px] font-semibold text-primary"
+                      onClick={() => setCurrentWeekStart(startOfWeek(now, { weekStartsOn: 1 }))}
+                    >
+                      Aujourd'hui
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mb-3">
+                <div className="h-1.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] font-medium text-muted-foreground">Progression</span>
+                  <span className="text-[10px] font-bold text-primary">{pct}%</span>
+                </div>
+              </div>
+
+              {/* Action chips */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-background/60 backdrop-blur" onClick={() => setHabitsSheetOpen(true)}>
+                  <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-background/60 backdrop-blur" onClick={() => setSalatSheetOpen(true)}>
+                  <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40 dark:text-blue-300 dark:border-blue-800" onClick={copyTasksFromLastWeek}>
+                  <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier semaine précédente
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-                {format(currentWeekStart, "d MMM", { locale: fr })} — {format(weekEnd, "d MMM yyyy", { locale: fr })}
-              </span>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          );
+        })()}
+        <CardHeader className="hidden">
+          <CardTitle />
         </CardHeader>
         <CardContent>
           {/* Mobile expanded day navigation */}
