@@ -824,12 +824,14 @@ export default function Goals() {
       );
     }
 
+    const completedCount = dayTasks.filter((t: any) => t.completed).length;
+    const totalCount = dayTasks.length;
     return (
       <Card
         key={dateStr}
         className={cn(
-          "overflow-hidden transition-all",
-          isToday ? "border-primary border-2 shadow-lg" : "border-border/50",
+          "overflow-hidden transition-all hover:shadow-md",
+          isToday ? "border-primary border-2 shadow-lg ring-2 ring-primary/20" : "border-border/50",
           isDragOver && "ring-2 ring-primary ring-offset-2"
         )}
         onDragOver={(e) => handleDragOver(e as any, dateStr)}
@@ -840,24 +842,36 @@ export default function Goals() {
           type="button"
           onClick={() => setExpandedDay(dateStr)}
           className={cn(
-            "px-4 py-3 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-80 transition-opacity",
-            isToday ? "bg-primary/10" : "bg-muted/30"
+            "px-3 py-2.5 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-90 transition-opacity",
+            isToday
+              ? "bg-gradient-to-r from-primary/20 via-primary/10 to-transparent"
+              : "bg-muted/30"
           )}
           title="Cliquer pour vue détaillée avec time-blocking"
         >
-          <div className="flex items-center gap-2">
-            <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
-              {DAY_NAMES[dayIndex]}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={cn("text-sm font-bold truncate", isToday ? "text-primary" : "text-foreground")}>
+              {DAY_NAMES[dayIndex].slice(0, 3)}
             </span>
             <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {isToday && (
-              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full mr-1">
-                Aujourd'hui
+            {totalCount > 0 && (
+              <span className={cn(
+                "text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums",
+                completedCount === totalCount
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {completedCount}/{totalCount}
               </span>
             )}
-            <Maximize2 className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {isToday && (
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                Auj.
+              </span>
+            )}
+            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         </button>
 
