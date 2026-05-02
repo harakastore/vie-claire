@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, Shield, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
