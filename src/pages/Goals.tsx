@@ -590,36 +590,6 @@ export default function Goals() {
             );
           })()}
 
-          {/* Non-négociable Personnel - blue */}
-          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                🔒 NON NÉGOCIABLE
-              </p>
-              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Non-négociable Business - orange */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
-                💼 NON NÉGOCIABLE BUSINESS
-              </p>
-              {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Récurrentes par jour - violet */}
           {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
