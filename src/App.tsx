@@ -15,6 +15,7 @@ import Engagements from "./pages/Engagements";
 import Goals from "./pages/Goals";
 import HighPerformance from "./pages/HighPerformance";
 import Discipline from "./pages/Discipline";
+import Sport from "./pages/Sport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
