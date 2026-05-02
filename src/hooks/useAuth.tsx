@@ -22,18 +22,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setLoading(false);
+        if (event === "TOKEN_REFRESHED" && !session) {
+          // refresh failed → force redirect
+          supabase.auth.signOut();
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error || !session) {
+        setSession(null);
+      } else {
+        setSession(session);
+      }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for JWT expired errors globally
+    const handleJwtExpired = (e: any) => {
+      const msg = e?.reason?.message || e?.message || "";
+      if (typeof msg === "string" && (msg.includes("JWT expired") || msg.includes("invalid JWT"))) {
+        supabase.auth.signOut();
+      }
+    };
+    window.addEventListener("unhandledrejection", handleJwtExpired);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("unhandledrejection", handleJwtExpired);
+    };
   }, []);
 
   const signOut = async () => {
