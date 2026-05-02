@@ -91,6 +91,9 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [blockOverrides, setBlockOverrides] = useState<Record<string, { start_time: string; end_time: string }>>({});
+  const [editingBlock, setEditingBlock] = useState<string | null>(null);
+  const [editingBlockTimes, setEditingBlockTimes] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [weeklySports, setWeeklySports] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +138,7 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
@@ -145,6 +148,7 @@ export default function Goals() {
       (supabase.from("salat_times" as any) as any).select("*").eq("month", currentMonth).eq("year", currentYear).maybeSingle(),
       (supabase.from("weekly_sports" as any) as any).select("*").eq("week_start", wsStr),
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
+      (supabase.from("daily_block_overrides" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
     ]);
     setGoals90(g90.data || []);
     setGoalsYearly(gy.data || []);
@@ -154,6 +158,14 @@ export default function Goals() {
     setDailyHabits(dh.data || []);
     setWeeklySports(spRes.data || []);
     setHabitLogs(hlRes.data || []);
+    const ovMap: Record<string, { start_time: string; end_time: string }> = {};
+    (boRes.data || []).forEach((o: any) => {
+      ovMap[`${o.day_date}_${o.block_key}`] = {
+        start_time: (o.start_time || "").toString().slice(0, 5),
+        end_time: (o.end_time || "").toString().slice(0, 5),
+      };
+    });
+    setBlockOverrides(ovMap);
     if (stRes.data) {
       setSalatTimes(stRes.data);
       setSalatForm({ fajr: stRes.data.fajr?.slice(0, 5) || DEFAULT_SALAT.fajr, dhuhr: stRes.data.dhuhr?.slice(0, 5) || DEFAULT_SALAT.dhuhr, asr: stRes.data.asr?.slice(0, 5) || DEFAULT_SALAT.asr, maghrib: stRes.data.maghrib?.slice(0, 5) || DEFAULT_SALAT.maghrib, isha: stRes.data.isha?.slice(0, 5) || DEFAULT_SALAT.isha });
@@ -162,6 +174,42 @@ export default function Goals() {
   };
 
   useEffect(() => { fetchAll(); }, [user, currentWeekStart, disciplineFrom, disciplineTo]);
+
+  // Get times for a specific block on a specific day (override > salat default)
+  const getBlockTimes = (dateStr: string, block: typeof BLOCKS[number]) => {
+    const ov = blockOverrides[`${dateStr}_${block.key}`];
+    if (ov) return { from: ov.start_time, to: ov.end_time, custom: true };
+    const from = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
+    const to = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+    return { from, to, custom: false };
+  };
+
+  const startEditBlockTimes = (dateStr: string, block: typeof BLOCKS[number]) => {
+    const t = getBlockTimes(dateStr, block);
+    setEditingBlock(`${dateStr}_${block.key}`);
+    setEditingBlockTimes({ start: t.from, end: t.to });
+  };
+
+  const saveBlockOverride = async (dateStr: string, blockKey: string) => {
+    if (!user) return;
+    const { start, end } = editingBlockTimes;
+    if (!start || !end) { setEditingBlock(null); return; }
+    const key = `${dateStr}_${blockKey}`;
+    setBlockOverrides((prev) => ({ ...prev, [key]: { start_time: start, end_time: end } }));
+    setEditingBlock(null);
+    const { error } = await (supabase.from("daily_block_overrides" as any) as any)
+      .upsert({ user_id: user.id, day_date: dateStr, block_key: blockKey, start_time: start, end_time: end }, { onConflict: "user_id,day_date,block_key" });
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+  };
+
+  const resetBlockOverride = async (dateStr: string, blockKey: string) => {
+    if (!user) return;
+    const key = `${dateStr}_${blockKey}`;
+    setBlockOverrides((prev) => { const n = { ...prev }; delete n[key]; return n; });
+    setEditingBlock(null);
+    await (supabase.from("daily_block_overrides" as any) as any).delete().eq("user_id", user.id).eq("day_date", dateStr).eq("block_key", blockKey);
+  };
+
 
   // Salat times save
   const saveSalatTimes = async () => {
@@ -636,10 +684,13 @@ export default function Goals() {
 
           {BLOCKS.map((block) => {
             const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
-            const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
-            const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+            const bt = getBlockTimes(dateStr, block);
+            const fromTime = bt.from;
+            const toTime = bt.to;
             const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
             const inputKey = `${dateStr}_${block.key}`;
+            const editKey = `${dateStr}_${block.key}`;
+            const isEditing = editingBlock === editKey;
 
             return (
               <div key={block.key} className={cn(
@@ -650,17 +701,31 @@ export default function Goals() {
                 onDragLeave={(e) => handleBlockDragLeave(e as any)}
                 onDrop={(e) => handleBlockDrop(e as any, block.key)}
               >
-                <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
+                <div className="px-4 py-2 flex items-center justify-between gap-2 flex-wrap" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
                     <span className="text-xs font-semibold" style={{ color: block.color }}>{block.label}</span>
+                    {bt.custom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{fromTime} — {toTime}</span>
-                    {duration && <span className="font-semibold ml-1">({duration})</span>}
-                  </div>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input type="time" value={editingBlockTimes.start} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, start: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums" />
+                      <span className="text-[10px]">→</span>
+                      <input type="time" value={editingBlockTimes.end} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, end: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums" />
+                      <button onClick={() => saveBlockOverride(dateStr, block.key)} className="h-6 px-1.5 text-[10px] font-bold rounded bg-primary text-primary-foreground">OK</button>
+                      {bt.custom && <button onClick={() => resetBlockOverride(dateStr, block.key)} title="Réinitialiser" className="h-6 px-1.5 text-[10px] rounded bg-muted hover:bg-destructive hover:text-destructive-foreground">↺</button>}
+                      <button onClick={() => setEditingBlock(null)} className="h-6 px-1 text-[10px] rounded hover:bg-muted">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => startEditBlockTimes(dateStr, block)} className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background/60 px-1.5 py-0.5 rounded transition-colors" title="Personnaliser horaires de ce bloc">
+                      <Clock className="h-3 w-3" />
+                      <span className="tabular-nums">{fromTime} — {toTime}</span>
+                      {duration && <span className="font-semibold ml-1">({duration})</span>}
+                      <Pencil className="h-2.5 w-2.5 opacity-50" />
+                    </button>
+                  )}
                 </div>
+
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   {blockTasks.map((t: any) => (
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
@@ -855,11 +920,14 @@ export default function Goals() {
               {BLOCKS.map((block) => {
                 const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
                 const blockDone = blockTasks.filter((t: any) => t.completed).length;
-                const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
-                const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+                const bt = getBlockTimes(dateStr, block);
+                const fromTime = bt.from;
+                const toTime = bt.to;
                 const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
                 const inputKey = `${dateStr}_${block.key}`;
                 const isDragTarget = dragOverBlock === block.key;
+                const editKey = `${dateStr}_${block.key}`;
+                const isEditing = editingBlock === editKey;
 
                 return (
                   <div key={block.key}
@@ -873,22 +941,38 @@ export default function Goals() {
                     onDrop={(e) => handleBlockDrop(e as any, block.key)}
                   >
                     <div className="px-3 py-2.5" style={{ backgroundColor: `${block.color}12` }}>
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1 gap-1">
                         <span className="text-xs font-bold uppercase tracking-wide truncate" style={{ color: block.color }}>
                           {block.label}
                         </span>
-                        {blockTasks.length > 0 && (
-                          <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: block.color }}>
-                            {blockDone}/{blockTasks.length}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {bt.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
+                          {blockTasks.length > 0 && (
+                            <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: block.color }}>
+                              {blockDone}/{blockTasks.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                        <Clock className="h-3 w-3" />
-                        <span className="tabular-nums">{fromTime} — {toTime}</span>
-                        {duration && <span className="ml-auto font-bold" style={{ color: block.color }}>{duration}</span>}
-                      </div>
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <input type="time" value={editingBlockTimes.start} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, start: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums w-[70px]" />
+                          <span className="text-[10px]">→</span>
+                          <input type="time" value={editingBlockTimes.end} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, end: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums w-[70px]" />
+                          <button onClick={() => saveBlockOverride(dateStr, block.key)} className="h-6 px-1.5 text-[10px] font-bold rounded bg-primary text-primary-foreground">OK</button>
+                          {bt.custom && <button onClick={() => resetBlockOverride(dateStr, block.key)} title="Réinitialiser à l'horaire par défaut" className="h-6 px-1.5 text-[10px] rounded bg-muted hover:bg-destructive hover:text-destructive-foreground">↺</button>}
+                          <button onClick={() => setEditingBlock(null)} className="h-6 px-1 text-[10px] rounded hover:bg-muted">✕</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => startEditBlockTimes(dateStr, block)} className="w-full flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background/40 px-1 py-0.5 rounded transition-colors font-medium" title="Personnaliser horaires de ce bloc">
+                          <Clock className="h-3 w-3" />
+                          <span className="tabular-nums">{fromTime} — {toTime}</span>
+                          {duration && <span className="ml-auto font-bold" style={{ color: block.color }}>{duration}</span>}
+                          <Pencil className="h-2.5 w-2.5 opacity-50" />
+                        </button>
+                      )}
                     </div>
+
                     <div className="px-3 py-3 space-y-1.5 flex-1 min-h-[120px]">
                       {blockTasks.map((t: any) => (
                         <div key={t.id}
