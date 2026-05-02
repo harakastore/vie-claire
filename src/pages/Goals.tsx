@@ -138,7 +138,7 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
@@ -148,6 +148,7 @@ export default function Goals() {
       (supabase.from("salat_times" as any) as any).select("*").eq("month", currentMonth).eq("year", currentYear).maybeSingle(),
       (supabase.from("weekly_sports" as any) as any).select("*").eq("week_start", wsStr),
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
+      (supabase.from("daily_block_overrides" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
     ]);
     setGoals90(g90.data || []);
     setGoalsYearly(gy.data || []);
@@ -157,6 +158,14 @@ export default function Goals() {
     setDailyHabits(dh.data || []);
     setWeeklySports(spRes.data || []);
     setHabitLogs(hlRes.data || []);
+    const ovMap: Record<string, { start_time: string; end_time: string }> = {};
+    (boRes.data || []).forEach((o: any) => {
+      ovMap[`${o.day_date}_${o.block_key}`] = {
+        start_time: (o.start_time || "").toString().slice(0, 5),
+        end_time: (o.end_time || "").toString().slice(0, 5),
+      };
+    });
+    setBlockOverrides(ovMap);
     if (stRes.data) {
       setSalatTimes(stRes.data);
       setSalatForm({ fajr: stRes.data.fajr?.slice(0, 5) || DEFAULT_SALAT.fajr, dhuhr: stRes.data.dhuhr?.slice(0, 5) || DEFAULT_SALAT.dhuhr, asr: stRes.data.asr?.slice(0, 5) || DEFAULT_SALAT.asr, maghrib: stRes.data.maghrib?.slice(0, 5) || DEFAULT_SALAT.maghrib, isha: stRes.data.isha?.slice(0, 5) || DEFAULT_SALAT.isha });
