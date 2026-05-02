@@ -920,11 +920,14 @@ export default function Goals() {
               {BLOCKS.map((block) => {
                 const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
                 const blockDone = blockTasks.filter((t: any) => t.completed).length;
-                const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
-                const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+                const bt = getBlockTimes(dateStr, block);
+                const fromTime = bt.from;
+                const toTime = bt.to;
                 const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
                 const inputKey = `${dateStr}_${block.key}`;
                 const isDragTarget = dragOverBlock === block.key;
+                const editKey = `${dateStr}_${block.key}`;
+                const isEditing = editingBlock === editKey;
 
                 return (
                   <div key={block.key}
@@ -938,22 +941,38 @@ export default function Goals() {
                     onDrop={(e) => handleBlockDrop(e as any, block.key)}
                   >
                     <div className="px-3 py-2.5" style={{ backgroundColor: `${block.color}12` }}>
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1 gap-1">
                         <span className="text-xs font-bold uppercase tracking-wide truncate" style={{ color: block.color }}>
                           {block.label}
                         </span>
-                        {blockTasks.length > 0 && (
-                          <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: block.color }}>
-                            {blockDone}/{blockTasks.length}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {bt.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
+                          {blockTasks.length > 0 && (
+                            <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: block.color }}>
+                              {blockDone}/{blockTasks.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
-                        <Clock className="h-3 w-3" />
-                        <span className="tabular-nums">{fromTime} — {toTime}</span>
-                        {duration && <span className="ml-auto font-bold" style={{ color: block.color }}>{duration}</span>}
-                      </div>
+                      {isEditing ? (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <input type="time" value={editingBlockTimes.start} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, start: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums w-[70px]" />
+                          <span className="text-[10px]">→</span>
+                          <input type="time" value={editingBlockTimes.end} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, end: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums w-[70px]" />
+                          <button onClick={() => saveBlockOverride(dateStr, block.key)} className="h-6 px-1.5 text-[10px] font-bold rounded bg-primary text-primary-foreground">OK</button>
+                          {bt.custom && <button onClick={() => resetBlockOverride(dateStr, block.key)} title="Réinitialiser à l'horaire par défaut" className="h-6 px-1.5 text-[10px] rounded bg-muted hover:bg-destructive hover:text-destructive-foreground">↺</button>}
+                          <button onClick={() => setEditingBlock(null)} className="h-6 px-1 text-[10px] rounded hover:bg-muted">✕</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => startEditBlockTimes(dateStr, block)} className="w-full flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background/40 px-1 py-0.5 rounded transition-colors font-medium" title="Personnaliser horaires de ce bloc">
+                          <Clock className="h-3 w-3" />
+                          <span className="tabular-nums">{fromTime} — {toTime}</span>
+                          {duration && <span className="ml-auto font-bold" style={{ color: block.color }}>{duration}</span>}
+                          <Pencil className="h-2.5 w-2.5 opacity-50" />
+                        </button>
+                      )}
                     </div>
+
                     <div className="px-3 py-3 space-y-1.5 flex-1 min-h-[120px]">
                       {blockTasks.map((t: any) => (
                         <div key={t.id}
