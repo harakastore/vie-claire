@@ -1187,6 +1187,9 @@ export default function Goals() {
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
                 <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
               </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100" onClick={copyTasksFromLastWeek}>
+                <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier tâches semaine précédente
+              </Button>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
