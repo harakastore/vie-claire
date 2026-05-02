@@ -256,7 +256,35 @@ export default function Goals() {
     toast({ title: "Objectifs dupliqués", description: `${rows.length} objectif(s) copiés vers le mois prochain.` });
   };
 
+  // Copy daily tasks from previous week into current week (same weekday offset)
+  const copyTasksFromLastWeek = async () => {
+    if (!user) return;
+    const prevWeekStart = subWeeks(currentWeekStart, 1);
+    const prevWeekEnd = endOfWeek(prevWeekStart, { weekStartsOn: 1 });
+    const { data } = await (supabase.from("daily_tasks" as any) as any)
+      .select("*")
+      .gte("day_date", format(prevWeekStart, "yyyy-MM-dd"))
+      .lte("day_date", format(prevWeekEnd, "yyyy-MM-dd"));
+    if (!data || data.length === 0) {
+      toast({ title: "Rien à copier", description: "Aucune tâche la semaine précédente." });
+      return;
+    }
+    const rows = data.map((t: any) => {
+      const oldDate = parseISO(t.day_date);
+      const newDate = addDays(oldDate, 7);
+      return {
+        user_id: user.id, title: t.title, day_date: format(newDate, "yyyy-MM-dd"),
+        block: t.block || "fajr_dhuhr", completed: false, scheduled_time: t.scheduled_time || null,
+      };
+    });
+    const { error } = await (supabase.from("daily_tasks" as any) as any).insert(rows);
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Tâches copiées 📋", description: `${rows.length} tâche(s) copiée(s) depuis la semaine précédente.` });
+    fetchAll();
+  };
+
   // Restart a 90-day goal with new dates
+
   const restart90DayGoal = async (goal: any) => {
     if (!user) return;
     const today = format(now, "yyyy-MM-dd");
@@ -1186,6 +1214,9 @@ export default function Goals() {
               </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSalatSheetOpen(true)}>
                 <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
+              </Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100" onClick={copyTasksFromLastWeek}>
+                <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier tâches semaine précédente
               </Button>
             </div>
             <div className="flex items-center gap-2">
