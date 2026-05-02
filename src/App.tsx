@@ -15,6 +15,7 @@ import Engagements from "./pages/Engagements";
 import Goals from "./pages/Goals";
 import HighPerformance from "./pages/HighPerformance";
 import Discipline from "./pages/Discipline";
+import Sport from "./pages/Sport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/performance" element={<ProtectedRoute><HighPerformance /></ProtectedRoute>} />
             <Route path="/discipline" element={<ProtectedRoute><Discipline /></ProtectedRoute>} />
+            <Route path="/sport" element={<ProtectedRoute><Sport /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

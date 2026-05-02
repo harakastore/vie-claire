@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, Shield, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, Shield, Dumbbell, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,7 +25,8 @@ const items = [
   { title: "Engagements", url: "/engagements", icon: ListTodo },
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
   { title: "Discipline", url: "/discipline", icon: Shield },
-  { title: "High Performance", url: "/performance", icon: Zap },
+  { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
+  { title: "Challenge 15j", url: "/performance", icon: Zap },
 ];
 
 export function AppSidebar() {

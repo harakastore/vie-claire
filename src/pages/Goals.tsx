@@ -590,36 +590,6 @@ export default function Goals() {
             );
           })()}
 
-          {/* Non-négociable Personnel - blue */}
-          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                🔒 NON NÉGOCIABLE
-              </p>
-              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Non-négociable Business - orange */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
-                💼 NON NÉGOCIABLE BUSINESS
-              </p>
-              {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Récurrentes par jour - violet */}
           {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
             <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
@@ -751,40 +721,6 @@ export default function Goals() {
                 </div>
               );
             })()}
-
-            {/* Non-négociable Personnel - blue */}
-            {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                  🔒 NON NÉGOCIABLE
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                    <div key={h.id} className="flex items-center gap-2 py-0.5">
-                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Non-négociable Business - orange */}
-            {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(30, 80%, 40%)" }}>
-                  💼 NON NÉGOCIABLE BUSINESS
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                    <div key={h.id} className="flex items-center gap-2 py-0.5">
-                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Récurrentes par jour - violet */}
             {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
@@ -920,32 +856,6 @@ export default function Goals() {
               </div>
             );
           })()}
-
-          {/* Non-négociable Personnel - blue bg */}
-          {showNonNego && dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(200, 70%, 95%)" }}>
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1">🔒 NON NÉGOCIABLE</p>
-              {dailyHabits.filter((h: any) => (h.category || "personal") === "personal" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
-                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Non-négociable Business - orange bg */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(30, 80%, 94%)" }}>
-              <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(30, 80%, 40%)" }}>💼 BUSINESS</p>
-              {dailyHabits.filter((h: any) => h.category === "business" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
-                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Récurrentes par jour - violet bg */}
           {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
@@ -1261,222 +1171,7 @@ export default function Goals() {
             </>
           )}
 
-          {/* === Programme Sport === */}
-          <Button variant="outline" className="w-full justify-between" onClick={() => setShowSports(!showSports)}>
-            <span className="flex items-center gap-2">
-              <Dumbbell className="h-4 w-4" />
-              Programme Sport de la semaine
-            </span>
-            {showSports ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-
-          {showSports && (
-            <Card className="glass-card">
-              <CardContent className="pt-4 space-y-2">
-                {DAY_NAMES.map((d, i) => {
-                  const sp = weeklySports.find((s: any) => s.day_index === i);
-                  const isCompleted = !!(sp?.completed);
-                  const kcalEaten = sp?.kcal_eaten || 0;
-                  const kcalBurned = sp?.kcal_burned || 0;
-                  const netKcal = kcalEaten - BASAL_KCAL - kcalBurned;
-                  const isDeficitGoal = netKcal <= -500;
-                  const isSurplus = netKcal >= 300;
-                  return (
-                    <div key={i} className={cn(
-                      "flex items-start gap-3 p-3 rounded-lg border transition-colors",
-                      isSameDay(weekDays[i], now) ? "border-primary/50 bg-primary/5" : "border-border/50",
-                      isCompleted && "border-green-400/50"
-                    )} style={isCompleted ? { backgroundColor: "hsl(150, 50%, 95%)" } : undefined}>
-                      <div className="flex flex-col items-center gap-1 pt-2">
-                        <button
-                          onClick={() => toggleSportCompleted(i)}
-                          className={cn(
-                            "h-6 w-6 rounded border-2 flex items-center justify-center transition-colors",
-                            isCompleted ? "border-green-500 bg-green-500 text-white" : "border-muted-foreground/30 hover:border-green-400"
-                          )}
-                        >
-                          {isCompleted && <CheckSquare className="h-4 w-4" />}
-                        </button>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={cn(
-                            "text-sm font-bold",
-                            isSameDay(weekDays[i], now) ? "text-primary" : "text-foreground"
-                          )}>{d}</span>
-                          <span className="text-xs text-muted-foreground">{format(weekDays[i], "d MMM", { locale: fr })}</span>
-                          {isCompleted && <span className="text-[10px] font-medium text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">✓ Fait</span>}
-                        </div>
-                        <Textarea
-                          placeholder="Programme sport du jour..."
-                          value={sp?.program || ""}
-                          onChange={(e) => {
-                            setWeeklySports((prev) => {
-                              const idx = prev.findIndex((s: any) => s.day_index === i);
-                              if (idx >= 0) {
-                                const updated = [...prev];
-                                updated[idx] = { ...updated[idx], program: e.target.value };
-                                return updated;
-                              }
-                              return [...prev, { day_index: i, program: e.target.value, completed: false, kcal_eaten: 0, kcal_burned: 0 }];
-                            });
-                          }}
-                          onBlur={(e) => saveSportsProgram(i, e.target.value)}
-                          className="min-h-[50px] text-xs resize-none border-dashed bg-transparent p-1.5 focus-visible:ring-1"
-                        />
-                        {/* Kcal Tracking */}
-                        <div className="mt-2 grid grid-cols-3 gap-2">
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">🍽 Mangé (kcal)</Label>
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              value={kcalEaten || ""}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setWeeklySports((prev) => {
-                                  const idx = prev.findIndex((s: any) => s.day_index === i);
-                                  if (idx >= 0) {
-                                    const updated = [...prev];
-                                    updated[idx] = { ...updated[idx], kcal_eaten: val };
-                                    return updated;
-                                  }
-                                  return [...prev, { day_index: i, program: "", completed: false, kcal_eaten: val, kcal_burned: 0 }];
-                                });
-                              }}
-                              onBlur={(e) => saveSportsKcal(i, "kcal_eaten", parseInt(e.target.value) || 0)}
-                              className="h-7 text-xs mt-0.5"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">🔥 Brûlé sport (kcal)</Label>
-                            <Input
-                              type="number"
-                              placeholder="0"
-                              value={kcalBurned || ""}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setWeeklySports((prev) => {
-                                  const idx = prev.findIndex((s: any) => s.day_index === i);
-                                  if (idx >= 0) {
-                                    const updated = [...prev];
-                                    updated[idx] = { ...updated[idx], kcal_burned: val };
-                                    return updated;
-                                  }
-                                  return [...prev, { day_index: i, program: "", completed: false, kcal_eaten: 0, kcal_burned: val }];
-                                });
-                              }}
-                              onBlur={(e) => saveSportsKcal(i, "kcal_burned", parseInt(e.target.value) || 0)}
-                              className="h-7 text-xs mt-0.5"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground">📊 Net (base 2000)</Label>
-                            <div className={cn(
-                              "h-7 mt-0.5 flex items-center justify-center rounded-md text-xs font-bold border",
-                              kcalEaten === 0 && kcalBurned === 0
-                                ? "text-muted-foreground border-border/50"
-                                : isDeficitGoal
-                                  ? "text-green-700 bg-green-100 border-green-300"
-                                  : isSurplus
-                                    ? "text-red-700 bg-red-100 border-red-300"
-                                    : "text-amber-700 bg-amber-50 border-amber-300"
-                            )}>
-                              {kcalEaten === 0 && kcalBurned === 0 ? "—" : `${netKcal > 0 ? "+" : ""}${netKcal}`}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* === Dashboard Discipline === */}
-          <Button variant="outline" className="w-full justify-between" onClick={() => setShowDiscipline(!showDiscipline)}>
-            <span className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Dashboard Discipline (Habitudes)
-            </span>
-            {showDiscipline ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-
-          {showDiscipline && (
-            <Card className="glass-card">
-              <CardContent className="pt-4 space-y-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Du</Label>
-                    <Input type="date" value={disciplineFrom} onChange={(e) => setDisciplineFrom(e.target.value)} className="h-8 text-xs w-auto" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label className="text-xs whitespace-nowrap">Au</Label>
-                    <Input type="date" value={disciplineTo} onChange={(e) => setDisciplineTo(e.target.value)} className="h-8 text-xs w-auto" />
-                  </div>
-                </div>
-
-                {dailyHabits.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Aucune habitude configurée.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr>
-                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-left sticky left-0 bg-background z-10">Habitude</th>
-                          {disciplineDays.map((d) => (
-                            <th key={format(d, "yyyy-MM-dd")} className={cn(
-                              "border border-border/50 px-1 py-2 text-[10px] font-semibold text-center min-w-[40px]",
-                              isSameDay(d, now) && "bg-primary/10 text-primary"
-                            )}>
-                              <div>{format(d, "EEE", { locale: fr })}</div>
-                              <div>{format(d, "d")}</div>
-                            </th>
-                          ))}
-                          <th className="border border-border/50 px-2 py-2 text-xs font-semibold text-center">%</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dailyHabits.map((h: any) => {
-                          const completedCount = disciplineDays.filter((d) => isHabitCompleted(h.id, format(d, "yyyy-MM-dd"))).length;
-                          const pct = disciplineDays.length > 0 ? Math.round((completedCount / disciplineDays.length) * 100) : 0;
-                          return (
-                            <tr key={h.id}>
-                              <td className="border border-border/50 px-2 py-1.5 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
-                              {disciplineDays.map((d) => {
-                                const dateStr = format(d, "yyyy-MM-dd");
-                                const done = isHabitCompleted(h.id, dateStr);
-                                return (
-                                  <td key={dateStr} className="border border-border/50 text-center p-0">
-                                    <button
-                                      onClick={() => toggleHabitLog(h.id, dateStr)}
-                                      className={cn(
-                                        "w-full h-8 text-sm transition-colors",
-                                        done ? "bg-green-500/20 text-green-600" : "hover:bg-muted/50"
-                                      )}
-                                    >
-                                      {done ? "✓" : ""}
-                                    </button>
-                                  </td>
-                                );
-                              })}
-                              <td className={cn(
-                                "border border-border/50 px-2 py-1.5 text-xs font-bold text-center",
-                                pct >= 80 ? "text-green-600" : pct >= 50 ? "text-yellow-600" : "text-red-500"
-                              )}>
-                                {pct}%
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Programme Sport et Dashboard Discipline déplacés vers leurs propres sections */}
         </>
       )}
 
@@ -1486,10 +1181,6 @@ export default function Goals() {
            <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-base font-semibold">Tâches quotidiennes</CardTitle>
-              <Button variant={showNonNego ? "outline" : "secondary"} size="sm" className="h-7 text-xs" onClick={() => setShowNonNego(!showNonNego)}>
-                {showNonNego ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
-                Non-négociable
-              </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setHabitsSheetOpen(true)}>
                 <Star className="h-3.5 w-3.5 mr-1" /> Habitudes
               </Button>
