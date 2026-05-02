@@ -684,10 +684,13 @@ export default function Goals() {
 
           {BLOCKS.map((block) => {
             const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
-            const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
-            const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+            const bt = getBlockTimes(dateStr, block);
+            const fromTime = bt.from;
+            const toTime = bt.to;
             const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
             const inputKey = `${dateStr}_${block.key}`;
+            const editKey = `${dateStr}_${block.key}`;
+            const isEditing = editingBlock === editKey;
 
             return (
               <div key={block.key} className={cn(
@@ -698,17 +701,31 @@ export default function Goals() {
                 onDragLeave={(e) => handleBlockDragLeave(e as any)}
                 onDrop={(e) => handleBlockDrop(e as any, block.key)}
               >
-                <div className="px-4 py-2 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
+                <div className="px-4 py-2 flex items-center justify-between gap-2 flex-wrap" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
                     <span className="text-xs font-semibold" style={{ color: block.color }}>{block.label}</span>
+                    {bt.custom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{fromTime} — {toTime}</span>
-                    {duration && <span className="font-semibold ml-1">({duration})</span>}
-                  </div>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input type="time" value={editingBlockTimes.start} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, start: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums" />
+                      <span className="text-[10px]">→</span>
+                      <input type="time" value={editingBlockTimes.end} onChange={(e) => setEditingBlockTimes((p) => ({ ...p, end: e.target.value }))} className="h-6 text-[10px] px-1 rounded border border-input bg-background tabular-nums" />
+                      <button onClick={() => saveBlockOverride(dateStr, block.key)} className="h-6 px-1.5 text-[10px] font-bold rounded bg-primary text-primary-foreground">OK</button>
+                      {bt.custom && <button onClick={() => resetBlockOverride(dateStr, block.key)} title="Réinitialiser" className="h-6 px-1.5 text-[10px] rounded bg-muted hover:bg-destructive hover:text-destructive-foreground">↺</button>}
+                      <button onClick={() => setEditingBlock(null)} className="h-6 px-1 text-[10px] rounded hover:bg-muted">✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => startEditBlockTimes(dateStr, block)} className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-background/60 px-1.5 py-0.5 rounded transition-colors" title="Personnaliser horaires de ce bloc">
+                      <Clock className="h-3 w-3" />
+                      <span className="tabular-nums">{fromTime} — {toTime}</span>
+                      {duration && <span className="font-semibold ml-1">({duration})</span>}
+                      <Pencil className="h-2.5 w-2.5 opacity-50" />
+                    </button>
+                  )}
                 </div>
+
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   {blockTasks.map((t: any) => (
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
