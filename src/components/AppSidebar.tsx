@@ -24,6 +24,7 @@ const items = [
   { title: "Crédits", url: "/credits", icon: CreditCard },
   { title: "Engagements", url: "/engagements", icon: ListTodo },
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
+  { title: "Discipline", url: "/discipline", icon: Shield },
   { title: "High Performance", url: "/performance", icon: Zap },
 ];
 
