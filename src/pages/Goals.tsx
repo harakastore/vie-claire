@@ -985,12 +985,27 @@ export default function Goals() {
       {!focusTasksOnly && (
         <>
           {/* Toggle goals visibility */}
-          <Button variant="outline" className="w-full justify-between" onClick={() => setShowGoals(!showGoals)}>
-            <span className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Objectifs (Annuel, 90 jours, mois, semaine)
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full justify-between h-11 rounded-xl transition-all",
+              showGoals
+                ? "bg-gradient-to-r from-primary/15 to-primary/5 border-primary/40"
+                : "bg-gradient-to-r from-muted/40 to-transparent hover:from-muted/60"
+            )}
+            onClick={() => setShowGoals(!showGoals)}
+          >
+            <span className="flex items-center gap-2.5">
+              <span className={cn(
+                "h-7 w-7 rounded-lg flex items-center justify-center transition-colors",
+                showGoals ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              )}>
+                <Target className="h-4 w-4" />
+              </span>
+              <span className="font-semibold">Objectifs</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">Annuel · 90j · Mois · Semaine</span>
             </span>
-            {showGoals ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showGoals ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
 
           {showGoals && (
