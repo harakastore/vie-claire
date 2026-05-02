@@ -14,6 +14,7 @@ import Credits from "./pages/Credits";
 import Engagements from "./pages/Engagements";
 import Goals from "./pages/Goals";
 import HighPerformance from "./pages/HighPerformance";
+import Discipline from "./pages/Discipline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
