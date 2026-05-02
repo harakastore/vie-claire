@@ -947,28 +947,40 @@ export default function Goals() {
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
       {!focusTasksOnly && (
-        <div
-          className="rounded-lg px-4 py-3 text-center font-bold text-black uppercase tracking-wide shadow-md text-sm sm:text-base"
-          style={{ backgroundColor: "#39FF14" }}
-        >
-          🎯 Objectif ultime : arriver à la liberté financière 5-10K$/mois grâce au business — le cabinet n'est qu'un bonus
+        <div className="relative overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/40 p-5 shadow-sm">
+          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-amber-300/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-orange-300/20 blur-3xl pointer-events-none" />
+          <div className="relative flex items-start gap-4">
+            <div className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Trophy className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" /> Mission de vie
+              </p>
+              <p className="text-sm sm:text-base font-bold leading-snug text-foreground">
+                Atteindre la liberté financière <span className="text-amber-600 dark:text-amber-400">5–10K$/mois</span> grâce au business
+                <span className="block text-xs sm:text-sm font-medium text-muted-foreground mt-0.5">— le cabinet n'est qu'un bonus.</span>
+              </p>
+            </div>
+          </div>
         </div>
       )}
       {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
-      {/* Focus tasks only button */}
-      <Button
-        variant={focusTasksOnly ? "default" : "outline"}
-        size={focusTasksOnly ? "sm" : "default"}
-        className={cn("justify-between", focusTasksOnly ? "w-auto" : "w-full")}
-        onClick={() => setFocusTasksOnly(!focusTasksOnly)}
-      >
-        <span className="flex items-center gap-2">
+      {/* Action toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant={focusTasksOnly ? "default" : "outline"}
+          size="sm"
+          className={cn("h-9 gap-2", !focusTasksOnly && "bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30 hover:from-primary/20 hover:to-primary/10")}
+          onClick={() => setFocusTasksOnly(!focusTasksOnly)}
+        >
+          {focusTasksOnly ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           <ListTodo className="h-4 w-4" />
-          {focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches quotidiennes"}
-        </span>
-        {focusTasksOnly ? <Minimize2 className="h-4 w-4 ml-2" /> : <Maximize2 className="h-4 w-4 ml-2" />}
-      </Button>
+          <span className="font-medium">{focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches"}</span>
+        </Button>
+      </div>
 
       {!focusTasksOnly && (
         <>
