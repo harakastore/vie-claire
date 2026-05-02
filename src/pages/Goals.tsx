@@ -698,111 +698,208 @@ export default function Goals() {
     const isDragOver = dragOverDay === dateStr;
 
     if (isExpanded) {
+      const totalDay = dayTasks.length;
+      const doneDay = dayTasks.filter((t: any) => t.completed).length;
+      const pctDay = totalDay > 0 ? Math.round((doneDay / totalDay) * 100) : 0;
+      const recurringForDay = dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr));
+      const recurringDone = recurringForDay.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
+
       return (
-        <Card key={dateStr} className="overflow-hidden border-primary border-2 shadow-lg col-span-7">
-          <div className="px-6 py-4 flex items-center justify-between bg-primary/10">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={expandedDayIndex <= 0} onClick={() => navigateExpandedDay(-1)}>
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <span className="text-xl font-bold text-primary">{DAY_NAMES[dayIndex]}</span>
-              <span className="text-2xl font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
-              {isToday && (
-                <span className="text-xs font-medium bg-primary text-primary-foreground px-2.5 py-1 rounded-full">
-                  Aujourd'hui
-                </span>
-              )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={expandedDayIndex >= 6} onClick={() => navigateExpandedDay(1)}>
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8" onClick={() => setSalatSheetOpen(true)}>
-                <Settings2 className="h-3.5 w-3.5 mr-1" /> Horaires Salat
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpandedDay(null)}>
-                <Minimize2 className="h-4 w-4" />
-              </Button>
+        <Card key={dateStr} className="overflow-hidden border-2 border-primary/40 shadow-2xl col-span-7 animate-fade-in">
+          {/* === Hero header === */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-secondary opacity-95" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.25),_transparent_60%)]" />
+            <div className="relative px-6 py-5 text-primary-foreground">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4 min-w-0">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-white/20 shrink-0"
+                    disabled={expandedDayIndex <= 0} onClick={() => navigateExpandedDay(-1)}>
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-baseline gap-3 flex-wrap">
+                      <span className="text-3xl font-bold tracking-tight">{DAY_NAMES[dayIndex]}</span>
+                      <span className="text-2xl font-light tabular-nums opacity-90">
+                        {format(day, "d MMMM yyyy", { locale: fr })}
+                      </span>
+                      {isToday && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-white text-primary px-2 py-0.5 rounded-full shadow-sm">
+                          Aujourd'hui
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs opacity-80 mt-0.5 font-medium">
+                      Vue détaillée — Time-blocking & priorités
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-white/20 shrink-0"
+                    disabled={expandedDayIndex >= 6} onClick={() => navigateExpandedDay(1)}>
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className="h-9 text-primary-foreground hover:bg-white/20 border border-white/30"
+                    onClick={() => setSalatSheetOpen(true)}>
+                    <Settings2 className="h-3.5 w-3.5 mr-1.5" /> Horaires Salat
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-white/20"
+                    onClick={() => setExpandedDay(null)} title="Réduire">
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* === Stats bar === */}
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+                  <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Tâches</p>
+                  <p className="text-lg font-bold tabular-nums">{doneDay}<span className="opacity-60 text-sm">/{totalDay}</span></p>
+                </div>
+                <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+                  <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Progression</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold tabular-nums">{pctDay}%</p>
+                    <div className="flex-1 h-1.5 bg-white/25 rounded-full overflow-hidden">
+                      <div className="h-full bg-white transition-all" style={{ width: `${pctDay}%` }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+                  <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Récurrentes</p>
+                  <p className="text-lg font-bold tabular-nums">{recurringDone}<span className="opacity-60 text-sm">/{recurringForDay.length}</span></p>
+                </div>
+                <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
+                  <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Priorités</p>
+                  <p className="text-lg font-bold tabular-nums">
+                    {dayTasks.filter((t: any) => t.block === "day_priority" && t.completed).length}
+                    <span className="opacity-60 text-sm">/{dayTasks.filter((t: any) => t.block === "day_priority").length}</span>
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <CardContent className="p-0">
-            {/* 2 Priorités du jour - expanded */}
+          <CardContent className="p-6 space-y-5 bg-gradient-to-b from-muted/30 to-transparent">
+            {/* === 2 Priorités du jour === */}
             {(() => {
               const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
               return (
-                <div className="px-6 py-3 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ 2 Priorités du jour</p>
-                  {priorities.map((t: any) => (
-                    <div key={t.id} className="flex items-center gap-2 py-0.5 group">
-                      <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
-                      <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-sm font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
-                      <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                <div className="rounded-xl border-2 border-amber-300/60 dark:border-amber-700/40 bg-gradient-to-br from-amber-50 to-amber-100/40 dark:from-amber-950/30 dark:to-amber-900/10 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-7 w-7 rounded-lg bg-amber-400 dark:bg-amber-600 flex items-center justify-center shadow-sm">
+                      <Star className="h-4 w-4 text-white fill-white" />
                     </div>
-                  ))}
-                  {priorities.length < 2 && (
-                    <Input placeholder={priorities.length === 0 ? "Priorité #1" : "Priorité #2"} value={newDayPriority[dateStr] || ""}
-                      onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
-                      onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
-                      className="h-7 text-xs border-dashed bg-transparent mt-1" />
-                  )}
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                      2 Priorités du jour
+                    </h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    {priorities.map((t: any) => (
+                      <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 transition-colors group">
+                        <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-5 w-5" />
+                        <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)}
+                          className={cn("text-sm font-semibold flex-1 text-amber-950 dark:text-amber-100", t.completed && "line-through opacity-50")} />
+                        <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0 transition-opacity">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {priorities.length < 2 && (
+                      <Input placeholder={priorities.length === 0 ? "✨ Priorité #1" : "✨ Priorité #2"} value={newDayPriority[dateStr] || ""}
+                        onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                        className="h-9 text-sm border-dashed border-amber-400/50 bg-white/40 dark:bg-black/10 placeholder:text-amber-700/60 dark:placeholder:text-amber-300/40" />
+                    )}
+                  </div>
                 </div>
               );
             })()}
 
-            {/* Récurrentes par jour - violet */}
-            {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-              <div className="px-6 py-4 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 40%)" }}>
-                  📅 RÉCURRENTES
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                    <div key={h.id} className="flex items-center gap-2 py-0.5">
-                      <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                      <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+            {/* === Récurrentes === */}
+            {showNonNego && recurringForDay.length > 0 && (
+              <div className="rounded-xl border-2 border-purple-300/60 dark:border-purple-700/40 bg-gradient-to-br from-purple-50 to-purple-100/40 dark:from-purple-950/30 dark:to-purple-900/10 p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-purple-500 dark:bg-purple-600 flex items-center justify-center shadow-sm">
+                      <CalendarDays className="h-4 w-4 text-white" />
                     </div>
-                  ))}
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-purple-900 dark:text-purple-200">
+                      Récurrentes
+                    </h3>
+                  </div>
+                  <span className="text-xs font-bold tabular-nums text-purple-700 dark:text-purple-300 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full">
+                    {recurringDone}/{recurringForDay.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {recurringForDay.map((h: any) => {
+                    const done = isHabitCompleted(h.id, dateStr);
+                    return (
+                      <label key={h.id} className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all",
+                        done ? "bg-purple-200/50 dark:bg-purple-800/30" : "bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40"
+                      )}>
+                        <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                        <span className={cn("text-sm font-medium text-purple-950 dark:text-purple-100", done && "line-through opacity-50")}>{h.title}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
+            {/* === Time-blocks === */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
               {BLOCKS.map((block) => {
                 const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
+                const blockDone = blockTasks.filter((t: any) => t.completed).length;
                 const fromTime = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
                 const toTime = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
                 const duration = fromTime && toTime ? calcDuration(fromTime, toTime) : "";
                 const inputKey = `${dateStr}_${block.key}`;
+                const isDragTarget = dragOverBlock === block.key;
 
                 return (
-                  <div key={block.key} className={cn(
-                    "border-b md:border-b-0 md:border-r last:border-r-0 transition-colors",
-                    dragOverBlock === block.key && "ring-2 ring-primary ring-inset"
-                  )}
+                  <div key={block.key}
+                    className={cn(
+                      "rounded-xl border-2 bg-card overflow-hidden flex flex-col transition-all shadow-sm hover:shadow-md",
+                      isDragTarget ? "ring-2 ring-primary ring-offset-2 scale-[1.02]" : "border-border/60"
+                    )}
+                    style={{ borderTopColor: block.color, borderTopWidth: "4px" }}
                     onDragOver={(e) => handleBlockDragOver(e as any, block.key)}
                     onDragLeave={(e) => handleBlockDragLeave(e as any)}
                     onDrop={(e) => handleBlockDrop(e as any, block.key)}
                   >
-                    <div className="px-4 py-2.5 flex items-center justify-between" style={{ backgroundColor: `${block.color}15` }}>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: block.color }} />
-                        <span className="text-xs font-semibold" style={{ color: block.color }}>{block.label}</span>
+                    <div className="px-3 py-2.5" style={{ backgroundColor: `${block.color}12` }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold uppercase tracking-wide truncate" style={{ color: block.color }}>
+                          {block.label}
+                        </span>
+                        {blockTasks.length > 0 && (
+                          <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: block.color }}>
+                            {blockDone}/{blockTasks.length}
+                          </span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
                         <Clock className="h-3 w-3" />
-                        <span>{fromTime} — {toTime}</span>
-                        {duration && <span className="font-semibold ml-1">({duration})</span>}
+                        <span className="tabular-nums">{fromTime} — {toTime}</span>
+                        {duration && <span className="ml-auto font-bold" style={{ color: block.color }}>{duration}</span>}
                       </div>
                     </div>
-                    <div className="px-4 py-3 space-y-2 min-h-[100px]">
+                    <div className="px-3 py-3 space-y-1.5 flex-1 min-h-[120px]">
                       {blockTasks.map((t: any) => (
-                        <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
+                        <div key={t.id}
+                          className={cn(
+                            "flex items-start gap-2 group cursor-grab active:cursor-grabbing px-2 py-1.5 rounded-md transition-colors",
+                            t.completed ? "bg-muted/40" : "hover:bg-muted/60"
+                          )}
                           draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
                           <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
                           <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
-                          <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                          <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0 transition-opacity">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -812,7 +909,8 @@ export default function Goals() {
                         value={newBlockTexts[inputKey] || ""}
                         onChange={(e) => setNewBlockTexts((prev) => ({ ...prev, [inputKey]: e.target.value }))}
                         onKeyDown={(e) => e.key === "Enter" && addDailyTask(dateStr, block.key)}
-                        className="h-7 text-xs border-dashed bg-transparent"
+                        className="h-8 text-xs border-dashed bg-transparent focus-visible:ring-1"
+                        style={{ borderColor: `${block.color}40` }}
                       />
                     </div>
                   </div>
