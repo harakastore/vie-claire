@@ -175,6 +175,42 @@ export default function Goals() {
 
   useEffect(() => { fetchAll(); }, [user, currentWeekStart, disciplineFrom, disciplineTo]);
 
+  // Get times for a specific block on a specific day (override > salat default)
+  const getBlockTimes = (dateStr: string, block: typeof BLOCKS[number]) => {
+    const ov = blockOverrides[`${dateStr}_${block.key}`];
+    if (ov) return { from: ov.start_time, to: ov.end_time, custom: true };
+    const from = (st[block.from as keyof typeof st] || "").toString().slice(0, 5);
+    const to = (st[block.to as keyof typeof st] || "").toString().slice(0, 5);
+    return { from, to, custom: false };
+  };
+
+  const startEditBlockTimes = (dateStr: string, block: typeof BLOCKS[number]) => {
+    const t = getBlockTimes(dateStr, block);
+    setEditingBlock(`${dateStr}_${block.key}`);
+    setEditingBlockTimes({ start: t.from, end: t.to });
+  };
+
+  const saveBlockOverride = async (dateStr: string, blockKey: string) => {
+    if (!user) return;
+    const { start, end } = editingBlockTimes;
+    if (!start || !end) { setEditingBlock(null); return; }
+    const key = `${dateStr}_${blockKey}`;
+    setBlockOverrides((prev) => ({ ...prev, [key]: { start_time: start, end_time: end } }));
+    setEditingBlock(null);
+    const { error } = await (supabase.from("daily_block_overrides" as any) as any)
+      .upsert({ user_id: user.id, day_date: dateStr, block_key: blockKey, start_time: start, end_time: end }, { onConflict: "user_id,day_date,block_key" });
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
+  };
+
+  const resetBlockOverride = async (dateStr: string, blockKey: string) => {
+    if (!user) return;
+    const key = `${dateStr}_${blockKey}`;
+    setBlockOverrides((prev) => { const n = { ...prev }; delete n[key]; return n; });
+    setEditingBlock(null);
+    await (supabase.from("daily_block_overrides" as any) as any).delete().eq("user_id", user.id).eq("day_date", dateStr).eq("block_key", blockKey);
+  };
+
+
   // Salat times save
   const saveSalatTimes = async () => {
     if (!user) return;
