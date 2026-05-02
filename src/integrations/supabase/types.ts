@@ -98,6 +98,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_block_overrides: {
+        Row: {
+          block_key: string
+          created_at: string
+          day_date: string
+          end_time: string | null
+          id: string
+          start_time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_key: string
+          created_at?: string
+          day_date: string
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_key?: string
+          created_at?: string
+          day_date?: string
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_habit_logs: {
         Row: {
           completed: boolean
