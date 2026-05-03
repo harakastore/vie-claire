@@ -206,6 +206,27 @@ export default function Sport() {
     await (supabase.from("meal_items" as any) as any).delete().eq("id", id);
   };
 
+  const estimateBurnedKcal = async (dayIndex: number) => {
+    const sp = weeklySports.find(s => s.day_index === dayIndex);
+    const program = sp?.program?.trim();
+    if (!program) return;
+    setEstimatingBurn(dayIndex);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-meal", {
+        body: { text: program, type: "exercise" },
+      });
+      if (error || !data?.kcal_burned) {
+        toast({ title: "Erreur", description: "Impossible d'estimer", variant: "destructive" });
+        return;
+      }
+      updateLocalSport(dayIndex, { kcal_burned: data.kcal_burned });
+      await upsertSport(dayIndex, { kcal_burned: data.kcal_burned });
+      toast({ title: "🔥 Estimé", description: `${data.kcal_burned} kcal brûlées` });
+    } finally {
+      setEstimatingBurn(null);
+    }
+  };
+
   // ===== WEIGHT =====
   const logWeightToday = async () => {
     if (!user || !todayWeight) return;
