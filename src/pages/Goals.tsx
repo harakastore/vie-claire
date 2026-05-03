@@ -1255,7 +1255,6 @@ export default function Goals() {
                 </div>
               );
             })}
-            ))}
           </div>
 
           <Input
