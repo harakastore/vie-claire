@@ -1014,7 +1014,17 @@ export default function Goals() {
     const completedCount = dayTasks.filter((t: any) => t.completed).length;
     const totalCount = dayTasks.length;
     const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
-    const otherTasks = dayTasks.filter((t: any) => t.block !== "day_priority");
+    const PRIO_RANK: Record<string, number> = { high: 1, normal: 2, low: 3 };
+    const otherTasks = dayTasks
+      .filter((t: any) => t.block !== "day_priority")
+      .slice()
+      .sort((a: any, b: any) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        const pa = PRIO_RANK[a.priority || "normal"] ?? 2;
+        const pb = PRIO_RANK[b.priority || "normal"] ?? 2;
+        if (pa !== pb) return pa - pb;
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      });
     const recurringHabits = dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr));
     const recurringDone = recurringHabits.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
     const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
