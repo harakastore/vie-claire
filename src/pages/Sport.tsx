@@ -166,7 +166,39 @@ export default function Sport() {
     }
   };
 
-  const deleteMealItem = async (id: string) => {
+  const addMealItemSmart = async (dateStr: string, mealType: string) => {
+    if (!user) return;
+    const draftKey = `${dateStr}-${mealType}`;
+    const draft = newItem[draftKey];
+    if (!draft || !draft.name.trim()) return;
+    setParsingKey(draftKey);
+    try {
+      const { data: parsed, error } = await supabase.functions.invoke("parse-meal", {
+        body: { text: draft.name.trim() },
+      });
+      if (error || !parsed) {
+        toast({ title: "Erreur", description: "Impossible d'analyser le repas", variant: "destructive" });
+        return;
+      }
+      const mealId = await ensureMeal(dateStr, mealType);
+      if (!mealId) return;
+      const payload = {
+        user_id: user.id,
+        meal_id: mealId,
+        name: parsed.name || draft.name.trim(),
+        kcal: parsed.kcal || 0,
+        protein_g: parsed.protein_g || 0,
+      };
+      const { data } = await (supabase.from("meal_items" as any) as any).insert(payload).select().single();
+      if (data) {
+        setMealItems((prev) => [...prev, data]);
+        setNewItem((prev) => ({ ...prev, [draftKey]: { name: "", kcal: "", protein: "" } }));
+        toast({ title: "✓ Ajouté", description: `${data.kcal} kcal · ${data.protein_g}g prot` });
+      }
+    } finally {
+      setParsingKey(null);
+    }
+  };
     setMealItems((prev) => prev.filter(i => i.id !== id));
     await (supabase.from("meal_items" as any) as any).delete().eq("id", id);
   };
