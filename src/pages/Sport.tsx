@@ -510,35 +510,27 @@ export default function Sport() {
                             ))}
                           </div>
 
-                          {/* add item form */}
+                          {/* add item form — smart AI parsing */}
                           <div className="space-y-1">
                             <Input
-                              placeholder="+ Aliment"
+                              placeholder='ex: "3 oeufs + 300g dinde"'
                               value={draft.name}
+                              disabled={parsingKey === draftKey}
                               onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, name: e.target.value } }))}
+                              onKeyDown={(e) => e.key === "Enter" && addMealItemSmart(dateStr, mt.key)}
                               className="h-7 text-[11px]"
                             />
-                            <div className="grid grid-cols-2 gap-1">
-                              <Input
-                                type="number" placeholder="kcal" value={draft.kcal}
-                                onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, kcal: e.target.value } }))}
-                                onKeyDown={(e) => e.key === "Enter" && addMealItem(dateStr, mt.key)}
-                                className="h-7 text-[11px] tabular-nums"
-                              />
-                              <Input
-                                type="number" placeholder="prot g" value={draft.protein}
-                                onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, protein: e.target.value } }))}
-                                onKeyDown={(e) => e.key === "Enter" && addMealItem(dateStr, mt.key)}
-                                className="h-7 text-[11px] tabular-nums"
-                              />
-                            </div>
                             <Button
                               size="sm" variant="outline"
-                              onClick={() => addMealItem(dateStr, mt.key)}
-                              disabled={!draft.name.trim()}
+                              onClick={() => addMealItemSmart(dateStr, mt.key)}
+                              disabled={!draft.name.trim() || parsingKey === draftKey}
                               className="h-7 w-full text-[11px]"
                             >
-                              <Plus className="h-3 w-3 mr-1" /> Ajouter
+                              {parsingKey === draftKey ? (
+                                <>⏳ Calcul…</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> Ajouter (auto kcal/prot)</>
+                              )}
                             </Button>
                           </div>
                         </div>
