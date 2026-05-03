@@ -1110,12 +1110,22 @@ export default function Goals() {
             </div>
             <div className="space-y-1">
               {priorities.map((t: any) => (
-                <div key={t.id} className="flex items-center gap-2 group/item">
-                  <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
+                <div
+                  key={t.id}
+                  className={cn(
+                    "flex items-center gap-2 group/item rounded-md px-1.5 py-1 transition-all",
+                    t.completed && "bg-emerald-500/10 ring-1 ring-emerald-500/30"
+                  )}
+                >
+                  <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
+                  {t.completed && <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                   <EditableText
                     value={t.title}
                     onSave={(v) => renameDailyTask(t.id, v)}
-                    className={cn("text-xs font-semibold flex-1 leading-tight", t.completed && "line-through opacity-50")}
+                    className={cn(
+                      "text-[13px] font-semibold flex-1 leading-snug",
+                      t.completed && "text-emerald-700/80 dark:text-emerald-400/80"
+                    )}
                   />
                   <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover/item:opacity-100 text-destructive shrink-0 transition-opacity">
                     <Trash2 className="h-3 w-3" />
