@@ -68,6 +68,7 @@ Réponds UNIQUEMENT le JSON, sans texte autour.`;
       name: String(parsed.name || text).slice(0, 200),
       kcal: Math.max(0, Math.round(Number(parsed.kcal) || 0)),
       protein_g: Math.max(0, Math.round(Number(parsed.protein_g) || 0)),
+      kcal_burned: Math.max(0, Math.round(Number(parsed.kcal_burned) || 0)),
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), {
