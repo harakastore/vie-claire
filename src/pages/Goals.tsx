@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays, Check } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -52,14 +52,14 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
   const { number, text } = parseNumberedTask(title);
   if (number) {
     return (
-      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "text-emerald-700/70 dark:text-emerald-400/70")}>
         <span className="font-black text-lg mr-1.5" style={{ color: completed ? undefined : "hsl(220, 70%, 50%)" }}>{number}-</span>
         <span className="font-bold text-base">{text}</span>
       </EditableText>
     );
   }
   return (
-    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")} />
+    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "text-emerald-700/70 dark:text-emerald-400/70")} />
   );
 }
 
@@ -1110,12 +1110,22 @@ export default function Goals() {
             </div>
             <div className="space-y-1">
               {priorities.map((t: any) => (
-                <div key={t.id} className="flex items-center gap-2 group/item">
-                  <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
+                <div
+                  key={t.id}
+                  className={cn(
+                    "flex items-center gap-2 group/item rounded-md px-1.5 py-1 transition-all",
+                    t.completed && "bg-emerald-500/10 ring-1 ring-emerald-500/30"
+                  )}
+                >
+                  <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
+                  {t.completed && <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                   <EditableText
                     value={t.title}
                     onSave={(v) => renameDailyTask(t.id, v)}
-                    className={cn("text-xs font-semibold flex-1 leading-tight", t.completed && "line-through opacity-50")}
+                    className={cn(
+                      "text-[13px] font-semibold flex-1 leading-snug",
+                      t.completed && "text-emerald-700/80 dark:text-emerald-400/80"
+                    )}
                   />
                   <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover/item:opacity-100 text-destructive shrink-0 transition-opacity">
                     <Trash2 className="h-3 w-3" />
@@ -1157,29 +1167,44 @@ export default function Goals() {
                 </div>
               </summary>
               <div className="px-2 pb-1.5 space-y-0.5">
-                {recurringHabits.map((h: any) => (
-                  <label key={h.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
-                    <span className={cn("text-[11px] font-medium leading-tight", isHabitCompleted(h.id, dateStr) && "line-through opacity-50")}>
-                      {h.title}
-                    </span>
-                  </label>
-                ))}
+                {recurringHabits.map((h: any) => {
+                  const done = isHabitCompleted(h.id, dateStr);
+                  return (
+                    <label
+                      key={h.id}
+                      className={cn(
+                        "flex items-center gap-2 py-1 px-1.5 rounded-md cursor-pointer transition-all",
+                        done && "bg-emerald-500/10"
+                      )}
+                    >
+                      <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
+                      {done && <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                      <span className={cn(
+                        "text-[12px] font-medium leading-snug",
+                        done && "text-emerald-700/80 dark:text-emerald-400/80"
+                      )}>
+                        {h.title}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </details>
           )}
 
           {/* Tasks list — clean, scannable */}
-          <div className="flex-1 flex flex-col gap-0.5 min-h-0">
+          <div className="flex-1 flex flex-col gap-1 min-h-0">
             {otherTasks.length === 0 && (
-              <p className="text-[10px] text-muted-foreground/60 italic px-1 py-1">Aucune tâche</p>
+              <p className="text-[11px] text-muted-foreground/70 px-1 py-1">Aucune tâche pour ce jour</p>
             )}
             {otherTasks.map((t: any) => (
               <div
                 key={t.id}
                 className={cn(
-                  "flex items-start gap-2 px-1.5 py-1 rounded-md group/task cursor-grab active:cursor-grabbing",
-                  "hover:bg-muted/50 transition-colors"
+                  "flex items-start gap-2 px-2 py-1.5 rounded-md group/task cursor-grab active:cursor-grabbing transition-all",
+                  t.completed
+                    ? "bg-emerald-500/10 border border-emerald-500/20"
+                    : "border border-transparent hover:bg-muted/60 hover:border-border/40"
                 )}
                 draggable
                 onDragStart={(e) => handleDragStart(e as any, t.id)}
@@ -1187,14 +1212,15 @@ export default function Goals() {
                 <Checkbox
                   checked={t.completed}
                   onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
-                  className="mt-0.5 h-3.5 w-3.5"
+                  className="mt-0.5 h-4 w-4"
                 />
+                {t.completed && <Check className="mt-0.5 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                 <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
                 <button
                   onClick={() => deleteDailyTask(t.id)}
                   className="opacity-0 group-hover/task:opacity-100 text-muted-foreground hover:text-destructive shrink-0 transition-all"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
@@ -1205,7 +1231,7 @@ export default function Goals() {
             value={newTaskText[dateStr] || ""}
             onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
             onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
-            className="h-7 text-[11px] border-dashed bg-transparent focus-visible:border-primary/50"
+            className="h-8 text-xs border-dashed bg-transparent focus-visible:border-primary/50"
           />
         </CardContent>
       </Card>
@@ -1611,14 +1637,22 @@ export default function Goals() {
 
           <div className={cn(
             "grid gap-3",
-            isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-7"
+            isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-12"
           )}>
             {(isMobile
               ? (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : visibleDays)
               : (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays)
-            ).map((day) =>
-              isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day)
-            )}
+            ).map((day, idx) => {
+              if (isMobile) return renderMobileDayCard(day);
+              if (expandedDay) return renderDesktopDayCard(day);
+              // Layout 3 + 4 : 3 premiers jours en col-span-4, 4 derniers en col-span-3
+              const span = idx < 3 ? "col-span-4" : "col-span-3";
+              return (
+                <div key={format(day, "yyyy-MM-dd")} className={span}>
+                  {renderDesktopDayCard(day)}
+                </div>
+              );
+            })}
           </div>
 
           {isMobile && !expandedDay && (
