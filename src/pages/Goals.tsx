@@ -69,6 +69,7 @@ export default function Goals() {
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const [showAllDays, setShowAllDays] = useState(false);
+  const [hideFirst3, setHideFirst3] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
