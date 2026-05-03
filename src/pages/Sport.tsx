@@ -199,6 +199,8 @@ export default function Sport() {
       setParsingKey(null);
     }
   };
+
+  const deleteMealItem = async (id: string) => {
     setMealItems((prev) => prev.filter(i => i.id !== id));
     await (supabase.from("meal_items" as any) as any).delete().eq("id", id);
   };
