@@ -212,7 +212,9 @@ export type Database = {
           created_at: string
           day_date: string
           id: string
+          priority: string
           scheduled_time: string | null
+          sort_order: number
           title: string
           user_id: string
         }
@@ -222,7 +224,9 @@ export type Database = {
           created_at?: string
           day_date: string
           id?: string
+          priority?: string
           scheduled_time?: string | null
+          sort_order?: number
           title: string
           user_id: string
         }
@@ -232,7 +236,9 @@ export type Database = {
           created_at?: string
           day_date?: string
           id?: string
+          priority?: string
           scheduled_time?: string | null
+          sort_order?: number
           title?: string
           user_id?: string
         }
@@ -504,6 +510,77 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_items: {
+        Row: {
+          created_at: string
+          id: string
+          kcal: number
+          meal_id: string
+          name: string
+          protein_g: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kcal?: number
+          meal_id: string
+          name: string
+          protein_g?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kcal?: number
+          meal_id?: string
+          name?: string
+          protein_g?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_items_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meals: {
+        Row: {
+          completed: boolean
+          created_at: string
+          day_date: string
+          id: string
+          meal_type: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          day_date: string
+          id?: string
+          meal_type: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          day_date?: string
+          id?: string
+          meal_type?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -746,6 +823,7 @@ export type Database = {
           kcal_burned: number | null
           kcal_eaten: number | null
           program: string
+          sport_time: string | null
           updated_at: string
           user_id: string
           week_start: string
@@ -758,6 +836,7 @@ export type Database = {
           kcal_burned?: number | null
           kcal_eaten?: number | null
           program?: string
+          sport_time?: string | null
           updated_at?: string
           user_id: string
           week_start: string
@@ -770,9 +849,67 @@ export type Database = {
           kcal_burned?: number | null
           kcal_eaten?: number | null
           program?: string
+          sport_time?: string | null
           updated_at?: string
           user_id?: string
           week_start?: string
+        }
+        Relationships: []
+      }
+      weight_goal: {
+        Row: {
+          created_at: string
+          id: string
+          start_date: string
+          start_weight_kg: number
+          target_date: string
+          target_weight_kg: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          start_date: string
+          start_weight_kg: number
+          target_date: string
+          target_weight_kg: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          start_date?: string
+          start_weight_kg?: number
+          target_date?: string
+          target_weight_kg?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weight_logs: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          user_id?: string
+          weight_kg?: number
         }
         Relationships: []
       }

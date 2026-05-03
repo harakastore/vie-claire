@@ -398,6 +398,11 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).update({ title: newTitle }).eq("id", id);
   };
 
+  const setTaskPriority = async (id: string, priority: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, priority } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ priority }).eq("id", id);
+  };
+
   const renameGoal = async (id: string, newTitle: string) => {
     const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, title: newTitle } : g);
     setGoals90((prev) => updateList(prev));
@@ -1009,7 +1014,17 @@ export default function Goals() {
     const completedCount = dayTasks.filter((t: any) => t.completed).length;
     const totalCount = dayTasks.length;
     const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
-    const otherTasks = dayTasks.filter((t: any) => t.block !== "day_priority");
+    const PRIO_RANK: Record<string, number> = { high: 1, normal: 2, low: 3 };
+    const otherTasks = dayTasks
+      .filter((t: any) => t.block !== "day_priority")
+      .slice()
+      .sort((a: any, b: any) => {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        const pa = PRIO_RANK[a.priority || "normal"] ?? 2;
+        const pb = PRIO_RANK[b.priority || "normal"] ?? 2;
+        if (pa !== pb) return pa - pb;
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      });
     const recurringHabits = dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr));
     const recurringDone = recurringHabits.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
     const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
@@ -1197,33 +1212,49 @@ export default function Goals() {
             {otherTasks.length === 0 && (
               <p className="text-[11px] text-muted-foreground/70 px-1 py-1">Aucune tâche pour ce jour</p>
             )}
-            {otherTasks.map((t: any) => (
-              <div
-                key={t.id}
-                className={cn(
-                  "flex items-start gap-2 px-2 py-1.5 rounded-md group/task cursor-grab active:cursor-grabbing transition-all",
-                  t.completed
-                    ? "bg-emerald-500/10 border border-emerald-500/20"
-                    : "border border-transparent hover:bg-muted/60 hover:border-border/40"
-                )}
-                draggable
-                onDragStart={(e) => handleDragStart(e as any, t.id)}
-              >
-                <Checkbox
-                  checked={t.completed}
-                  onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
-                  className="mt-0.5 h-4 w-4"
-                />
-                {t.completed && <Check className="mt-0.5 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
-                <button
-                  onClick={() => deleteDailyTask(t.id)}
-                  className="opacity-0 group-hover/task:opacity-100 text-muted-foreground hover:text-destructive shrink-0 transition-all"
+            {otherTasks.map((t: any) => {
+              const prio = t.priority || "normal";
+              const prioCfg: any = {
+                high: { color: "border-l-red-500 bg-red-50/40 dark:bg-red-950/20", dot: "bg-red-500", label: "Haute", next: "normal" },
+                normal: { color: "border-l-blue-400/60", dot: "bg-blue-400", label: "Normale", next: "low" },
+                low: { color: "border-l-slate-300 dark:border-l-slate-700 opacity-80", dot: "bg-slate-400", label: "Basse", next: "high" },
+              };
+              const cfg = prioCfg[prio];
+              return (
+                <div
+                  key={t.id}
+                  className={cn(
+                    "flex items-start gap-2 px-2 py-1.5 rounded-md border-l-[3px] group/task cursor-grab active:cursor-grabbing transition-all",
+                    t.completed
+                      ? "bg-emerald-500/10 border border-emerald-500/20 border-l-emerald-500"
+                      : cn("border border-transparent hover:bg-muted/60 hover:border-border/40", cfg.color)
+                  )}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e as any, t.id)}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
+                  <Checkbox
+                    checked={t.completed}
+                    onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
+                    className="mt-0.5 h-4 w-4"
+                  />
+                  {t.completed && <Check className="mt-0.5 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                  <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
+                  {!t.completed && (
+                    <button
+                      onClick={() => setTaskPriority(t.id, cfg.next)}
+                      className={cn("h-2 w-2 rounded-full shrink-0 mt-1.5 transition-transform hover:scale-150", cfg.dot)}
+                      title={`Priorité : ${cfg.label} (clique pour changer)`}
+                    />
+                  )}
+                  <button
+                    onClick={() => deleteDailyTask(t.id)}
+                    className="opacity-0 group-hover/task:opacity-100 text-muted-foreground hover:text-destructive shrink-0 transition-all"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
 
           <Input
