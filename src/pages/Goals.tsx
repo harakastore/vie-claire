@@ -1008,114 +1008,204 @@ export default function Goals() {
 
     const completedCount = dayTasks.filter((t: any) => t.completed).length;
     const totalCount = dayTasks.length;
+    const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
+    const otherTasks = dayTasks.filter((t: any) => t.block !== "day_priority");
+    const recurringHabits = dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr));
+    const recurringDone = recurringHabits.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
+    const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const isPast = day < new Date(format(now, "yyyy-MM-dd"));
+    const isWeekend = dayIndex === 5 || dayIndex === 6;
+
     return (
       <Card
         key={dateStr}
         className={cn(
-          "overflow-hidden transition-all hover:shadow-md",
-          isToday ? "border-primary border-2 shadow-lg ring-2 ring-primary/20" : "border-border/50",
-          isDragOver && "ring-2 ring-primary ring-offset-2"
+          "group/card overflow-hidden transition-all duration-300 flex flex-col",
+          "border bg-card hover:shadow-lg hover:-translate-y-0.5",
+          isToday
+            ? "border-primary/50 shadow-md ring-1 ring-primary/30 bg-gradient-to-b from-primary/5 to-card"
+            : isPast
+              ? "border-border/40 opacity-90"
+              : "border-border/60",
+          isDragOver && "ring-2 ring-primary ring-offset-2 scale-[1.01]"
         )}
         onDragOver={(e) => handleDragOver(e as any, dateStr)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e as any, dateStr)}
       >
+        {/* Header — clean, calm, focused */}
         <button
           type="button"
           onClick={() => setExpandedDay(dateStr)}
           className={cn(
-            "px-3 py-2.5 flex items-center justify-between w-full text-left cursor-pointer hover:opacity-90 transition-opacity",
-            isToday
-              ? "bg-gradient-to-r from-primary/20 via-primary/10 to-transparent"
-              : "bg-muted/30"
+            "relative px-3 pt-3 pb-2.5 flex flex-col gap-2 w-full text-left transition-colors",
+            "border-b border-border/40 hover:bg-muted/30",
+            isToday && "bg-primary/5"
           )}
-          title="Cliquer pour vue détaillée avec time-blocking"
+          title="Vue détaillée du jour"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className={cn("text-sm font-bold truncate", isToday ? "text-primary" : "text-foreground")}>
-              {DAY_NAMES[dayIndex].slice(0, 3)}
-            </span>
-            <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
-            {totalCount > 0 && (
+          <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-baseline gap-2 min-w-0">
               <span className={cn(
-                "text-[10px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums",
-                completedCount === totalCount
-                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                  : "bg-muted text-muted-foreground"
+                "text-[10px] font-semibold uppercase tracking-[0.12em]",
+                isToday ? "text-primary" : isWeekend ? "text-secondary" : "text-muted-foreground"
               )}>
-                {completedCount}/{totalCount}
+                {DAY_NAMES[dayIndex].slice(0, 3)}
               </span>
+              <span className={cn(
+                "text-2xl font-bold tabular-nums leading-none",
+                isToday ? "text-primary" : "text-foreground"
+              )}>
+                {format(day, "d", { locale: fr })}
+              </span>
+            </div>
+            {isToday ? (
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full shadow-sm">
+                Aujourd'hui
+              </span>
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/60 opacity-0 group-hover/card:opacity-100 transition-opacity" />
             )}
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            {isToday && (
-              <span className="text-[9px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
-                Auj.
-              </span>
-            )}
-            <Maximize2 className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
+
+          {/* Progress bar — subtle motivation */}
+          {totalCount > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="font-medium text-muted-foreground">
+                  {completedCount}/{totalCount} {progressPct === 100 && "✓"}
+                </span>
+                <span className={cn(
+                  "font-bold tabular-nums",
+                  progressPct === 100 ? "text-emerald-600 dark:text-emerald-400"
+                    : progressPct >= 50 ? "text-primary"
+                    : "text-muted-foreground"
+                )}>
+                  {progressPct}%
+                </span>
+              </div>
+              <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    progressPct === 100
+                      ? "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                      : "bg-gradient-to-r from-primary/70 to-primary"
+                  )}
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+          )}
         </button>
 
-        <CardContent className="p-3 space-y-1.5">
-          {/* 2 Priorités du jour - compact */}
-          {(() => {
-            const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
-            return (
-              <div className="pb-2 mb-2 border-b rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
-                <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ 2 PRIORITÉS</p>
-                {priorities.map((t: any) => (
-                  <div key={t.id} className="flex items-center gap-2 py-0.5 group">
-                    <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
-                    <EditableText value={t.title} onSave={(v) => renameDailyTask(t.id, v)} className={cn("text-xs font-semibold flex-1", t.completed && "line-through text-muted-foreground")} />
-                    <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3 w-3" /></button>
-                  </div>
-                ))}
-                {priorities.length < 2 && (
-                  <Input placeholder={priorities.length === 0 ? "Priorité #1..." : "Priorité #2..."} value={newDayPriority[dateStr] || ""}
-                    onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
-                    onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
-                    className="h-6 text-[10px] border-dashed bg-transparent mt-1" />
-                )}
-              </div>
-            );
-          })()}
-
-          {/* Récurrentes par jour - violet bg */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="pb-2 mb-2 border-b border-dashed rounded-md px-2 py-1.5" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
-              <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: "hsl(270, 60%, 40%)" }}>📅 RÉCURRENTES</p>
-              {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
-                  <span className={cn("text-xs font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+        <CardContent className="p-2.5 flex-1 flex flex-col gap-2.5">
+          {/* Priorités — premium, minimal */}
+          <section className="rounded-lg border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-2 py-1.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-amber-500">★</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                Top 2 priorités
+              </span>
+            </div>
+            <div className="space-y-1">
+              {priorities.map((t: any) => (
+                <div key={t.id} className="flex items-center gap-2 group/item">
+                  <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-3.5 w-3.5" />
+                  <EditableText
+                    value={t.title}
+                    onSave={(v) => renameDailyTask(t.id, v)}
+                    className={cn("text-xs font-semibold flex-1 leading-tight", t.completed && "line-through opacity-50")}
+                  />
+                  <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover/item:opacity-100 text-destructive shrink-0 transition-opacity">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
                 </div>
               ))}
+              {priorities.length < 2 && (
+                <Input
+                  placeholder={priorities.length === 0 ? "+ Priorité #1" : "+ Priorité #2"}
+                  value={newDayPriority[dateStr] || ""}
+                  onChange={(e) => setNewDayPriority((prev) => ({ ...prev, [dateStr]: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && addDayPriority(dateStr)}
+                  className="h-6 text-[10px] border-dashed bg-transparent border-amber-300/50"
+                />
+              )}
             </div>
+          </section>
+
+          {/* Récurrentes — collapsed chip with badge */}
+          {showNonNego && recurringHabits.length > 0 && (
+            <details className="group/rec rounded-lg border border-violet-200/60 dark:border-violet-900/40 bg-violet-50/40 dark:bg-violet-950/20">
+              <summary className="flex items-center justify-between gap-2 px-2 py-1.5 cursor-pointer list-none select-none">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[10px]">🔁</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-400 truncate">
+                    Récurrentes
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className={cn(
+                    "text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full",
+                    recurringDone === recurringHabits.length
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                      : "bg-violet-500/15 text-violet-700 dark:text-violet-400"
+                  )}>
+                    {recurringDone}/{recurringHabits.length}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-violet-500 transition-transform group-open/rec:rotate-180" />
+                </div>
+              </summary>
+              <div className="px-2 pb-1.5 space-y-0.5">
+                {recurringHabits.map((h: any) => (
+                  <label key={h.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
+                    <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
+                    <span className={cn("text-[11px] font-medium leading-tight", isHabitCompleted(h.id, dateStr) && "line-through opacity-50")}>
+                      {h.title}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </details>
           )}
 
+          {/* Tasks list — clean, scannable */}
+          <div className="flex-1 flex flex-col gap-0.5 min-h-0">
+            {otherTasks.length === 0 && (
+              <p className="text-[10px] text-muted-foreground/60 italic px-1 py-1">Aucune tâche</p>
+            )}
+            {otherTasks.map((t: any) => (
+              <div
+                key={t.id}
+                className={cn(
+                  "flex items-start gap-2 px-1.5 py-1 rounded-md group/task cursor-grab active:cursor-grabbing",
+                  "hover:bg-muted/50 transition-colors"
+                )}
+                draggable
+                onDragStart={(e) => handleDragStart(e as any, t.id)}
+              >
+                <Checkbox
+                  checked={t.completed}
+                  onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
+                <button
+                  onClick={() => deleteDailyTask(t.id)}
+                  className="opacity-0 group-hover/task:opacity-100 text-muted-foreground hover:text-destructive shrink-0 transition-all"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
 
-          {/* All tasks flat - draggable (exclude priority tasks) */}
-          {dayTasks.filter((t: any) => t.block !== "day_priority").map((t: any) => (
-            <div
-              key={t.id}
-              className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
-              draggable
-              onDragStart={(e) => handleDragStart(e as any, t.id)}
-            >
-              <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="mt-0.5 h-4 w-4" />
-              <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
-              <button onClick={() => deleteDailyTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
           <Input
-            placeholder="+ tâche"
+            placeholder="+ Ajouter une tâche"
             value={newTaskText[dateStr] || ""}
             onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
             onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
-            className="h-7 text-xs border-dashed bg-transparent"
+            className="h-7 text-[11px] border-dashed bg-transparent focus-visible:border-primary/50"
           />
         </CardContent>
       </Card>
