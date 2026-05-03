@@ -41,8 +41,9 @@ export default function Sport() {
   const [weightGoal, setWeightGoal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // New item draft per meal
+  // New item draft per meal (free text + AI-parsed)
   const [newItem, setNewItem] = useState<Record<string, { name: string; kcal: string; protein: string }>>({});
+  const [parsingKey, setParsingKey] = useState<string | null>(null);
   const [todayWeight, setTodayWeight] = useState("");
 
   const fetchAll = async () => {
