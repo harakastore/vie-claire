@@ -398,6 +398,11 @@ export default function Goals() {
     await (supabase.from("daily_tasks" as any) as any).update({ title: newTitle }).eq("id", id);
   };
 
+  const setTaskPriority = async (id: string, priority: string) => {
+    setDailyTasks((prev) => prev.map((t) => t.id === id ? { ...t, priority } : t));
+    await (supabase.from("daily_tasks" as any) as any).update({ priority }).eq("id", id);
+  };
+
   const renameGoal = async (id: string, newTitle: string) => {
     const updateList = (list: any[]) => list.map((g) => g.id === id ? { ...g, title: newTitle } : g);
     setGoals90((prev) => updateList(prev));
