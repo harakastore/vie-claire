@@ -52,14 +52,14 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
   const { number, text } = parseNumberedTask(title);
   if (number) {
     return (
-      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "line-through text-muted-foreground")}>
+      <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("flex-1 leading-snug", completed && "text-emerald-700/70 dark:text-emerald-400/70")}>
         <span className="font-black text-lg mr-1.5" style={{ color: completed ? undefined : "hsl(220, 70%, 50%)" }}>{number}-</span>
         <span className="font-bold text-base">{text}</span>
       </EditableText>
     );
   }
   return (
-    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "line-through text-muted-foreground")} />
+    <EditableText value={title} onSave={(v) => onRename?.(v)} className={cn("text-sm flex-1 leading-snug", completed && "text-emerald-700/70 dark:text-emerald-400/70")} />
   );
 }
 
