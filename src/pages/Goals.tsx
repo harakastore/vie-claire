@@ -1611,14 +1611,22 @@ export default function Goals() {
 
           <div className={cn(
             "grid gap-3",
-            isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-7"
+            isMobile ? "grid-cols-1" : expandedDay ? "grid-cols-1" : "grid-cols-12"
           )}>
             {(isMobile
               ? (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : visibleDays)
               : (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays)
-            ).map((day) =>
-              isMobile ? renderMobileDayCard(day) : renderDesktopDayCard(day)
-            )}
+            ).map((day, idx) => {
+              if (isMobile) return renderMobileDayCard(day);
+              if (expandedDay) return renderDesktopDayCard(day);
+              // Layout 3 + 4 : 3 premiers jours en col-span-4, 4 derniers en col-span-3
+              const span = idx < 3 ? "col-span-4" : "col-span-3";
+              return (
+                <div key={format(day, "yyyy-MM-dd")} className={span}>
+                  {renderDesktopDayCard(day)}
+                </div>
+              );
+            })}
           </div>
 
           {isMobile && !expandedDay && (
