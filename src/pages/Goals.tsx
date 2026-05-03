@@ -69,6 +69,7 @@ export default function Goals() {
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
   const [showAllDays, setShowAllDays] = useState(false);
+  const [hideFirst3, setHideFirst3] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
@@ -1646,6 +1647,15 @@ export default function Goals() {
                 <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40 dark:text-blue-300 dark:border-blue-800" onClick={copyTasksFromLastWeek}>
                   <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier semaine précédente
                 </Button>
+                {!isMobile && !expandedDay && (
+                  <Button
+                    variant="outline" size="sm"
+                    className="h-7 text-xs rounded-full bg-background/60 backdrop-blur"
+                    onClick={() => setHideFirst3(!hideFirst3)}
+                  >
+                    {hideFirst3 ? "👁 Voir les 3 premiers jours" : "🙈 Masquer les 3 premiers jours"}
+                  </Button>
+                )}
               </div>
             </div>
           );
@@ -1672,12 +1682,15 @@ export default function Goals() {
           )}>
             {(isMobile
               ? (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : visibleDays)
-              : (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays)
+              : (expandedDay
+                  ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay)
+                  : (hideFirst3 ? weekDays.slice(3) : weekDays))
             ).map((day, idx) => {
               if (isMobile) return renderMobileDayCard(day);
               if (expandedDay) return renderDesktopDayCard(day);
-              // Layout 3 + 4 : 3 premiers jours en col-span-4, 4 derniers en col-span-3
-              const span = idx < 3 ? "col-span-4" : "col-span-3";
+              // Layout: si on cache les 3 premiers, 4 jours en col-span-3 chacun
+              // Sinon: 3 + 4 (premiers col-span-4, derniers col-span-3)
+              const span = hideFirst3 ? "col-span-3" : (idx < 3 ? "col-span-4" : "col-span-3");
               return (
                 <div key={format(day, "yyyy-MM-dd")} className={span}>
                   {renderDesktopDayCard(day)}

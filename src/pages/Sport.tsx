@@ -41,8 +41,9 @@ export default function Sport() {
   const [weightGoal, setWeightGoal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // New item draft per meal
+  // New item draft per meal (free text + AI-parsed)
   const [newItem, setNewItem] = useState<Record<string, { name: string; kcal: string; protein: string }>>({});
+  const [parsingKey, setParsingKey] = useState<string | null>(null);
   const [todayWeight, setTodayWeight] = useState("");
 
   const fetchAll = async () => {
@@ -162,6 +163,40 @@ export default function Sport() {
     if (data) {
       setMealItems((prev) => [...prev, data]);
       setNewItem((prev) => ({ ...prev, [`${dateStr}-${mealType}`]: { name: "", kcal: "", protein: "" } }));
+    }
+  };
+
+  const addMealItemSmart = async (dateStr: string, mealType: string) => {
+    if (!user) return;
+    const draftKey = `${dateStr}-${mealType}`;
+    const draft = newItem[draftKey];
+    if (!draft || !draft.name.trim()) return;
+    setParsingKey(draftKey);
+    try {
+      const { data: parsed, error } = await supabase.functions.invoke("parse-meal", {
+        body: { text: draft.name.trim() },
+      });
+      if (error || !parsed) {
+        toast({ title: "Erreur", description: "Impossible d'analyser le repas", variant: "destructive" });
+        return;
+      }
+      const mealId = await ensureMeal(dateStr, mealType);
+      if (!mealId) return;
+      const payload = {
+        user_id: user.id,
+        meal_id: mealId,
+        name: parsed.name || draft.name.trim(),
+        kcal: parsed.kcal || 0,
+        protein_g: parsed.protein_g || 0,
+      };
+      const { data } = await (supabase.from("meal_items" as any) as any).insert(payload).select().single();
+      if (data) {
+        setMealItems((prev) => [...prev, data]);
+        setNewItem((prev) => ({ ...prev, [draftKey]: { name: "", kcal: "", protein: "" } }));
+        toast({ title: "✓ Ajouté", description: `${data.kcal} kcal · ${data.protein_g}g prot` });
+      }
+    } finally {
+      setParsingKey(null);
     }
   };
 
@@ -475,35 +510,27 @@ export default function Sport() {
                             ))}
                           </div>
 
-                          {/* add item form */}
+                          {/* add item form — smart AI parsing */}
                           <div className="space-y-1">
                             <Input
-                              placeholder="+ Aliment"
+                              placeholder='ex: "3 oeufs + 300g dinde"'
                               value={draft.name}
+                              disabled={parsingKey === draftKey}
                               onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, name: e.target.value } }))}
+                              onKeyDown={(e) => e.key === "Enter" && addMealItemSmart(dateStr, mt.key)}
                               className="h-7 text-[11px]"
                             />
-                            <div className="grid grid-cols-2 gap-1">
-                              <Input
-                                type="number" placeholder="kcal" value={draft.kcal}
-                                onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, kcal: e.target.value } }))}
-                                onKeyDown={(e) => e.key === "Enter" && addMealItem(dateStr, mt.key)}
-                                className="h-7 text-[11px] tabular-nums"
-                              />
-                              <Input
-                                type="number" placeholder="prot g" value={draft.protein}
-                                onChange={(e) => setNewItem(p => ({ ...p, [draftKey]: { ...draft, protein: e.target.value } }))}
-                                onKeyDown={(e) => e.key === "Enter" && addMealItem(dateStr, mt.key)}
-                                className="h-7 text-[11px] tabular-nums"
-                              />
-                            </div>
                             <Button
                               size="sm" variant="outline"
-                              onClick={() => addMealItem(dateStr, mt.key)}
-                              disabled={!draft.name.trim()}
+                              onClick={() => addMealItemSmart(dateStr, mt.key)}
+                              disabled={!draft.name.trim() || parsingKey === draftKey}
                               className="h-7 w-full text-[11px]"
                             >
-                              <Plus className="h-3 w-3 mr-1" /> Ajouter
+                              {parsingKey === draftKey ? (
+                                <>⏳ Calcul…</>
+                              ) : (
+                                <><Plus className="h-3 w-3 mr-1" /> Ajouter (auto kcal/prot)</>
+                              )}
                             </Button>
                           </div>
                         </div>
