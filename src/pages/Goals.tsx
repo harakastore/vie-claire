@@ -1647,6 +1647,15 @@ export default function Goals() {
                 <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40 dark:text-blue-300 dark:border-blue-800" onClick={copyTasksFromLastWeek}>
                   <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier semaine précédente
                 </Button>
+                {!isMobile && !expandedDay && (
+                  <Button
+                    variant="outline" size="sm"
+                    className="h-7 text-xs rounded-full bg-background/60 backdrop-blur"
+                    onClick={() => setHideFirst3(!hideFirst3)}
+                  >
+                    {hideFirst3 ? "👁 Voir les 3 premiers jours" : "🙈 Masquer les 3 premiers jours"}
+                  </Button>
+                )}
               </div>
             </div>
           );
