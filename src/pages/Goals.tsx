@@ -1682,12 +1682,15 @@ export default function Goals() {
           )}>
             {(isMobile
               ? (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : visibleDays)
-              : (expandedDay ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay) : weekDays)
+              : (expandedDay
+                  ? weekDays.filter(d => format(d, "yyyy-MM-dd") === expandedDay)
+                  : (hideFirst3 ? weekDays.slice(3) : weekDays))
             ).map((day, idx) => {
               if (isMobile) return renderMobileDayCard(day);
               if (expandedDay) return renderDesktopDayCard(day);
-              // Layout 3 + 4 : 3 premiers jours en col-span-4, 4 derniers en col-span-3
-              const span = idx < 3 ? "col-span-4" : "col-span-3";
+              // Layout: si on cache les 3 premiers, 4 jours en col-span-3 chacun
+              // Sinon: 3 + 4 (premiers col-span-4, derniers col-span-3)
+              const span = hideFirst3 ? "col-span-3" : (idx < 3 ? "col-span-4" : "col-span-3");
               return (
                 <div key={format(day, "yyyy-MM-dd")} className={span}>
                   {renderDesktopDayCard(day)}
