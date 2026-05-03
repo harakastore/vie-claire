@@ -1167,29 +1167,44 @@ export default function Goals() {
                 </div>
               </summary>
               <div className="px-2 pb-1.5 space-y-0.5">
-                {recurringHabits.map((h: any) => (
-                  <label key={h.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
-                    <span className={cn("text-[11px] font-medium leading-tight", isHabitCompleted(h.id, dateStr) && "line-through opacity-50")}>
-                      {h.title}
-                    </span>
-                  </label>
-                ))}
+                {recurringHabits.map((h: any) => {
+                  const done = isHabitCompleted(h.id, dateStr);
+                  return (
+                    <label
+                      key={h.id}
+                      className={cn(
+                        "flex items-center gap-2 py-1 px-1.5 rounded-md cursor-pointer transition-all",
+                        done && "bg-emerald-500/10"
+                      )}
+                    >
+                      <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-3.5 w-3.5" />
+                      {done && <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                      <span className={cn(
+                        "text-[12px] font-medium leading-snug",
+                        done && "text-emerald-700/80 dark:text-emerald-400/80"
+                      )}>
+                        {h.title}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </details>
           )}
 
           {/* Tasks list — clean, scannable */}
-          <div className="flex-1 flex flex-col gap-0.5 min-h-0">
+          <div className="flex-1 flex flex-col gap-1 min-h-0">
             {otherTasks.length === 0 && (
-              <p className="text-[10px] text-muted-foreground/60 italic px-1 py-1">Aucune tâche</p>
+              <p className="text-[11px] text-muted-foreground/70 px-1 py-1">Aucune tâche pour ce jour</p>
             )}
             {otherTasks.map((t: any) => (
               <div
                 key={t.id}
                 className={cn(
-                  "flex items-start gap-2 px-1.5 py-1 rounded-md group/task cursor-grab active:cursor-grabbing",
-                  "hover:bg-muted/50 transition-colors"
+                  "flex items-start gap-2 px-2 py-1.5 rounded-md group/task cursor-grab active:cursor-grabbing transition-all",
+                  t.completed
+                    ? "bg-emerald-500/10 border border-emerald-500/20"
+                    : "border border-transparent hover:bg-muted/60 hover:border-border/40"
                 )}
                 draggable
                 onDragStart={(e) => handleDragStart(e as any, t.id)}
@@ -1197,14 +1212,15 @@ export default function Goals() {
                 <Checkbox
                   checked={t.completed}
                   onCheckedChange={() => toggleDailyTask(t.id, t.completed)}
-                  className="mt-0.5 h-3.5 w-3.5"
+                  className="mt-0.5 h-4 w-4"
                 />
+                {t.completed && <Check className="mt-0.5 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
                 <TaskTitle title={t.title} completed={t.completed} onRename={(v) => renameDailyTask(t.id, v)} />
                 <button
                   onClick={() => deleteDailyTask(t.id)}
                   className="opacity-0 group-hover/task:opacity-100 text-muted-foreground hover:text-destructive shrink-0 transition-all"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
@@ -1215,7 +1231,7 @@ export default function Goals() {
             value={newTaskText[dateStr] || ""}
             onChange={(e) => setNewTaskText((prev) => ({ ...prev, [dateStr]: e.target.value }))}
             onKeyDown={(e) => e.key === "Enter" && addSimpleDailyTask(dateStr)}
-            className="h-7 text-[11px] border-dashed bg-transparent focus-visible:border-primary/50"
+            className="h-8 text-xs border-dashed bg-transparent focus-visible:border-primary/50"
           />
         </CardContent>
       </Card>
