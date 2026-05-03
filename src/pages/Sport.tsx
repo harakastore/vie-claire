@@ -422,7 +422,7 @@ export default function Sport() {
                   <div className="md:col-span-2">
                     <Label className="text-[10px] flex items-center gap-1 mb-1"><Dumbbell className="h-3 w-3" /> Programme</Label>
                     <Textarea
-                      placeholder="Ex: Pectoraux + triceps, 45min cardio..."
+                      placeholder="Ex: Pectoraux + triceps 45min, 15min cardio..."
                       value={sp?.program || ""}
                       onChange={(e) => updateLocalSport(i, { program: e.target.value })}
                       onBlur={(e) => upsertSport(i, { program: e.target.value })}
@@ -437,6 +437,14 @@ export default function Sport() {
                       onBlur={(e) => upsertSport(i, { kcal_burned: parseInt(e.target.value) || 0 })}
                       className="h-9 text-sm tabular-nums"
                     />
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => estimateBurnedKcal(i)}
+                      disabled={!sp?.program?.trim() || estimatingBurn === i}
+                      className="h-7 w-full mt-1 text-[11px]"
+                    >
+                      {estimatingBurn === i ? "⏳ Calcul…" : <><Flame className="h-3 w-3 mr-1 text-orange-500" /> Estimer auto</>}
+                    </Button>
                   </div>
                 </div>
 
