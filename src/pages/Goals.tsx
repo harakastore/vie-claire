@@ -905,18 +905,19 @@ export default function Goals() {
                     {recurringDone}/{recurringForDay.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {recurringForDay.map((h: any) => {
                     const done = isHabitCompleted(h.id, dateStr);
                     return (
-                      <label key={h.id} className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all",
+                      <div key={h.id} className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-lg transition-all group",
                         done ? "bg-purple-200/50 dark:bg-purple-800/30" : "bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40"
                       )}>
                         <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                        <span className={cn("text-sm font-medium text-purple-950 dark:text-purple-100", done && "line-through opacity-50")}>{h.title}</span>
-                      </label>
+                        <EditableText value={h.title} onSave={(v) => updateDailyHabit(h.id, v)} className={cn("text-sm font-medium text-purple-950 dark:text-purple-100 flex-1", done && "line-through opacity-50")} />
+                        <button onClick={() => deleteDailyHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
                     );
+                  })}
                   })}
                 </div>
               </div>
