@@ -14,6 +14,7 @@ import {
   TrendingDown, TrendingUp, Copy, Utensils, Clock, Plus, Trash2,
   Target, Scale, Trophy, Coffee, Sandwich, Apple, Moon
 } from "lucide-react";
+import heroPhoto from "@/assets/discipline-hero.png";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 
@@ -305,12 +306,19 @@ export default function Sport() {
       >
         <div className="absolute -top-8 -right-8 opacity-10"><Dumbbell className="h-44 w-44" /></div>
         <div className="relative flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold mb-2">
-              🏋️ SPORT & NUTRITION
+          <div className="flex items-start gap-5">
+            <img
+              src={heroPhoto}
+              alt="Objectif physique"
+              className="h-32 w-32 sm:h-40 sm:w-40 rounded-2xl object-cover ring-4 ring-white/40 shadow-2xl shrink-0"
+            />
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold mb-2">
+                🏋️ SPORT & NUTRITION
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Programme hebdomadaire</h1>
+              <p className="text-sm opacity-90 mt-1">Semaine du {format(weekStart, "d MMM", { locale: fr })} au {format(addDays(weekStart, 6), "d MMM yyyy", { locale: fr })}</p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Programme hebdomadaire</h1>
-            <p className="text-sm opacity-90 mt-1">Semaine du {format(weekStart, "d MMM", { locale: fr })} au {format(addDays(weekStart, 6), "d MMM yyyy", { locale: fr })}</p>
           </div>
           <div className="grid grid-cols-3 gap-2 min-w-[300px]">
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">

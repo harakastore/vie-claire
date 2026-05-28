@@ -174,7 +174,7 @@ export default function Discipline() {
             <img
               src={disciplineHero}
               alt="Discipline"
-              className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-4 ring-white/30 shadow-xl shrink-0"
+              className="h-32 w-32 sm:h-40 sm:w-40 rounded-2xl object-cover ring-4 ring-white/40 shadow-2xl shrink-0"
             />
             <div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight">🛡️ Discipline absolue</h1>

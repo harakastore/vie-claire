@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Flame, Trophy, RotateCcw, Settings2, Save } from "lucide-react";
+import heroPhoto from "@/assets/discipline-hero.png";
 
 type ChallengeDay = { day_number: number; sport: boolean; deficit: boolean; fajr: boolean };
 type Config = {
@@ -170,15 +171,22 @@ export default function HighPerformance() {
       >
         <div className="absolute -bottom-10 -right-10 opacity-10"><Flame className="h-56 w-56" /></div>
         <div className="relative flex items-start justify-between flex-wrap gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold mb-2">
-              🔥 CHALLENGE {config.days_count} JOURS
+          <div className="flex items-start gap-5">
+            <img
+              src={heroPhoto}
+              alt="Objectif physique"
+              className="h-32 w-32 sm:h-40 sm:w-40 rounded-2xl object-cover ring-4 ring-white/40 shadow-2xl shrink-0"
+            />
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold mb-2">
+                🔥 CHALLENGE {config.days_count} JOURS
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{config.title}</h1>
+              <p className="text-sm sm:text-base opacity-90 mt-2 max-w-xl">
+                Du <span className="font-bold">{format(startDate, "EEEE d MMMM", { locale: fr })}</span> au <span className="font-bold">{format(endDate, "EEEE d MMMM yyyy", { locale: fr })}</span>
+              </p>
+              <p className="text-xs opacity-80 mt-1">Chaque jour : {OBJECTIVES.map(o => o.label).join(" · ")}</p>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{config.title}</h1>
-            <p className="text-sm sm:text-base opacity-90 mt-2 max-w-xl">
-              Du <span className="font-bold">{format(startDate, "EEEE d MMMM", { locale: fr })}</span> au <span className="font-bold">{format(endDate, "EEEE d MMMM yyyy", { locale: fr })}</span>
-            </p>
-            <p className="text-xs opacity-80 mt-1">Chaque jour : {OBJECTIVES.map(o => o.label).join(" · ")}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 min-w-[280px]">
