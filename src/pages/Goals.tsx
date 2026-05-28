@@ -918,7 +918,6 @@ export default function Goals() {
                       </div>
                     );
                   })}
-                  })}
                 </div>
               </div>
             )}
