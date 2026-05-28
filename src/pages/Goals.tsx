@@ -73,7 +73,7 @@ export default function Goals() {
   const [showGoals, setShowGoals] = useState(false);
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
-  const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [expandedDay, setExpandedDay] = useState<string | null>(() => format(new Date(), "yyyy-MM-dd"));
   const [focusTasksOnly, setFocusTasksOnly] = useState(false);
   const [showNonNego, setShowNonNego] = useState(true);
 
