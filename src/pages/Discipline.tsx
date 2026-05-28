@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2, Pencil, Shield, Briefcase, Repeat, ChevronLeft, ChevronRight, Sparkles, Trophy, Flame } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import disciplineHero from "@/assets/discipline-hero.png";
 
 const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
 const FAJR_KEYWORDS = ["fajr", "al fajr", "alfajr", "salat al fajr", "صلاة الفجر", "الفجر"];
@@ -169,9 +170,16 @@ export default function Discipline() {
       >
         <div className="absolute -top-8 -right-8 opacity-10"><Shield className="h-40 w-40" /></div>
         <div className="relative flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">🛡️ Discipline absolue</h1>
-            <p className="text-sm opacity-90 mt-1">Non-négociables d'aujourd'hui — {format(now, "EEEE d MMMM yyyy", { locale: fr })}</p>
+          <div className="flex items-center gap-4">
+            <img
+              src={disciplineHero}
+              alt="Discipline"
+              className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-4 ring-white/30 shadow-xl shrink-0"
+            />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">🛡️ Discipline absolue</h1>
+              <p className="text-sm opacity-90 mt-1">Non-négociables d'aujourd'hui — {format(now, "EEEE d MMMM yyyy", { locale: fr })}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3 bg-white/15 backdrop-blur rounded-xl px-4 py-2.5">
             <Trophy className="h-5 w-5 text-yellow-300" />
