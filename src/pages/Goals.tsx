@@ -679,9 +679,10 @@ export default function Goals() {
                 📅 RÉCURRENTES
               </p>
               {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5">
+                <div key={h.id} className="flex items-center gap-2 py-0.5 group">
                   <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <span className={cn("text-sm font-medium", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")}>{h.title}</span>
+                  <EditableText value={h.title} onSave={(v) => updateDailyHabit(h.id, v)} className={cn("text-sm font-medium flex-1", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")} />
+                  <button onClick={() => deleteDailyHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               ))}
             </div>
