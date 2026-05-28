@@ -444,6 +444,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hp_config: {
+        Row: {
+          created_at: string
+          days_count: number
+          id: string
+          obj1_label: string
+          obj2_label: string
+          obj3_label: string
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_count?: number
+          id?: string
+          obj1_label?: string
+          obj2_label?: string
+          obj3_label?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_count?: number
+          id?: string
+          obj1_label?: string
+          obj2_label?: string
+          obj3_label?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hp_daily: {
         Row: {
           cost_per_lead: number | null
