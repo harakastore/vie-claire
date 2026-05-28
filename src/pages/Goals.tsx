@@ -1719,6 +1719,9 @@ export default function Goals() {
                 <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-cyan-100 dark:from-blue-950/40 dark:to-cyan-950/40 dark:text-blue-300 dark:border-blue-800" onClick={copyTasksFromLastWeek}>
                   <ChevronRight className="h-3.5 w-3.5 mr-1" /> Copier semaine précédente
                 </Button>
+                <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-purple-50 to-fuchsia-50 border-purple-300 text-purple-700 hover:from-purple-100 hover:to-fuchsia-100 dark:from-purple-950/40 dark:to-fuchsia-950/40 dark:text-purple-300 dark:border-purple-800" onClick={redistributeWeekTasks}>
+                  ⚖️ Répartir les tâches
+                </Button>
                 {!isMobile && !expandedDay && (
                   <Button
                     variant="outline" size="sm"
