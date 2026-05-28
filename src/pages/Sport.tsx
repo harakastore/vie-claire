@@ -14,6 +14,7 @@ import {
   TrendingDown, TrendingUp, Copy, Utensils, Clock, Plus, Trash2,
   Target, Scale, Trophy, Coffee, Sandwich, Apple, Moon
 } from "lucide-react";
+import heroPhoto from "@/assets/discipline-hero.png";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 

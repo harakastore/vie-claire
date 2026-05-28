@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Flame, Trophy, RotateCcw, Settings2, Save } from "lucide-react";
+import heroPhoto from "@/assets/discipline-hero.png";
 
 type ChallengeDay = { day_number: number; sport: boolean; deficit: boolean; fajr: boolean };
 type Config = {
