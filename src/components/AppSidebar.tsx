@@ -26,7 +26,7 @@ const items = [
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
   { title: "Discipline", url: "/discipline", icon: Shield },
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
-  { title: "Challenge 15j", url: "/performance", icon: Zap },
+  { title: "Challenge", url: "/performance", icon: Zap },
 ];
 
 export function AppSidebar() {
