@@ -318,13 +318,39 @@ export default function Goals() {
       toast({ title: "Rien à copier", description: "Aucune tâche la semaine précédente." });
       return;
     }
-    const rows = data.map((t: any) => {
-      const oldDate = parseISO(t.day_date);
-      const newDate = addDays(oldDate, 7);
-      return {
-        user_id: user.id, title: t.title, day_date: format(newDate, "yyyy-MM-dd"),
-        block: t.block || "fajr_dhuhr", completed: false, scheduled_time: t.scheduled_time || null,
-      };
+    const MAX_PER_BLOCK = 3;
+    const blockKeys = BLOCKS.map(b => b.key);
+    // Group by new day_date
+    const byDay: Record<string, any[]> = {};
+    data.forEach((t: any) => {
+      const newDate = format(addDays(parseISO(t.day_date), 7), "yyyy-MM-dd");
+      (byDay[newDate] ||= []).push(t);
+    });
+    const rows: any[] = [];
+    Object.entries(byDay).forEach(([newDate, tasks]) => {
+      // Keep priorities as priorities
+      const priorities = tasks.filter(t => t.block === "day_priority");
+      const others = tasks.filter(t => t.block !== "day_priority");
+      priorities.forEach(t => rows.push({
+        user_id: user.id, title: t.title, day_date: newDate,
+        block: "day_priority", completed: false, scheduled_time: t.scheduled_time || null,
+      }));
+      // Count current load per block, then redistribute overflow round-robin
+      const load: Record<string, any[]> = {};
+      blockKeys.forEach(k => load[k] = []);
+      others.forEach(t => {
+        const original = blockKeys.includes(t.block) ? t.block : blockKeys[0];
+        if (load[original].length < MAX_PER_BLOCK) load[original].push(t);
+        else {
+          // find least loaded block
+          const target = blockKeys.reduce((a, b) => load[a].length <= load[b].length ? a : b);
+          load[target].push(t);
+        }
+      });
+      blockKeys.forEach(k => load[k].forEach(t => rows.push({
+        user_id: user.id, title: t.title, day_date: newDate,
+        block: k, completed: false, scheduled_time: t.scheduled_time || null,
+      })));
     });
     const { error } = await (supabase.from("daily_tasks" as any) as any).insert(rows);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
