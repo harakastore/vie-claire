@@ -358,6 +358,50 @@ export default function Goals() {
     fetchAll();
   };
 
+  // Redistribute all current week tasks across blocks (max 3 per block, overflow to least loaded)
+  const redistributeWeekTasks = async () => {
+    if (!user) return;
+    const MAX_PER_BLOCK = 3;
+    const blockKeys = BLOCKS.map(b => b.key);
+    const wsStr = format(currentWeekStart, "yyyy-MM-dd");
+    const weStr = format(weekEnd, "yyyy-MM-dd");
+    const others = dailyTasks.filter((t: any) => t.block !== "day_priority");
+    if (others.length === 0) { toast({ title: "Rien à répartir" }); return; }
+
+    const byDay: Record<string, any[]> = {};
+    others.forEach((t: any) => { (byDay[t.day_date] ||= []).push(t); });
+
+    const updates: { id: string; block: string }[] = [];
+    Object.entries(byDay).forEach(([, tasks]) => {
+      const load: Record<string, any[]> = {};
+      blockKeys.forEach(k => load[k] = []);
+      tasks.forEach((t: any) => {
+        const original = blockKeys.includes(t.block) ? t.block : blockKeys[0];
+        if (load[original].length < MAX_PER_BLOCK) load[original].push(t);
+        else {
+          const target = blockKeys.reduce((a, b) => load[a].length <= load[b].length ? a : b);
+          load[target].push(t);
+        }
+      });
+      blockKeys.forEach(k => load[k].forEach(t => {
+        if (t.block !== k) updates.push({ id: t.id, block: k });
+      }));
+    });
+
+    if (updates.length === 0) { toast({ title: "Déjà équilibré ✨" }); return; }
+
+    // Optimistic update
+    setDailyTasks(prev => prev.map(t => {
+      const u = updates.find(x => x.id === t.id);
+      return u ? { ...t, block: u.block } : t;
+    }));
+
+    await Promise.all(updates.map(u =>
+      (supabase.from("daily_tasks" as any) as any).update({ block: u.block }).eq("id", u.id)
+    ));
+    toast({ title: "Tâches réparties ⚖️", description: `${updates.length} tâche(s) redistribuée(s).` });
+  };
+
   // Restart a 90-day goal with new dates
 
   const restart90DayGoal = async (goal: any) => {
