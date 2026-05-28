@@ -335,6 +335,52 @@ export default function Sport() {
         </div>
       </div>
 
+      {/* PROGRAMME DU JOUR */}
+      {(() => {
+        const todayIdx = weekDays.findIndex(d => isSameDay(d, now));
+        if (todayIdx < 0) return null;
+        const sp = weeklySports.find((s: any) => s.day_index === todayIdx);
+        const program = sp?.program?.trim();
+        const kcalBurned = sp?.kcal_burned || 0;
+        const dateStr = format(weekDays[todayIdx], "yyyy-MM-dd");
+        const tot = dayMealTotals(dateStr, true);
+        return (
+          <Card className="border-2 border-primary/40 shadow-lg">
+            <CardHeader className="py-3 px-4 bg-gradient-to-r from-primary/10 to-transparent">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Flame className="h-4 w-4 text-primary" />
+                Programme d'aujourd'hui — {format(now, "EEEE d MMMM", { locale: fr })}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              {program ? (
+                <div className="flex items-start gap-2">
+                  <Dumbbell className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                  <p className="text-sm whitespace-pre-wrap">{program}</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Aucun programme défini pour aujourd'hui.</p>
+              )}
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                <div className="text-center">
+                  <p className="text-lg font-black tabular-nums">{Math.round(tot.kcal)}</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Kcal mangé</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-black tabular-nums">{Math.round(tot.protein)}g</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Protéines</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-lg font-black tabular-nums">{kcalBurned}</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Kcal brûlé</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+
       {/* WEIGHT TRACKING */}
       <WeightTrackerCard
         goal={weightGoal}
