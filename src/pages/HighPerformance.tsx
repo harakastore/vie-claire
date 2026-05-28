@@ -1,57 +1,119 @@
 import { useEffect, useMemo, useState } from "react";
-import { format, addDays, parseISO, differenceInCalendarDays, isSameDay } from "date-fns";
+import { format, addDays, parseISO, differenceInCalendarDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Flame, Trophy, RotateCcw, Utensils, Dumbbell, Sun } from "lucide-react";
-
-const CHALLENGE_DAYS = 15;
-const FORCED_START = "2026-05-02"; // Samedi 2 mai 2026 → 16 mai 2026
+import { Flame, Trophy, RotateCcw, Settings2, Save } from "lucide-react";
 
 type ChallengeDay = { day_number: number; sport: boolean; deficit: boolean; fajr: boolean };
+type Config = {
+  title: string;
+  start_date: string;
+  days_count: number;
+  obj1_label: string;
+  obj2_label: string;
+  obj3_label: string;
+};
 
-const FIELDS = [
-  { key: "deficit" as const, label: "Déficit", icon: Utensils, color: "hsl(15, 90%, 55%)" },
-  { key: "sport"   as const, label: "Sport",   icon: Dumbbell, color: "hsl(220, 80%, 55%)" },
-  { key: "fajr"    as const, label: "Fajr",    icon: Sun,      color: "hsl(45, 95%, 55%)" },
-];
+const DEFAULT_CONFIG: Config = {
+  title: "Discipline Absolue",
+  start_date: format(new Date(), "yyyy-MM-dd"),
+  days_count: 15,
+  obj1_label: "Déficit",
+  obj2_label: "Sport",
+  obj3_label: "Fajr",
+};
 
 export default function HighPerformance() {
   const { user } = useAuth();
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const [challengeStart] = useState<string>(FORCED_START);
+  const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [days, setDays] = useState<ChallengeDay[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [draft, setDraft] = useState<Config>(DEFAULT_CONFIG);
+  const [saving, setSaving] = useState(false);
 
-  const fetchDays = async () => {
+  const loadAll = async () => {
     if (!user) return;
     setLoading(true);
+    const { data: cfgRow } = await supabase
+      .from("hp_config" as any)
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let cfg: Config = DEFAULT_CONFIG;
+    if (cfgRow) {
+      cfg = {
+        title: (cfgRow as any).title,
+        start_date: (cfgRow as any).start_date,
+        days_count: (cfgRow as any).days_count,
+        obj1_label: (cfgRow as any).obj1_label,
+        obj2_label: (cfgRow as any).obj2_label,
+        obj3_label: (cfgRow as any).obj3_label,
+      };
+    } else {
+      // create default config
+      await supabase.from("hp_config" as any).insert({ user_id: user.id, ...DEFAULT_CONFIG });
+    }
+    setConfig(cfg);
+
     const { data } = await supabase
       .from("hp_challenge")
       .select("*")
       .eq("user_id", user.id)
-      .eq("challenge_start", FORCED_START)
+      .eq("challenge_start", cfg.start_date)
       .order("day_number", { ascending: true });
+
     const mapped = (data || [])
-      .filter((c: any) => c.day_number <= CHALLENGE_DAYS)
+      .filter((c: any) => c.day_number <= cfg.days_count)
       .map((c: any) => ({ day_number: c.day_number, sport: c.sport, deficit: c.deficit, fajr: c.fajr }));
     setDays(mapped);
     setLoading(false);
   };
 
-  useEffect(() => { fetchDays(); }, [user]);
+  useEffect(() => { loadAll(); }, [user]);
+
+  const openEdit = () => {
+    setDraft(config);
+    setEditOpen(true);
+  };
+
+  const saveConfig = async () => {
+    if (!user) return;
+    if (!draft.title.trim() || !draft.start_date || draft.days_count < 1) {
+      toast({ title: "Champs invalides", description: "Vérifie le titre, la date et la durée.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("hp_config" as any)
+      .upsert({ user_id: user.id, ...draft, days_count: Number(draft.days_count) }, { onConflict: "user_id" });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      setSaving(false);
+      return;
+    }
+    toast({ title: "Challenge mis à jour" });
+    setEditOpen(false);
+    setSaving(false);
+    await loadAll();
+  };
 
   const reset = async () => {
     if (!user) return;
-    await supabase.from("hp_challenge").delete().eq("user_id", user.id).eq("challenge_start", FORCED_START);
+    await supabase.from("hp_challenge").delete().eq("user_id", user.id).eq("challenge_start", config.start_date);
     setDays([]);
-    toast({ title: "Challenge réinitialisé", description: "Toutes les cases sont remises à zéro." });
+    toast({ title: "Challenge réinitialisé" });
   };
 
   const toggle = async (dayNum: number, field: "sport" | "deficit" | "fajr") => {
@@ -63,33 +125,39 @@ export default function HighPerformance() {
       return [...others, updated].sort((a, b) => a.day_number - b.day_number);
     });
     const { error } = await supabase.from("hp_challenge").upsert(
-      { user_id: user.id, challenge_start: FORCED_START, ...updated },
+      { user_id: user.id, challenge_start: config.start_date, ...updated },
       { onConflict: "user_id,challenge_start,day_number" }
     );
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
   };
 
-  const startDate = parseISO(FORCED_START);
-  const endDate = addDays(startDate, CHALLENGE_DAYS - 1);
+  const startDate = parseISO(config.start_date);
+  const endDate = addDays(startDate, config.days_count - 1);
 
   const todayDayNum = useMemo(() => {
     const diff = differenceInCalendarDays(new Date(today), startDate) + 1;
-    return diff >= 1 && diff <= CHALLENGE_DAYS ? diff : null;
-  }, [today]);
+    return diff >= 1 && diff <= config.days_count ? diff : null;
+  }, [today, config.start_date, config.days_count]);
 
   const totalChecks = days.reduce((acc, d) => acc + (d.sport ? 1 : 0) + (d.deficit ? 1 : 0) + (d.fajr ? 1 : 0), 0);
-  const max = CHALLENGE_DAYS * 3;
-  const pct = Math.round((totalChecks / max) * 100);
+  const max = config.days_count * 3;
+  const pct = max > 0 ? Math.round((totalChecks / max) * 100) : 0;
   const perfectDays = days.filter(d => d.sport && d.deficit && d.fajr).length;
   const streak = useMemo(() => {
     let s = 0;
-    for (let i = 1; i <= CHALLENGE_DAYS; i++) {
+    for (let i = 1; i <= config.days_count; i++) {
       const d = days.find(x => x.day_number === i);
       if (d && d.sport && d.deficit && d.fajr) s++;
       else break;
     }
     return s;
-  }, [days]);
+  }, [days, config.days_count]);
+
+  const OBJECTIVES = [
+    { key: "deficit" as const, label: config.obj1_label },
+    { key: "sport" as const, label: config.obj2_label },
+    { key: "fajr" as const, label: config.obj3_label },
+  ];
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
 
@@ -104,13 +172,13 @@ export default function HighPerformance() {
         <div className="relative flex items-start justify-between flex-wrap gap-4">
           <div>
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur rounded-full px-3 py-1 text-xs font-bold mb-2">
-              🔥 CHALLENGE 15 JOURS
+              🔥 CHALLENGE {config.days_count} JOURS
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">Discipline Absolue</h1>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{config.title}</h1>
             <p className="text-sm sm:text-base opacity-90 mt-2 max-w-xl">
               Du <span className="font-bold">{format(startDate, "EEEE d MMMM", { locale: fr })}</span> au <span className="font-bold">{format(endDate, "EEEE d MMMM yyyy", { locale: fr })}</span>
             </p>
-            <p className="text-xs opacity-80 mt-1">Chaque jour : 🍽 Déficit calorique · 🏋️ Sport · 🕌 Salat Al Fajr</p>
+            <p className="text-xs opacity-80 mt-1">Chaque jour : {OBJECTIVES.map(o => o.label).join(" · ")}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-3 min-w-[280px]">
@@ -120,7 +188,7 @@ export default function HighPerformance() {
               <p className="text-[10px] opacity-80 uppercase tracking-wider">Score</p>
             </div>
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
-              <p className="text-xl font-black tabular-nums">{perfectDays}/{CHALLENGE_DAYS}</p>
+              <p className="text-xl font-black tabular-nums">{perfectDays}/{config.days_count}</p>
               <p className="text-[10px] opacity-80 uppercase tracking-wider">Parfaits</p>
             </div>
             <div className="bg-white/15 backdrop-blur rounded-xl p-3 text-center">
@@ -131,16 +199,60 @@ export default function HighPerformance() {
           </div>
         </div>
 
-        {/* progress bar */}
         <div className="relative mt-5 h-3 bg-white/20 rounded-full overflow-hidden">
           <div className="h-full bg-gradient-to-r from-yellow-300 to-white rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <div className="relative flex items-center justify-between mt-2 text-xs opacity-90">
+        <div className="relative flex items-center justify-between mt-2 text-xs opacity-90 flex-wrap gap-2">
           <span className="tabular-nums font-bold">{totalChecks}/{max} validations</span>
           {todayDayNum && <span className="font-bold">📍 Jour {todayDayNum} aujourd'hui</span>}
-          <button onClick={reset} className="inline-flex items-center gap-1 underline opacity-80 hover:opacity-100">
-            <RotateCcw className="h-3 w-3" /> Réinitialiser
-          </button>
+          <div className="flex items-center gap-3">
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogTrigger asChild>
+                <button onClick={openEdit} className="inline-flex items-center gap-1 underline opacity-90 hover:opacity-100">
+                  <Settings2 className="h-3 w-3" /> Modifier
+                </button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Personnaliser le challenge</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label>Titre</Label>
+                    <Input value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label>Date de début</Label>
+                      <Input type="date" value={draft.start_date} onChange={(e) => setDraft({ ...draft, start_date: e.target.value })} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Durée (jours)</Label>
+                      <Input type="number" min={1} max={365} value={draft.days_count} onChange={(e) => setDraft({ ...draft, days_count: parseInt(e.target.value || "0") })} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Objectif 1</Label>
+                    <Input value={draft.obj1_label} onChange={(e) => setDraft({ ...draft, obj1_label: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Objectif 2</Label>
+                    <Input value={draft.obj2_label} onChange={(e) => setDraft({ ...draft, obj2_label: e.target.value })} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Objectif 3</Label>
+                    <Input value={draft.obj3_label} onChange={(e) => setDraft({ ...draft, obj3_label: e.target.value })} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">⚠️ Changer la date de début affichera un nouveau suivi vierge (les cases existantes sont liées à l'ancienne date).</p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setEditOpen(false)}>Annuler</Button>
+                  <Button onClick={saveConfig} disabled={saving}><Save className="h-4 w-4 mr-1" />Enregistrer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <button onClick={reset} className="inline-flex items-center gap-1 underline opacity-80 hover:opacity-100">
+              <RotateCcw className="h-3 w-3" /> Réinitialiser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -154,7 +266,7 @@ export default function HighPerformance() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {Array.from({ length: CHALLENGE_DAYS }, (_, i) => {
+            {Array.from({ length: config.days_count }, (_, i) => {
               const num = i + 1;
               const d = days.find(x => x.day_number === num) || { day_number: num, sport: false, deficit: false, fajr: false };
               const score = (d.sport ? 1 : 0) + (d.deficit ? 1 : 0) + (d.fajr ? 1 : 0);
@@ -197,7 +309,7 @@ export default function HighPerformance() {
                   </div>
 
                   <div className="space-y-1.5">
-                    {FIELDS.map(({ key, label, icon: Icon }) => (
+                    {OBJECTIVES.map(({ key, label }) => (
                       <button
                         key={key}
                         onClick={() => toggle(num, key)}
@@ -210,10 +322,7 @@ export default function HighPerformance() {
                               : "bg-white/80 text-muted-foreground hover:bg-white"
                         )}
                       >
-                        <span className="flex items-center gap-1.5">
-                          <Icon className="h-3.5 w-3.5" />
-                          {label}
-                        </span>
+                        <span className="truncate">{label}</span>
                         <span className="text-base leading-none">{d[key] ? "✓" : "○"}</span>
                       </button>
                     ))}
