@@ -384,6 +384,92 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top expenses & vendors */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-0 bg-gradient-to-br from-card to-muted/30 shadow-lg">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top dépenses</CardTitle>
+            <span className="text-xs text-muted-foreground">{filteredExpenses.length} transaction(s)</span>
+          </CardHeader>
+          <CardContent>
+            {filteredExpenses.length === 0 ? (
+              <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">Aucune dépense</div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {[...filteredExpenses]
+                  .sort((a, b) => Number(b.amount) - Number(a.amount))
+                  .slice(0, 8)
+                  .map((e, i) => {
+                    const max = Math.max(...filteredExpenses.map((x) => Number(x.amount)));
+                    const pct = (Number(e.amount) / max) * 100;
+                    const color = PIE_COLORS[i % PIE_COLORS.length];
+                    return (
+                      <li key={e.id} className="py-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: `${color}25`, color }}>
+                              {i + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">{e.vendor || e.category || "Sans nom"}</p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {e.category && e.vendor ? `${e.category} · ` : ""}
+                                {format(new Date(e.date), "d MMM", { locale: fr })}
+                                {" · "}{e.sector === "perso" ? "Perso" : "Cabinet"}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-sm font-semibold tabular-nums whitespace-nowrap">{Number(e.amount).toLocaleString("fr-FR")} MAD</span>
+                        </div>
+                        <div className="mt-1.5 ml-9 h-1 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 bg-gradient-to-br from-card to-muted/30 shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top fournisseurs / bénéficiaires</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const vendorMap: Record<string, number> = {};
+              filteredExpenses.forEach((e) => {
+                const name = e.vendor || e.category || "Sans nom";
+                vendorMap[name] = (vendorMap[name] || 0) + Number(e.amount);
+              });
+              const vendors = Object.entries(vendorMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
+              if (vendors.length === 0) return <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">Aucune dépense</div>;
+              const max = vendors[0].value;
+              return (
+                <ul className="space-y-3">
+                  {vendors.map((v, i) => {
+                    const color = PIE_COLORS[i % PIE_COLORS.length];
+                    const pct = (v.value / max) * 100;
+                    return (
+                      <li key={v.name}>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-sm font-medium truncate">{v.name}</span>
+                          <span className="text-sm font-semibold tabular-nums whitespace-nowrap">{v.value.toLocaleString("fr-FR")} MAD</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
