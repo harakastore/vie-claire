@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, Shield, Dumbbell, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, Users, CheckSquare, CreditCard, ListTodo, Target, Zap, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,9 @@ const items = [
   { title: "Crédits", url: "/credits", icon: CreditCard },
   { title: "Engagements", url: "/engagements", icon: ListTodo },
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
+  { title: "Cabinet", url: "/cabinet", icon: Briefcase },
+  { title: "Moi-même", url: "/moi-meme", icon: User },
+  { title: "Apprentissage", url: "/apprentissage", icon: GraduationCap },
   { title: "Discipline", url: "/discipline", icon: Shield },
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
   { title: "Challenge", url: "/performance", icon: Zap },
