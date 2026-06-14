@@ -38,6 +38,183 @@ export type Database = {
         }
         Relationships: []
       }
+      cabinet_marketing_strategies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cabinet_roadmap: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          status: string
+          target_date: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          status?: string
+          target_date?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          status?: string
+          target_date?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cabinet_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          frequency: string | null
+          id: string
+          order_index: number
+          priority: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          order_index?: number
+          priority?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          order_index?: number
+          priority?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cabinet_vision: {
+        Row: {
+          updated_at: string
+          user_id: string
+          vision_text: string
+        }
+        Insert: {
+          updated_at?: string
+          user_id: string
+          vision_text?: string
+        }
+        Update: {
+          updated_at?: string
+          user_id?: string
+          vision_text?: string
+        }
+        Relationships: []
+      }
+      cnss_config: {
+        Row: {
+          total_due: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          total_due?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          total_due?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cnss_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          paid_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          paid_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credits: {
         Row: {
           amount: number | null
@@ -549,6 +726,45 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_items: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          notes: string | null
+          order_index: number
+          resource_url: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_index?: number
+          resource_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_index?: number
+          resource_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           created_at: string
@@ -675,6 +891,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      personal_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          priority: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          priority?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          priority?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
