@@ -95,6 +95,7 @@ export default function Goals() {
   const [blockOverrides, setBlockOverrides] = useState<Record<string, { start_time: string; end_time: string }>>({});
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [editingBlockTimes, setEditingBlockTimes] = useState<{ start: string; end: string }>({ start: "", end: "" });
+  const [focusedBlocks, setFocusedBlocks] = useState<Record<string, string | null>>({});
   const [weeklySports, setWeeklySports] = useState<any[]>([]);
   const [habitLogs, setHabitLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -994,8 +995,34 @@ export default function Goals() {
             )}
 
             {/* === Time-blocks === */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
-              {BLOCKS.map((block) => {
+            {(() => {
+              const focusedBlock = focusedBlocks[dateStr] || null;
+              const visibleBlocks = focusedBlock ? BLOCKS.filter(b => b.key === focusedBlock) : BLOCKS;
+              return (
+                <div className="space-y-3">
+                  {focusedBlock && (
+                    <div className="flex items-center justify-between gap-2 px-1">
+                      <div className="text-xs text-muted-foreground">
+                        Vue focus — un seul bloc affiché
+                      </div>
+                      <button
+                        onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: null }))}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition"
+                      >
+                        ← Voir tous les blocs
+                      </button>
+                    </div>
+                  )}
+                  {!focusedBlock && (
+                    <div className="text-[11px] text-muted-foreground px-1">
+                      💡 Cliquez sur le titre d'un bloc pour n'afficher que ses tâches
+                    </div>
+                  )}
+                  <div className={cn(
+                    "grid gap-3",
+                    focusedBlock ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-5"
+                  )}>
+              {visibleBlocks.map((block) => {
                 const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
                 const blockDone = blockTasks.filter((t: any) => t.completed).length;
                 const bt = getBlockTimes(dateStr, block);
@@ -1006,6 +1033,7 @@ export default function Goals() {
                 const isDragTarget = dragOverBlock === block.key;
                 const editKey = `${dateStr}_${block.key}`;
                 const isEditing = editingBlock === editKey;
+                const isFocused = focusedBlock === block.key;
 
                 return (
                   <div key={block.key}
@@ -1020,9 +1048,15 @@ export default function Goals() {
                   >
                     <div className="px-3 py-2.5" style={{ backgroundColor: `${block.color}12` }}>
                       <div className="flex items-center justify-between mb-1 gap-1">
-                        <span className="text-xs font-bold uppercase tracking-wide truncate" style={{ color: block.color }}>
+                        <button
+                          onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: isFocused ? null : block.key }))}
+                          className="text-xs font-bold uppercase tracking-wide truncate hover:underline cursor-pointer text-left flex items-center gap-1"
+                          style={{ color: block.color }}
+                          title={isFocused ? "Afficher tous les blocs" : "Voir uniquement ce bloc"}
+                        >
+                          {isFocused && <span>🔍</span>}
                           {block.label}
-                        </span>
+                        </button>
                         <div className="flex items-center gap-1 shrink-0">
                           {bt.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
                           {blockTasks.length > 0 && (
@@ -1051,7 +1085,7 @@ export default function Goals() {
                       )}
                     </div>
 
-                    <div className="px-3 py-3 space-y-1.5 flex-1 min-h-[120px]">
+                    <div className={cn("px-3 py-3 space-y-1.5 flex-1", isFocused ? "min-h-[300px]" : "min-h-[120px]")}>
                       {blockTasks.map((t: any) => (
                         <div key={t.id}
                           className={cn(
@@ -1078,7 +1112,10 @@ export default function Goals() {
                   </div>
                 );
               })}
-            </div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       );
