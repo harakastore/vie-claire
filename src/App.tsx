@@ -19,6 +19,8 @@ import Sport from "./pages/Sport";
 import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
+import SportPerf from "./pages/SportPerf";
+import Investments from "./pages/Investments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,8 @@ const App = () => (
             <Route path="/cabinet" element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
             <Route path="/moi-meme" element={<ProtectedRoute><MoiMeme /></ProtectedRoute>} />
             <Route path="/apprentissage" element={<ProtectedRoute><Apprentissage /></ProtectedRoute>} />
+            <Route path="/performances-sport" element={<ProtectedRoute><SportPerf /></ProtectedRoute>} />
+            <Route path="/investissements" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
