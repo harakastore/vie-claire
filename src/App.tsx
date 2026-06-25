@@ -19,6 +19,8 @@ import Sport from "./pages/Sport";
 import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
+import SportPerf from "./pages/SportPerf";
+import Investments from "./pages/Investments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
