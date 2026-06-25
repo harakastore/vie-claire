@@ -421,6 +421,80 @@ export type Database = {
         }
         Relationships: []
       }
+      dca_assets: {
+        Row: {
+          created_at: string
+          currency: string
+          day_of_month: number
+          id: string
+          monthly_amount: number
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          day_of_month?: number
+          id?: string
+          monthly_amount?: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          day_of_month?: number
+          id?: string
+          monthly_amount?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dca_contributions: {
+        Row: {
+          amount: number
+          asset_id: string
+          contributed_at: string
+          created_at: string
+          id: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset_id: string
+          contributed_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset_id?: string
+          contributed_at?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dca_contributions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "dca_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -1035,6 +1109,77 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      sport_disciplines: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          type: string
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          type?: string
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          type?: string
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sport_records: {
+        Row: {
+          created_at: string
+          discipline_id: string
+          id: string
+          note: string | null
+          recorded_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          discipline_id: string
+          id?: string
+          note?: string | null
+          recorded_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          discipline_id?: string
+          id?: string
+          note?: string | null
+          recorded_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_records_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "sport_disciplines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppliers: {
         Row: {
