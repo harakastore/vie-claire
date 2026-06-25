@@ -29,6 +29,8 @@ const items = [
   { title: "Apprentissage", url: "/apprentissage", icon: GraduationCap },
   { title: "Discipline", url: "/discipline", icon: Shield },
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
+  { title: "Performances Sport", url: "/performances-sport", icon: Trophy },
+  { title: "Investissements DCA", url: "/investissements", icon: TrendingUp },
   { title: "Challenge", url: "/performance", icon: Zap },
 ];
 
