@@ -8,19 +8,18 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Expenses from "./pages/Expenses";
-import Payments from "./pages/Payments";
 import Habits from "./pages/Habits";
 import Credits from "./pages/Credits";
 import Engagements from "./pages/Engagements";
 import Goals from "./pages/Goals";
-import HighPerformance from "./pages/HighPerformance";
 import Discipline from "./pages/Discipline";
 import Sport from "./pages/Sport";
 import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
-import Investments from "./pages/Investments";
+import BusinessRoutine from "./pages/BusinessRoutine";
+import DailyDashboard from "./pages/DailyDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,20 +48,19 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/journee" element={<ProtectedRoute><DailyDashboard /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-            <Route path="/paiements" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
             <Route path="/habitudes" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
             <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
             <Route path="/engagements" element={<ProtectedRoute><Engagements /></ProtectedRoute>} />
             <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
-            <Route path="/performance" element={<ProtectedRoute><HighPerformance /></ProtectedRoute>} />
             <Route path="/discipline" element={<ProtectedRoute><Discipline /></ProtectedRoute>} />
+            <Route path="/business-routine" element={<ProtectedRoute><BusinessRoutine /></ProtectedRoute>} />
             <Route path="/sport" element={<ProtectedRoute><Sport /></ProtectedRoute>} />
             <Route path="/cabinet" element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
             <Route path="/moi-meme" element={<ProtectedRoute><MoiMeme /></ProtectedRoute>} />
             <Route path="/apprentissage" element={<ProtectedRoute><Apprentissage /></ProtectedRoute>} />
             <Route path="/performances-sport" element={<ProtectedRoute><SportPerf /></ProtectedRoute>} />
-            <Route path="/investissements" element={<ProtectedRoute><Investments /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
