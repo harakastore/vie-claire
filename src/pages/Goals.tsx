@@ -1120,6 +1120,59 @@ export default function Goals() {
                 </div>
               );
             })()}
+
+            {/* === Discipline (toggle) — checklist only, no monthly dashboard === */}
+            {showDiscipline && (() => {
+              const disciplineHabits = dailyHabits.filter((h: any) => {
+                const c = h.category || "personal";
+                return (c === "personal" || c === "recurring") && habitVisibleOnDate(h, dateStr);
+              });
+              const businessRoutine = dailyHabits.filter((h: any) => h.category === "business");
+              const dDone = disciplineHabits.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
+              const bDone = businessRoutine.filter((h: any) => isHabitCompleted(h.id, dateStr)).length;
+              return (
+                <div className="rounded-xl border-2 border-sky-300/60 dark:border-sky-700/40 bg-gradient-to-br from-sky-50 to-indigo-100/40 dark:from-sky-950/30 dark:to-indigo-900/10 p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-7 w-7 rounded-lg bg-sky-500 flex items-center justify-center shadow-sm">
+                      <Shield className="h-4 w-4 text-white" />
+                    </div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-sky-900 dark:text-sky-200">Discipline — Checklist du jour</h3>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-sky-700 dark:text-sky-300 mb-1.5">🛡 Personnel & récurrentes ({dDone}/{disciplineHabits.length})</p>
+                      <div className="space-y-1">
+                        {disciplineHabits.length === 0 ? <p className="text-xs italic text-muted-foreground">Aucune</p> :
+                          disciplineHabits.map((h: any) => {
+                            const done = isHabitCompleted(h.id, dateStr);
+                            return (
+                              <label key={h.id} className={cn("flex items-center gap-2 px-2 py-1 rounded cursor-pointer", done && "bg-emerald-500/10")}>
+                                <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                                <span className={cn("text-sm font-medium", done && "line-through text-muted-foreground")}>{h.title}</span>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-orange-700 dark:text-orange-300 mb-1.5">🚀 Business Daily Routine ({bDone}/{businessRoutine.length})</p>
+                      <div className="space-y-1">
+                        {businessRoutine.length === 0 ? <p className="text-xs italic text-muted-foreground">Aucune</p> :
+                          businessRoutine.map((h: any) => {
+                            const done = isHabitCompleted(h.id, dateStr);
+                            return (
+                              <label key={h.id} className={cn("flex items-center gap-2 px-2 py-1 rounded cursor-pointer", done && "bg-emerald-500/10")}>
+                                <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
+                                <span className={cn("text-sm font-medium", done && "line-through text-muted-foreground")}>{h.title}</span>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       );
