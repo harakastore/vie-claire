@@ -883,6 +883,10 @@ export default function Goals() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" className={cn("h-9 text-primary-foreground hover:bg-white/20 border border-white/30", showDiscipline && "bg-white/25")}
+                    onClick={() => setShowDiscipline(!showDiscipline)}>
+                    <Shield className="h-3.5 w-3.5 mr-1.5" /> {showDiscipline ? "Masquer" : "Voir"} discipline
+                  </Button>
                   <Button variant="ghost" size="sm" className="h-9 text-primary-foreground hover:bg-white/20 border border-white/30"
                     onClick={() => setSalatSheetOpen(true)}>
                     <Settings2 className="h-3.5 w-3.5 mr-1.5" /> Horaires Salat
