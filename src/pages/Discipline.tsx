@@ -271,7 +271,7 @@ export default function Discipline() {
       </Card>
 
       {/* === NON-NÉGOCIABLES DU JOUR + GESTION CRUD === */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {GROUPS.map(({ key, label, icon: Icon, bg, color, bar }) => {
           const items = groupedHabits[key].filter((h) => key === "recurring" ? habitVisibleOnDate(h, todayStr) : true);
           const allItems = groupedHabits[key];
