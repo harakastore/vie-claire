@@ -29,11 +29,10 @@ const isFajrHabit = (h: any) => {
   return FAJR_KEYWORDS.some((k) => t.includes(k));
 };
 
-type GroupKey = "personal" | "business" | "recurring";
+type GroupKey = "personal" | "recurring";
 
 const GROUPS: { key: GroupKey; label: string; icon: any; bg: string; color: string; bar: string }[] = [
   { key: "personal", label: "Personnel", icon: Shield,    bg: "hsl(200, 85%, 96%)", color: "hsl(200, 75%, 35%)", bar: "hsl(200, 75%, 50%)" },
-  { key: "business", label: "Business",  icon: Briefcase, bg: "hsl(28, 95%, 95%)",  color: "hsl(28, 85%, 40%)",  bar: "hsl(28, 90%, 55%)" },
   { key: "recurring", label: "Récurrentes", icon: Repeat, bg: "hsl(270, 75%, 96%)", color: "hsl(270, 65%, 40%)", bar: "hsl(270, 70%, 55%)" },
 ];
 
@@ -54,7 +53,7 @@ export default function Discipline() {
   const [loading, setLoading] = useState(true);
 
   // Inline add per group
-  const [newHabitText, setNewHabitText] = useState<Record<GroupKey, string>>({ personal: "", business: "", recurring: "" });
+  const [newHabitText, setNewHabitText] = useState<Record<GroupKey, string>>({ personal: "", recurring: "" });
   const [newHabitDays, setNewHabitDays] = useState<number[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -143,10 +142,11 @@ export default function Discipline() {
   }, [fajrHabits, habitLogs, monthDays]);
 
   const groupedHabits = useMemo(() => {
-    const map: Record<GroupKey, any[]> = { personal: [], business: [], recurring: [] };
+    const map: Record<GroupKey, any[]> = { personal: [], recurring: [] };
     dailyHabits.forEach((h) => {
-      const cat = (h.category || "personal") as GroupKey;
-      if (map[cat]) map[cat].push(h);
+      const cat = (h.category || "personal") as string;
+      if (cat === "recurring") map.recurring.push(h);
+      else if (cat !== "business") map.personal.push(h); // exclude business (now in Business Daily Routine)
     });
     return map;
   }, [dailyHabits]);
