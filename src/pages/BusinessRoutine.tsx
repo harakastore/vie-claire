@@ -123,8 +123,10 @@ export default function BusinessRoutine() {
     let done = 0; let total = 0;
     habits.forEach((h) => {
       validDays.forEach((d) => {
+        const ds = format(d, "yyyy-MM-dd");
+        if (!habitVisibleOnDate(h, ds)) return;
         total++;
-        if (isDone(h.id, format(d, "yyyy-MM-dd"))) done++;
+        if (isDone(h.id, ds)) done++;
       });
     });
     return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
