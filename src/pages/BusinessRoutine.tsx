@@ -10,9 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, Rocket, ChevronLeft, ChevronRight, Flame, Trophy } from "lucide-react";
+import { Plus, Trash2, Pencil, Rocket, ChevronLeft, ChevronRight, Flame, Trophy, CalendarDays } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import disciplineHero from "@/assets/discipline-hero.png";
+
+const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
+const habitVisibleOnDate = (h: any, dateStr: string) => {
+  const days = h.days_of_week as number[] | null | undefined;
+  if (!days || days.length === 0) return true;
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  return days.includes(dow);
+};
 
 const CATEGORY = "business";
 const COLOR = "hsl(28, 90%, 55%)";
@@ -35,6 +43,7 @@ export default function BusinessRoutine() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
+  const [newDays, setNewDays] = useState<number[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
 
@@ -75,14 +84,22 @@ export default function BusinessRoutine() {
   const addHabit = async () => {
     if (!user || !newTitle.trim()) return;
     const title = newTitle.trim();
+    const days = newDays.length > 0 ? newDays : null;
     const tmp = `temp-${Date.now()}`;
-    setHabits((p) => [...p, { id: tmp, user_id: user.id, title, sort_order: habits.length, active: true, category: CATEGORY }]);
-    setNewTitle("");
+    setHabits((p) => [...p, { id: tmp, user_id: user.id, title, sort_order: habits.length, active: true, category: CATEGORY, days_of_week: days }]);
+    setNewTitle(""); setNewDays([]);
     const { data, error } = await (supabase.from("daily_habits" as any) as any)
-      .insert({ user_id: user.id, title, sort_order: habits.length, category: CATEGORY })
+      .insert({ user_id: user.id, title, sort_order: habits.length, category: CATEGORY, days_of_week: days })
       .select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setHabits((p) => p.map((h) => h.id === tmp ? data : h));
+  };
+
+  const toggleHabitDay = async (h: any, dow: number) => {
+    const days: number[] = h.days_of_week || [];
+    const next = days.includes(dow) ? days.filter((d) => d !== dow) : [...days, dow].sort();
+    setHabits((p) => p.map((x) => x.id === h.id ? { ...x, days_of_week: next.length ? next : null } : x));
+    await (supabase.from("daily_habits" as any) as any).update({ days_of_week: next.length ? next : null }).eq("id", h.id);
   };
 
   const deleteHabit = async (id: string) => {
@@ -97,16 +114,19 @@ export default function BusinessRoutine() {
     await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() }).eq("id", id);
   };
 
-  const doneToday = habits.filter((h) => isDone(h.id, todayStr)).length;
-  const pctToday = habits.length > 0 ? Math.round((doneToday / habits.length) * 100) : 0;
+  const doneToday = habits.filter((h) => habitVisibleOnDate(h, todayStr) && isDone(h.id, todayStr)).length;
+  const totalToday = habits.filter((h) => habitVisibleOnDate(h, todayStr)).length;
+  const pctToday = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0;
 
   const monthStats = useMemo(() => {
     const validDays = monthDays.filter((d) => d <= now);
     let done = 0; let total = 0;
     habits.forEach((h) => {
       validDays.forEach((d) => {
+        const ds = format(d, "yyyy-MM-dd");
+        if (!habitVisibleOnDate(h, ds)) return;
         total++;
-        if (isDone(h.id, format(d, "yyyy-MM-dd"))) done++;
+        if (isDone(h.id, ds)) done++;
       });
     });
     return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
@@ -157,53 +177,114 @@ export default function BusinessRoutine() {
             </div>
             <div>
               <p className="text-sm font-black uppercase tracking-wider" style={{ color: COLOR_DARK }}>Aujourd'hui</p>
-              <p className="text-[10px] text-muted-foreground">{doneToday}/{habits.length} complétées</p>
+              <p className="text-[10px] text-muted-foreground">{doneToday}/{totalToday} aujourd'hui · {habits.length} total</p>
             </div>
           </div>
           <p className="text-2xl font-black tabular-nums" style={{ color: COLOR }}>{pctToday}%</p>
         </div>
         <CardContent className="pt-4 space-y-2">
-          {habits.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Aucune routine. Ajoute ta première ci-dessous.</p>
-          ) : habits.map((h) => {
-            const done = isDone(h.id, todayStr);
-            return (
-              <div key={h.id} className="group flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-muted/40">
-                <Checkbox checked={done} onCheckedChange={() => toggle(h.id, todayStr)} className="h-4 w-4 mt-0.5" />
-                {editingId === h.id ? (
-                  <Input autoFocus value={editingTitle} onChange={(e) => setEditingTitle(e.target.value)}
-                    onBlur={() => rename(h.id, editingTitle)}
-                    onKeyDown={(e) => { if (e.key === "Enter") rename(h.id, editingTitle); if (e.key === "Escape") setEditingId(null); }}
-                    className="h-7 text-sm flex-1" />
-                ) : (
-                  <span
-                    className={cn("text-sm font-medium flex-1 cursor-text", done && "line-through text-muted-foreground")}
-                    onDoubleClick={() => { setEditingId(h.id); setEditingTitle(h.title); }}
-                  >{h.title}</span>
-                )}
-                <button onClick={() => { setEditingId(h.id); setEditingTitle(h.title); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground">
-                  <Pencil className="h-3 w-3" />
-                </button>
-                <button onClick={() => deleteHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive">
-                  <Trash2 className="h-3 w-3" />
-                </button>
+          {(() => {
+            const todayList = habits.filter((h) => habitVisibleOnDate(h, todayStr));
+            if (todayList.length === 0) {
+              return <p className="text-sm text-muted-foreground text-center py-6">Aucune routine pour aujourd'hui.</p>;
+            }
+            return todayList.map((h) => {
+              const done = isDone(h.id, todayStr);
+              return (
+                <div key={h.id} className="group flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-muted/40">
+                  <Checkbox checked={done} onCheckedChange={() => toggle(h.id, todayStr)} className="h-4 w-4 mt-0.5" />
+                  {editingId === h.id ? (
+                    <Input autoFocus value={editingTitle} onChange={(e) => setEditingTitle(e.target.value)}
+                      onBlur={() => rename(h.id, editingTitle)}
+                      onKeyDown={(e) => { if (e.key === "Enter") rename(h.id, editingTitle); if (e.key === "Escape") setEditingId(null); }}
+                      className="h-7 text-sm flex-1" />
+                  ) : (
+                    <span
+                      className={cn("text-sm font-medium flex-1 cursor-text", done && "line-through text-muted-foreground")}
+                      onDoubleClick={() => { setEditingId(h.id); setEditingTitle(h.title); }}
+                    >{h.title}</span>
+                  )}
+                  {h.days_of_week && h.days_of_week.length > 0 && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
+                      {h.days_of_week.map((d: number) => DAY_LABELS[d]).join("")}
+                    </span>
+                  )}
+                  <button onClick={() => { setEditingId(h.id); setEditingTitle(h.title); }} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground">
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                  <button onClick={() => deleteHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              );
+            });
+          })()}
+
+          {/* Manage days for all recurring habits */}
+          {habits.length > 0 && (
+            <details className="border-t pt-2 mt-2">
+              <summary className="text-[10px] uppercase tracking-wider font-bold cursor-pointer text-muted-foreground hover:text-foreground">
+                ⚙️ Gérer les jours de chaque routine ({habits.length})
+              </summary>
+              <div className="mt-2 space-y-2">
+                {habits.map((h) => (
+                  <div key={`mgr-${h.id}`} className="border rounded-md p-2 space-y-1.5 bg-background">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium flex-1">{h.title}</span>
+                      <span className="text-[9px] text-muted-foreground">
+                        {(!h.days_of_week || h.days_of_week.length === 0) ? "Tous les jours" : ""}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      {DAY_LABELS.map((lbl, dow) => {
+                        const active = (h.days_of_week || []).includes(dow);
+                        return (
+                          <button key={dow} onClick={() => toggleHabitDay(h, dow)}
+                            className={cn("h-6 w-6 rounded text-[10px] font-bold border transition-colors",
+                              active ? "text-white" : "bg-background text-muted-foreground hover:bg-muted")}
+                            style={active ? { backgroundColor: COLOR, borderColor: COLOR } : undefined}
+                          >{lbl}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-          <div className="border-t pt-3 flex gap-1.5">
-            <Input
-              placeholder="+ Nouvelle routine business..."
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addHabit()}
-              className="h-8 text-xs"
-            />
-            <Button size="sm" className="h-8 px-2.5 text-white" style={{ backgroundColor: COLOR }} onClick={addHabit}>
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
+            </details>
+          )}
+
+          {/* Add form */}
+          <div className="border-t pt-3 space-y-2">
+            <div className="flex gap-1 flex-wrap items-center">
+              <span className="text-[10px] text-muted-foreground mr-1 flex items-center gap-1"><CalendarDays className="h-3 w-3" /> Jours (vide = tous):</span>
+              {DAY_LABELS.map((lbl, dow) => {
+                const active = newDays.includes(dow);
+                return (
+                  <button key={dow}
+                    onClick={() => setNewDays((p) => p.includes(dow) ? p.filter((d) => d !== dow) : [...p, dow].sort())}
+                    className={cn("h-6 w-6 rounded text-[10px] font-bold border transition-colors",
+                      active ? "text-white" : "bg-background text-muted-foreground hover:bg-muted")}
+                    style={active ? { backgroundColor: COLOR, borderColor: COLOR } : undefined}
+                  >{lbl}</button>
+                );
+              })}
+            </div>
+            <div className="flex gap-1.5">
+              <Input
+                placeholder="+ Nouvelle routine business..."
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addHabit()}
+                className="h-8 text-xs"
+              />
+              <Button size="sm" className="h-8 px-2.5 text-white" style={{ backgroundColor: COLOR }} onClick={addHabit}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
 
       {/* Monthly dashboard */}
       <Card className="overflow-hidden">
@@ -244,7 +325,7 @@ export default function BusinessRoutine() {
                 </thead>
                 <tbody>
                   {habits.map((h) => {
-                    const validDays = monthDays.filter((d) => d <= now);
+                    const validDays = monthDays.filter((d) => d <= now && habitVisibleOnDate(h, format(d, "yyyy-MM-dd")));
                     const completed = validDays.filter((d) => isDone(h.id, format(d, "yyyy-MM-dd"))).length;
                     const pct = validDays.length > 0 ? Math.round((completed / validDays.length) * 100) : 0;
                     return (
@@ -252,20 +333,25 @@ export default function BusinessRoutine() {
                         <td className="border border-border/50 px-2 py-1 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
                         {monthDays.map((d) => {
                           const ds = format(d, "yyyy-MM-dd");
+                          const visible = habitVisibleOnDate(h, ds);
                           const done = isDone(h.id, ds);
                           const isFuture = d > now;
                           return (
                             <td key={ds} className={cn("border border-border/50 text-center p-0", isSameDay(d, now) && "bg-primary/5")}>
-                              <button
-                                disabled={isFuture}
-                                onClick={() => toggle(h.id, ds)}
-                                className={cn(
-                                  "w-full h-7 text-xs font-bold transition-colors",
-                                  isFuture ? "text-muted-foreground/30 cursor-not-allowed" :
-                                  done ? "text-white" : "hover:bg-muted/50 text-muted-foreground"
-                                )}
-                                style={done ? { backgroundColor: COLOR } : undefined}
-                              >{done ? "✓" : isFuture ? "" : "·"}</button>
+                              {!visible ? (
+                                <div className="w-full h-7 bg-muted/20" />
+                              ) : (
+                                <button
+                                  disabled={isFuture}
+                                  onClick={() => toggle(h.id, ds)}
+                                  className={cn(
+                                    "w-full h-7 text-xs font-bold transition-colors",
+                                    isFuture ? "text-muted-foreground/30 cursor-not-allowed" :
+                                    done ? "text-white" : "hover:bg-muted/50 text-muted-foreground"
+                                  )}
+                                  style={done ? { backgroundColor: COLOR } : undefined}
+                                >{done ? "✓" : isFuture ? "" : "·"}</button>
+                              )}
                             </td>
                           );
                         })}
