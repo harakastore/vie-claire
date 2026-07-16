@@ -114,8 +114,9 @@ export default function BusinessRoutine() {
     await (supabase.from("daily_habits" as any) as any).update({ title: title.trim() }).eq("id", id);
   };
 
-  const doneToday = habits.filter((h) => isDone(h.id, todayStr)).length;
-  const pctToday = habits.length > 0 ? Math.round((doneToday / habits.length) * 100) : 0;
+  const doneToday = habits.filter((h) => habitVisibleOnDate(h, todayStr) && isDone(h.id, todayStr)).length;
+  const totalToday = habits.filter((h) => habitVisibleOnDate(h, todayStr)).length;
+  const pctToday = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0;
 
   const monthStats = useMemo(() => {
     const validDays = monthDays.filter((d) => d <= now);
