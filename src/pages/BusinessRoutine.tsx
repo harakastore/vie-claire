@@ -84,14 +84,22 @@ export default function BusinessRoutine() {
   const addHabit = async () => {
     if (!user || !newTitle.trim()) return;
     const title = newTitle.trim();
+    const days = newDays.length > 0 ? newDays : null;
     const tmp = `temp-${Date.now()}`;
-    setHabits((p) => [...p, { id: tmp, user_id: user.id, title, sort_order: habits.length, active: true, category: CATEGORY }]);
-    setNewTitle("");
+    setHabits((p) => [...p, { id: tmp, user_id: user.id, title, sort_order: habits.length, active: true, category: CATEGORY, days_of_week: days }]);
+    setNewTitle(""); setNewDays([]);
     const { data, error } = await (supabase.from("daily_habits" as any) as any)
-      .insert({ user_id: user.id, title, sort_order: habits.length, category: CATEGORY })
+      .insert({ user_id: user.id, title, sort_order: habits.length, category: CATEGORY, days_of_week: days })
       .select().single();
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); fetchAll(); }
     else if (data) setHabits((p) => p.map((h) => h.id === tmp ? data : h));
+  };
+
+  const toggleHabitDay = async (h: any, dow: number) => {
+    const days: number[] = h.days_of_week || [];
+    const next = days.includes(dow) ? days.filter((d) => d !== dow) : [...days, dow].sort();
+    setHabits((p) => p.map((x) => x.id === h.id ? { ...x, days_of_week: next.length ? next : null } : x));
+    await (supabase.from("daily_habits" as any) as any).update({ days_of_week: next.length ? next : null }).eq("id", h.id);
   };
 
   const deleteHabit = async (id: string) => {
