@@ -325,7 +325,7 @@ export default function BusinessRoutine() {
                 </thead>
                 <tbody>
                   {habits.map((h) => {
-                    const validDays = monthDays.filter((d) => d <= now);
+                    const validDays = monthDays.filter((d) => d <= now && habitVisibleOnDate(h, format(d, "yyyy-MM-dd")));
                     const completed = validDays.filter((d) => isDone(h.id, format(d, "yyyy-MM-dd"))).length;
                     const pct = validDays.length > 0 ? Math.round((completed / validDays.length) * 100) : 0;
                     return (
@@ -333,20 +333,25 @@ export default function BusinessRoutine() {
                         <td className="border border-border/50 px-2 py-1 text-xs font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{h.title}</td>
                         {monthDays.map((d) => {
                           const ds = format(d, "yyyy-MM-dd");
+                          const visible = habitVisibleOnDate(h, ds);
                           const done = isDone(h.id, ds);
                           const isFuture = d > now;
                           return (
                             <td key={ds} className={cn("border border-border/50 text-center p-0", isSameDay(d, now) && "bg-primary/5")}>
-                              <button
-                                disabled={isFuture}
-                                onClick={() => toggle(h.id, ds)}
-                                className={cn(
-                                  "w-full h-7 text-xs font-bold transition-colors",
-                                  isFuture ? "text-muted-foreground/30 cursor-not-allowed" :
-                                  done ? "text-white" : "hover:bg-muted/50 text-muted-foreground"
-                                )}
-                                style={done ? { backgroundColor: COLOR } : undefined}
-                              >{done ? "✓" : isFuture ? "" : "·"}</button>
+                              {!visible ? (
+                                <div className="w-full h-7 bg-muted/20" />
+                              ) : (
+                                <button
+                                  disabled={isFuture}
+                                  onClick={() => toggle(h.id, ds)}
+                                  className={cn(
+                                    "w-full h-7 text-xs font-bold transition-colors",
+                                    isFuture ? "text-muted-foreground/30 cursor-not-allowed" :
+                                    done ? "text-white" : "hover:bg-muted/50 text-muted-foreground"
+                                  )}
+                                  style={done ? { backgroundColor: COLOR } : undefined}
+                                >{done ? "✓" : isFuture ? "" : "·"}</button>
+                              )}
                             </td>
                           );
                         })}
