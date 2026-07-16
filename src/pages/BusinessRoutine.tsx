@@ -10,9 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, Rocket, ChevronLeft, ChevronRight, Flame, Trophy } from "lucide-react";
+import { Plus, Trash2, Pencil, Rocket, ChevronLeft, ChevronRight, Flame, Trophy, CalendarDays } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import disciplineHero from "@/assets/discipline-hero.png";
+
+const DAY_LABELS = ["D", "L", "M", "M", "J", "V", "S"];
+const habitVisibleOnDate = (h: any, dateStr: string) => {
+  const days = h.days_of_week as number[] | null | undefined;
+  if (!days || days.length === 0) return true;
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  return days.includes(dow);
+};
 
 const CATEGORY = "business";
 const COLOR = "hsl(28, 90%, 55%)";
