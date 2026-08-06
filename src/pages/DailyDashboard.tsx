@@ -202,12 +202,12 @@ export default function DailyDashboard() {
             </h1>
             <p className="text-sm opacity-90 mt-1 capitalize">{format(now, "EEEE d MMMM yyyy", { locale: fr })}</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <StatMini label="Tâches" value={`${tasksDone}/${tasks.length}`} sub={`${tasksPct}%`} />
             <StatMini label="Discipline" value={`${personalHabits.filter(h => isHabitDone(h.id)).length}/${personalHabits.length}`} />
-            <StatMini label="Business" value={`${businessHabits.filter(h => isHabitDone(h.id)).length}/${businessHabits.length}`} />
-            <StatMini label="Fajr" value={fajrDone ? "✓" : (fajrHabits.length > 0 ? "—" : "—")} />
+            <StatMini label="Fajr" value={fajrDone ? "✓" : "—"} />
           </div>
+
         </div>
       </div>
 
