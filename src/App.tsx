@@ -18,7 +18,7 @@ import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
-import BusinessRoutine from "./pages/BusinessRoutine";
+
 import DailyDashboard from "./pages/DailyDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -55,7 +55,6 @@ const App = () => (
             <Route path="/engagements" element={<ProtectedRoute><Engagements /></ProtectedRoute>} />
             <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/discipline" element={<ProtectedRoute><Discipline /></ProtectedRoute>} />
-            <Route path="/business-routine" element={<ProtectedRoute><BusinessRoutine /></ProtectedRoute>} />
             <Route path="/sport" element={<ProtectedRoute><Sport /></ProtectedRoute>} />
             <Route path="/cabinet" element={<ProtectedRoute><Cabinet /></ProtectedRoute>} />
             <Route path="/moi-meme" element={<ProtectedRoute><MoiMeme /></ProtectedRoute>} />
