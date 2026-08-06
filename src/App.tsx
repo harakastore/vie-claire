@@ -18,7 +18,7 @@ import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
-import BusinessRoutine from "./pages/BusinessRoutine";
+
 import DailyDashboard from "./pages/DailyDashboard";
 import NotFound from "./pages/NotFound";
 
