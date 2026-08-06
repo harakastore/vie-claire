@@ -25,7 +25,6 @@ const items = [
   { title: "Engagements", url: "/engagements", icon: ListTodo },
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
   { title: "Cabinet", url: "/cabinet", icon: Briefcase },
-  { title: "Business Daily Routine", url: "/business-routine", icon: Rocket },
   { title: "Moi-même", url: "/moi-meme", icon: User },
   { title: "Apprentissage", url: "/apprentissage", icon: GraduationCap },
   { title: "Discipline", url: "/discipline", icon: Shield },
