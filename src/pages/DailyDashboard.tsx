@@ -292,33 +292,6 @@ export default function DailyDashboard() {
         )}
       </SectionCard>
 
-      {/* === BUSINESS ROUTINE === */}
-      <SectionCard
-        icon={<Rocket className="h-4 w-4" />}
-        title="Business Daily Routine"
-        subtitle={`${businessHabits.filter(h => isHabitDone(h.id)).length}/${businessHabits.length} complétées`}
-        gradient="from-orange-500 to-amber-500"
-        manageLink="/business-routine"
-      >
-        {businessHabits.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            Aucune routine. <Link className="text-primary underline" to="/business-routine">En créer →</Link>
-          </p>
-        ) : (
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {businessHabits.map((h: any) => {
-              const done = isHabitDone(h.id);
-              return (
-                <label key={h.id} className={cn("flex items-start gap-2 py-2 px-3 rounded-lg cursor-pointer border transition-all",
-                  done ? "bg-emerald-50 border-emerald-300 dark:bg-emerald-950/30" : "bg-card hover:bg-muted/60 border-border/40")}>
-                  <Checkbox checked={done} onCheckedChange={() => toggleHabit(h.id)} className="h-4 w-4 mt-0.5" />
-                  <span className={cn("text-sm flex-1 font-medium", done && "line-through text-muted-foreground")}>{h.title}</span>
-                </label>
-              );
-            })}
-          </div>
-        )}
-      </SectionCard>
 
       {/* === SALAT AL FAJR === */}
       <Card className="overflow-hidden border-2" style={{ borderColor: "hsl(48, 95%, 60%)" }}>
