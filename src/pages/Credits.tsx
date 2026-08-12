@@ -107,6 +107,7 @@ export default function Credits() {
 
   const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
   const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
+  const filteredCredits = statusFilter === "all" ? credits : credits.filter((c) => c.status === statusFilter);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -161,12 +162,31 @@ export default function Credits() {
       </div>
 
       {/* Table */}
+      {/* Status filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold uppercase text-muted-foreground">Statut :</span>
+        {[
+          { v: "all", label: "Tous" },
+          { v: "en_cours", label: "En cours" },
+          { v: "partiel", label: "Partiel" },
+          { v: "rembourse", label: "Remboursé" },
+        ].map((f) => (
+          <Button key={f.v} size="sm" variant={statusFilter === f.v ? "default" : "outline"}
+            className="h-7 text-xs" onClick={() => setStatusFilter(f.v)}>
+            {f.label}
+            <span className="ml-1.5 opacity-70 tabular-nums">
+              {f.v === "all" ? credits.length : credits.filter((c) => c.status === f.v).length}
+            </span>
+          </Button>
+        ))}
+      </div>
+
       <Card className="glass-card">
         <CardContent className="p-0">
           {loading ? (
             <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-          ) : credits.length === 0 ? (
-            <div className="p-12 text-center text-sm text-muted-foreground">Aucun crédit enregistré.</div>
+          ) : filteredCredits.length === 0 ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">Aucun crédit pour ce statut.</div>
           ) : (
             <Table>
               <TableHeader>
