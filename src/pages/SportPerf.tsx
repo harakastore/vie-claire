@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Plus, Trash2, Trophy, ChevronDown, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { toast } from "sonner";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +111,7 @@ export default function SportPerf() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-6xl">
+    <div className="w-full py-2">
       <PageHeader title="Performances Sport" description="Tes records par discipline, en tableau" />
 
       <Card className="mb-6">
