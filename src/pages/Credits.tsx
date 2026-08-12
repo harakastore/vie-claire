@@ -34,6 +34,7 @@ export default function Credits() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Form
   const [personName, setPersonName] = useState("");
