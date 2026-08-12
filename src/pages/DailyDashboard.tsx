@@ -61,6 +61,11 @@ export default function DailyDashboard() {
   const [meals, setMeals] = useState<any[]>([]);
   const [mealItems, setMealItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newTask, setNewTask] = useState<Record<string, string>>({});
+  const [editSport, setEditSport] = useState(false);
+  const [sProgram, setSProgram] = useState("");
+  const [sTime, setSTime] = useState("");
+  const [sBurned, setSBurned] = useState("");
 
   // Quick add kcal
   const [qMealType, setQMealType] = useState<string>("petit_dej");
