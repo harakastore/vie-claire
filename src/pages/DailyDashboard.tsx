@@ -100,6 +100,36 @@ export default function DailyDashboard() {
     await (supabase.from("daily_tasks" as any) as any).update({ completed: nv }).eq("id", t.id);
   };
 
+  const addTask = async (blockKey: string) => {
+    if (!user) return;
+    const title = (newTask[blockKey] || "").trim();
+    if (!title) return;
+    setNewTask((p) => ({ ...p, [blockKey]: "" }));
+    const payload = { user_id: user.id, title, day_date: todayStr, block: blockKey, completed: false };
+    const tmp = `temp-${Date.now()}`;
+    setTasks((p) => [...p, { ...payload, id: tmp }]);
+    const { data } = await (supabase.from("daily_tasks" as any) as any).insert(payload).select().single();
+    if (data) setTasks((p) => p.map((x) => x.id === tmp ? data : x));
+  };
+
+  const deleteTask = async (id: string) => {
+    setTasks((p) => p.filter((x) => x.id !== id));
+    await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
+  };
+
+  const saveSport = async (patch: any) => {
+    if (!user) return;
+    setSport((p: any) => ({ ...(p || {}), ...patch }));
+    if (sport?.id) {
+      await (supabase.from("weekly_sports" as any) as any).update(patch).eq("id", sport.id);
+    } else {
+      const { data } = await (supabase.from("weekly_sports" as any) as any)
+        .insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program: "", ...patch })
+        .select().single();
+      if (data) setSport(data);
+    }
+  };
+
   const isHabitDone = (habitId: string) => habitLogs.some((l: any) => l.habit_id === habitId && l.completed);
 
   const toggleHabit = async (habitId: string) => {
