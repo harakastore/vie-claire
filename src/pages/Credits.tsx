@@ -202,7 +202,7 @@ export default function Credits() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {credits.map((c) => {
+                {filteredCredits.map((c) => {
                   const type = c.credit_type || "they_owe";
                   const st = statusConfig[c.status] || statusConfig.en_cours;
                   return (
