@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Plus, Trash2, Trophy, ChevronDown, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { toast } from "sonner";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +111,7 @@ export default function SportPerf() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 max-w-6xl">
+    <div className="w-full py-2">
       <PageHeader title="Performances Sport" description="Tes records par discipline, en tableau" />
 
       <Card className="mb-6">
@@ -157,7 +157,7 @@ export default function SportPerf() {
                   const last = list[list.length - 1];
                   const trend = trendOf(d);
                   const isOpen = !!open[d.id];
-                  const chartData = list.map((r) => ({ date: format(new Date(r.recorded_at), "dd/MM"), value: Number(r.value) }));
+                  
                   return (
                     <Collapsible key={d.id} asChild open={isOpen} onOpenChange={(v) => setOpen((p) => ({ ...p, [d.id]: v }))}>
                       <>
@@ -199,23 +199,8 @@ export default function SportPerf() {
                         <CollapsibleContent asChild>
                           <TableRow className="bg-muted/30 hover:bg-muted/30">
                             <TableCell colSpan={9} className="p-4">
-                              <div className="grid gap-4 lg:grid-cols-2">
-                                {chartData.length > 1 ? (
-                                  <div className="h-44">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                      <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                                        <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
-                                        <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))" }} />
-                                        <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-                                      </LineChart>
-                                    </ResponsiveContainer>
-                                  </div>
-                                ) : (
-                                  <div className="h-44 flex items-center justify-center text-sm text-muted-foreground">Ajoute au moins 2 entrées pour voir la courbe</div>
-                                )}
-                                <div className="max-h-44 overflow-auto rounded-md border bg-card">
+                              <div className="grid gap-4">
+                                <div className="max-h-60 overflow-auto rounded-md border bg-card">
                                   <Table>
                                     <TableHeader>
                                       <TableRow>

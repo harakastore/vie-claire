@@ -61,6 +61,11 @@ export default function DailyDashboard() {
   const [meals, setMeals] = useState<any[]>([]);
   const [mealItems, setMealItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [newTask, setNewTask] = useState<Record<string, string>>({});
+  const [editSport, setEditSport] = useState(false);
+  const [sProgram, setSProgram] = useState("");
+  const [sTime, setSTime] = useState("");
+  const [sBurned, setSBurned] = useState("");
 
   // Quick add kcal
   const [qMealType, setQMealType] = useState<string>("petit_dej");
@@ -98,6 +103,36 @@ export default function DailyDashboard() {
     const nv = !t.completed;
     setTasks((p) => p.map((x) => x.id === t.id ? { ...x, completed: nv } : x));
     await (supabase.from("daily_tasks" as any) as any).update({ completed: nv }).eq("id", t.id);
+  };
+
+  const addTask = async (blockKey: string) => {
+    if (!user) return;
+    const title = (newTask[blockKey] || "").trim();
+    if (!title) return;
+    setNewTask((p) => ({ ...p, [blockKey]: "" }));
+    const payload = { user_id: user.id, title, day_date: todayStr, block: blockKey, completed: false };
+    const tmp = `temp-${Date.now()}`;
+    setTasks((p) => [...p, { ...payload, id: tmp }]);
+    const { data } = await (supabase.from("daily_tasks" as any) as any).insert(payload).select().single();
+    if (data) setTasks((p) => p.map((x) => x.id === tmp ? data : x));
+  };
+
+  const deleteTask = async (id: string) => {
+    setTasks((p) => p.filter((x) => x.id !== id));
+    await (supabase.from("daily_tasks" as any) as any).delete().eq("id", id);
+  };
+
+  const saveSport = async (patch: any) => {
+    if (!user) return;
+    setSport((p: any) => ({ ...(p || {}), ...patch }));
+    if (sport?.id) {
+      await (supabase.from("weekly_sports" as any) as any).update(patch).eq("id", sport.id);
+    } else {
+      const { data } = await (supabase.from("weekly_sports" as any) as any)
+        .insert({ user_id: user.id, week_start: wsStr, day_index: dayIndex, program: "", ...patch })
+        .select().single();
+      if (data) setSport(data);
+    }
   };
 
   const isHabitDone = (habitId: string) => habitLogs.some((l: any) => l.habit_id === habitId && l.completed);
@@ -182,7 +217,7 @@ export default function DailyDashboard() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="space-y-6 w-full">
         <PageHeader title="🌞 Dashboard du jour" />
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
       </div>
@@ -190,7 +225,7 @@ export default function DailyDashboard() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in">
       {/* Hero */}
       <div className="rounded-2xl p-5 shadow-lg text-white relative overflow-hidden"
         style={{ background: "linear-gradient(135deg, hsl(220, 70%, 45%), hsl(280, 65%, 50%))" }}>
@@ -231,36 +266,46 @@ export default function DailyDashboard() {
             </Link>
           </div>
         </div>
-        <CardContent className="p-4 space-y-3 bg-gradient-to-b from-muted/30 to-transparent">
-          {tasks.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aucune tâche aujourd'hui. <Link className="text-primary underline" to="/objectifs">En ajouter →</Link>
-            </p>
-          ) : BLOCKS.map((b) => {
-            const list = tasks.filter((t) => (t.block || "fajr_dhuhr") === b.key);
-            if (list.length === 0) return null;
-            const done = list.filter((t) => t.completed).length;
-            return (
-              <div key={b.key} className="rounded-xl border-2 bg-card overflow-hidden shadow-sm"
-                style={{ borderTopColor: b.color, borderTopWidth: "4px" }}>
-                <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: `${b.color}12` }}>
-                  <span className="text-xs font-black uppercase tracking-wide" style={{ color: b.color }}>{b.label}</span>
-                  <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: b.color }}>
-                    {done}/{list.length}
-                  </span>
+        <CardContent className="p-4 bg-gradient-to-b from-muted/30 to-transparent">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {BLOCKS.map((b) => {
+              const list = tasks.filter((t) => (t.block || "fajr_dhuhr") === b.key);
+              const done = list.filter((t) => t.completed).length;
+              return (
+                <div key={b.key} className="rounded-xl border-2 bg-card overflow-hidden shadow-sm flex flex-col"
+                  style={{ borderTopColor: b.color, borderTopWidth: "4px" }}>
+                  <div className="px-3 py-2 flex items-center justify-between" style={{ backgroundColor: `${b.color}12` }}>
+                    <span className="text-xs font-black uppercase tracking-wide" style={{ color: b.color }}>{b.label}</span>
+                    <span className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full bg-white dark:bg-black/30" style={{ color: b.color }}>
+                      {done}/{list.length}
+                    </span>
+                  </div>
+                  <div className="px-3 py-2 space-y-1 flex-1">
+                    {list.length === 0 && <p className="text-[11px] text-muted-foreground italic py-1">Aucune tâche</p>}
+                    {list.map((t: any) => (
+                      <div key={t.id} className={cn("group flex items-start gap-2 py-1 px-1.5 rounded transition-colors",
+                        t.completed ? "bg-emerald-50 dark:bg-emerald-950/30" : "hover:bg-muted/60")}>
+                        <Checkbox checked={t.completed} onCheckedChange={() => toggleTask(t)} className="h-4 w-4 mt-0.5" />
+                        <span className={cn("text-sm flex-1 font-medium cursor-pointer", t.completed && "line-through text-muted-foreground")}
+                          onClick={() => toggleTask(t)}>{t.title}</span>
+                        <button onClick={() => deleteTask(t.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-2 pb-2 flex gap-1">
+                    <Input value={newTask[b.key] || ""} onChange={(e) => setNewTask((p) => ({ ...p, [b.key]: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter") addTask(b.key); }}
+                      placeholder="Nouvelle tâche…" className="h-8 text-xs" />
+                    <Button size="sm" className="h-8 px-2" onClick={() => addTask(b.key)} disabled={!(newTask[b.key] || "").trim()}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="px-3 py-2 space-y-1">
-                  {list.map((t: any) => (
-                    <label key={t.id} className={cn("flex items-start gap-2 py-1 px-1.5 rounded cursor-pointer transition-colors",
-                      t.completed ? "bg-emerald-50 dark:bg-emerald-950/30" : "hover:bg-muted/60")}>
-                      <Checkbox checked={t.completed} onCheckedChange={() => toggleTask(t)} className="h-4 w-4 mt-0.5" />
-                      <span className={cn("text-sm flex-1 font-medium", t.completed && "line-through text-muted-foreground")}>{t.title}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
@@ -334,14 +379,43 @@ export default function DailyDashboard() {
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
           <div className="rounded-lg border-2 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 border-emerald-300/60">
-            <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 mb-1">Programme sport</p>
-            <p className="text-sm font-medium">{sport?.program || <span className="text-muted-foreground italic">Pas de programme défini</span>}</p>
-            {sport?.sport_time && <p className="text-xs text-muted-foreground mt-1">🕐 {sport.sport_time}</p>}
-            {sport && (
-              <div className="mt-2 flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1"><Flame className="h-3 w-3 text-orange-500" /> <b>{kcalBurned}</b> kcal brûlées</span>
-                {sport.completed && <span className="text-emerald-600 font-bold">✓ Fait</span>}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Programme sport du jour</p>
+              <Button size="sm" variant="outline" className="h-6 text-[11px] px-2"
+                onClick={() => {
+                  setSProgram(sport?.program || "");
+                  setSTime(sport?.sport_time || "");
+                  setSBurned(sport?.kcal_burned ? String(sport.kcal_burned) : "");
+                  setEditSport((v) => !v);
+                }}>
+                {editSport ? "Fermer" : sport?.program ? "Modifier" : "Ajouter"}
+              </Button>
+            </div>
+            {editSport ? (
+              <div className="space-y-2">
+                <Input value={sProgram} onChange={(e) => setSProgram(e.target.value)} placeholder="Ex: Push (pecs/épaules) 45min" className="h-8 text-xs" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="time" value={sTime} onChange={(e) => setSTime(e.target.value)} className="h-8 text-xs" />
+                  <Input type="number" value={sBurned} onChange={(e) => setSBurned(e.target.value)} placeholder="kcal brûlées" className="h-8 text-xs" />
+                </div>
+                <Button size="sm" className="h-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={async () => {
+                    await saveSport({ program: sProgram.trim(), sport_time: sTime || null, kcal_burned: sBurned ? Number(sBurned) : null });
+                    setEditSport(false);
+                  }}>Enregistrer</Button>
               </div>
+            ) : (
+              <>
+                <p className="text-sm font-medium">{sport?.program || <span className="text-muted-foreground italic">Pas de programme défini</span>}</p>
+                {sport?.sport_time && <p className="text-xs text-muted-foreground mt-1">🕐 {sport.sport_time}</p>}
+                <div className="mt-2 flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1"><Flame className="h-3 w-3 text-orange-500" /> <b>{kcalBurned}</b> kcal brûlées</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={!!sport?.completed} onCheckedChange={() => saveSport({ completed: !sport?.completed })} className="h-4 w-4" />
+                    <span className={cn("font-bold", sport?.completed && "text-emerald-600")}>Séance faite</span>
+                  </label>
+                </div>
+              </>
             )}
           </div>
 
