@@ -157,7 +157,7 @@ export default function SportPerf() {
                   const last = list[list.length - 1];
                   const trend = trendOf(d);
                   const isOpen = !!open[d.id];
-                  const chartData = list.map((r) => ({ date: format(new Date(r.recorded_at), "dd/MM"), value: Number(r.value) }));
+                  
                   return (
                     <Collapsible key={d.id} asChild open={isOpen} onOpenChange={(v) => setOpen((p) => ({ ...p, [d.id]: v }))}>
                       <>
