@@ -199,23 +199,8 @@ export default function SportPerf() {
                         <CollapsibleContent asChild>
                           <TableRow className="bg-muted/30 hover:bg-muted/30">
                             <TableCell colSpan={9} className="p-4">
-                              <div className="grid gap-4 lg:grid-cols-2">
-                                {chartData.length > 1 ? (
-                                  <div className="h-44">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                      <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                                        <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
-                                        <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))" }} />
-                                        <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-                                      </LineChart>
-                                    </ResponsiveContainer>
-                                  </div>
-                                ) : (
-                                  <div className="h-44 flex items-center justify-center text-sm text-muted-foreground">Ajoute au moins 2 entrées pour voir la courbe</div>
-                                )}
-                                <div className="max-h-44 overflow-auto rounded-md border bg-card">
+                              <div className="grid gap-4">
+                                <div className="max-h-60 overflow-auto rounded-md border bg-card">
                                   <Table>
                                     <TableHeader>
                                       <TableRow>
