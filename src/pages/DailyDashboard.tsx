@@ -379,14 +379,43 @@ export default function DailyDashboard() {
         </CardHeader>
         <CardContent className="pt-4 space-y-4">
           <div className="rounded-lg border-2 bg-emerald-50/40 dark:bg-emerald-950/20 p-3 border-emerald-300/60">
-            <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 mb-1">Programme sport</p>
-            <p className="text-sm font-medium">{sport?.program || <span className="text-muted-foreground italic">Pas de programme défini</span>}</p>
-            {sport?.sport_time && <p className="text-xs text-muted-foreground mt-1">🕐 {sport.sport_time}</p>}
-            {sport && (
-              <div className="mt-2 flex items-center gap-4 text-xs">
-                <span className="flex items-center gap-1"><Flame className="h-3 w-3 text-orange-500" /> <b>{kcalBurned}</b> kcal brûlées</span>
-                {sport.completed && <span className="text-emerald-600 font-bold">✓ Fait</span>}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Programme sport du jour</p>
+              <Button size="sm" variant="outline" className="h-6 text-[11px] px-2"
+                onClick={() => {
+                  setSProgram(sport?.program || "");
+                  setSTime(sport?.sport_time || "");
+                  setSBurned(sport?.kcal_burned ? String(sport.kcal_burned) : "");
+                  setEditSport((v) => !v);
+                }}>
+                {editSport ? "Fermer" : sport?.program ? "Modifier" : "Ajouter"}
+              </Button>
+            </div>
+            {editSport ? (
+              <div className="space-y-2">
+                <Input value={sProgram} onChange={(e) => setSProgram(e.target.value)} placeholder="Ex: Push (pecs/épaules) 45min" className="h-8 text-xs" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="time" value={sTime} onChange={(e) => setSTime(e.target.value)} className="h-8 text-xs" />
+                  <Input type="number" value={sBurned} onChange={(e) => setSBurned(e.target.value)} placeholder="kcal brûlées" className="h-8 text-xs" />
+                </div>
+                <Button size="sm" className="h-8 w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={async () => {
+                    await saveSport({ program: sProgram.trim(), sport_time: sTime || null, kcal_burned: sBurned ? Number(sBurned) : null });
+                    setEditSport(false);
+                  }}>Enregistrer</Button>
               </div>
+            ) : (
+              <>
+                <p className="text-sm font-medium">{sport?.program || <span className="text-muted-foreground italic">Pas de programme défini</span>}</p>
+                {sport?.sport_time && <p className="text-xs text-muted-foreground mt-1">🕐 {sport.sport_time}</p>}
+                <div className="mt-2 flex items-center gap-4 text-xs">
+                  <span className="flex items-center gap-1"><Flame className="h-3 w-3 text-orange-500" /> <b>{kcalBurned}</b> kcal brûlées</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <Checkbox checked={!!sport?.completed} onCheckedChange={() => saveSport({ completed: !sport?.completed })} className="h-4 w-4" />
+                    <span className={cn("font-bold", sport?.completed && "text-emerald-600")}>Séance faite</span>
+                  </label>
+                </div>
+              </>
             )}
           </div>
 
