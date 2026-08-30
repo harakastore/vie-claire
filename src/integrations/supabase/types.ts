@@ -1068,6 +1068,81 @@ export type Database = {
         }
         Relationships: []
       }
+      routine_meals: {
+        Row: {
+          created_at: string
+          id: string
+          kcal: number | null
+          name: string
+          notes: string | null
+          protein_g: number | null
+          slot: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kcal?: number | null
+          name: string
+          notes?: string | null
+          protein_g?: number | null
+          slot: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kcal?: number | null
+          name?: string
+          notes?: string | null
+          protein_g?: number | null
+          slot?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      routine_schedule: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          label: string
+          notes: string | null
+          sort_order: number
+          start_time: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          label: string
+          notes?: string | null
+          sort_order?: number
+          start_time?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          label?: string
+          notes?: string | null
+          sort_order?: number
+          start_time?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       salat_times: {
         Row: {
           asr: string
