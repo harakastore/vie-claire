@@ -18,6 +18,7 @@ import Cabinet from "./pages/Cabinet";
 import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
+import Routines from "./pages/Routines";
 
 import DailyDashboard from "./pages/DailyDashboard";
 import NotFound from "./pages/NotFound";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/moi-meme" element={<ProtectedRoute><MoiMeme /></ProtectedRoute>} />
             <Route path="/apprentissage" element={<ProtectedRoute><Apprentissage /></ProtectedRoute>} />
             <Route path="/performances-sport" element={<ProtectedRoute><SportPerf /></ProtectedRoute>} />
+            <Route path="/routines" element={<ProtectedRoute><Routines /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
