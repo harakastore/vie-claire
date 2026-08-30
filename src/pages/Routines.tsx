@@ -207,10 +207,15 @@ export default function Routines() {
                   <div className="flex gap-1">
                     <Input type="number" value={draft.kcal} onChange={(e) => setNewMeal((p) => ({ ...p, [s.key]: { ...draft, kcal: e.target.value } }))} placeholder="kcal" className="h-8 text-xs" />
                     <Input type="number" value={draft.protein} onChange={(e) => setNewMeal((p) => ({ ...p, [s.key]: { ...draft, protein: e.target.value } }))} placeholder="prot. g" className="h-8 text-xs" />
-                    <Button size="sm" className="h-8 px-2" onClick={() => addMeal(s.key)} disabled={!draft.name.trim()}>
+                    <Button size="sm" variant="outline" className="h-8 px-2" title="Calcul auto kcal/protéines"
+                      onClick={() => calcDraft(s.key)} disabled={!draft.name.trim() || calcing === s.key}>
+                      {calcing === s.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    </Button>
+                    <Button size="sm" className="h-8 px-2" onClick={() => addMeal(s.key)} disabled={!draft.name.trim() || calcing === s.key}>
                       <Plus className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground">Laissez kcal/prot. vides : le calcul est automatique à l'ajout.</p>
                 </div>
               </div>
             );
