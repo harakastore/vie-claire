@@ -186,6 +186,10 @@ export default function Routines() {
                       <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
                         {m.kcal ? `${m.kcal} kcal` : ""}{m.protein_g ? ` · ${m.protein_g}g` : ""}
                       </span>
+                      <button onClick={() => calcExisting(m)} disabled={calcing === m.id} title="Recalculer kcal / protéines"
+                        className="opacity-0 group-hover:opacity-100 text-primary shrink-0">
+                        {calcing === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      </button>
                       <button onClick={() => removeMeal(m.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
