@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EditableText } from "@/components/EditableText";
-import { Plus, Trash2, UtensilsCrossed, Clock } from "lucide-react";
+import { Plus, Trash2, UtensilsCrossed, Clock, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const SLOTS = [
   { key: "ftour", label: "Ftour / Petit-déjeuner", color: "#f59e0b" },
