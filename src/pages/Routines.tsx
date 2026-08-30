@@ -41,6 +41,39 @@ export default function Routines() {
   const [schedule, setSchedule] = useState<Slot[]>([]);
   const [newMeal, setNewMeal] = useState<Record<string, { name: string; kcal: string; protein: string }>>({});
   const [newSlot, setNewSlot] = useState({ label: "", start: "", end: "" });
+  const [calcing, setCalcing] = useState<string | null>(null);
+
+  const analyze = async (text: string) => {
+    const { data, error } = await supabase.functions.invoke("parse-meal", { body: { text, type: "meal" } });
+    if (error || !data || (data as any).error) throw new Error("calcul impossible");
+    return data as { name: string; kcal: number; protein_g: number };
+  };
+
+  const calcDraft = async (slot: string) => {
+    const draft = newMeal[slot] || { name: "", kcal: "", protein: "" };
+    if (!draft.name.trim()) return;
+    setCalcing(slot);
+    try {
+      const r = await analyze(draft.name.trim());
+      setNewMeal((p) => ({ ...p, [slot]: { name: r.name || draft.name, kcal: String(r.kcal), protein: String(r.protein_g) } }));
+    } catch {
+      toast.error("Calcul automatique indisponible");
+    } finally {
+      setCalcing(null);
+    }
+  };
+
+  const calcExisting = async (m: Meal) => {
+    setCalcing(m.id);
+    try {
+      const r = await analyze(m.name);
+      await updateMeal(m.id, { kcal: r.kcal, protein_g: r.protein_g });
+    } catch {
+      toast.error("Calcul automatique indisponible");
+    } finally {
+      setCalcing(null);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
