@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EditableText } from "@/components/EditableText";
-import { Plus, Trash2, UtensilsCrossed, Clock } from "lucide-react";
+import { Plus, Trash2, UtensilsCrossed, Clock, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const SLOTS = [
   { key: "ftour", label: "Ftour / Petit-déjeuner", color: "#f59e0b" },
@@ -40,6 +41,39 @@ export default function Routines() {
   const [schedule, setSchedule] = useState<Slot[]>([]);
   const [newMeal, setNewMeal] = useState<Record<string, { name: string; kcal: string; protein: string }>>({});
   const [newSlot, setNewSlot] = useState({ label: "", start: "", end: "" });
+  const [calcing, setCalcing] = useState<string | null>(null);
+
+  const analyze = async (text: string) => {
+    const { data, error } = await supabase.functions.invoke("parse-meal", { body: { text, type: "meal" } });
+    if (error || !data || (data as any).error) throw new Error("calcul impossible");
+    return data as { name: string; kcal: number; protein_g: number };
+  };
+
+  const calcDraft = async (slot: string) => {
+    const draft = newMeal[slot] || { name: "", kcal: "", protein: "" };
+    if (!draft.name.trim()) return;
+    setCalcing(slot);
+    try {
+      const r = await analyze(draft.name.trim());
+      setNewMeal((p) => ({ ...p, [slot]: { name: r.name || draft.name, kcal: String(r.kcal), protein: String(r.protein_g) } }));
+    } catch {
+      toast.error("Calcul automatique indisponible");
+    } finally {
+      setCalcing(null);
+    }
+  };
+
+  const calcExisting = async (m: Meal) => {
+    setCalcing(m.id);
+    try {
+      const r = await analyze(m.name);
+      await updateMeal(m.id, { kcal: r.kcal, protein_g: r.protein_g });
+    } catch {
+      toast.error("Calcul automatique indisponible");
+    } finally {
+      setCalcing(null);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -55,14 +89,29 @@ export default function Routines() {
 
   const addMeal = async (slot: string) => {
     const draft = newMeal[slot] || { name: "", kcal: "", protein: "" };
-    const name = draft.name.trim();
+    let name = draft.name.trim();
     if (!name || !user) return;
+    let kcal = draft.kcal ? Number(draft.kcal) : null;
+    let protein: number | null = draft.protein ? Number(draft.protein) : null;
+    if (kcal === null && protein === null) {
+      setCalcing(slot);
+      try {
+        const r = await analyze(name);
+        name = r.name || name;
+        kcal = r.kcal;
+        protein = r.protein_g;
+      } catch {
+        toast.error("Calcul automatique indisponible");
+      } finally {
+        setCalcing(null);
+      }
+    }
     const row = {
       user_id: user.id,
       slot,
       name,
-      kcal: draft.kcal ? Number(draft.kcal) : null,
-      protein_g: draft.protein ? Number(draft.protein) : null,
+      kcal,
+      protein_g: protein,
       sort_order: meals.filter((x) => x.slot === slot).length,
     };
     setNewMeal((p) => ({ ...p, [slot]: { name: "", kcal: "", protein: "" } }));
@@ -137,6 +186,10 @@ export default function Routines() {
                       <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
                         {m.kcal ? `${m.kcal} kcal` : ""}{m.protein_g ? ` · ${m.protein_g}g` : ""}
                       </span>
+                      <button onClick={() => calcExisting(m)} disabled={calcing === m.id} title="Recalculer kcal / protéines"
+                        className="opacity-0 group-hover:opacity-100 text-primary shrink-0">
+                        {calcing === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      </button>
                       <button onClick={() => removeMeal(m.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -154,10 +207,15 @@ export default function Routines() {
                   <div className="flex gap-1">
                     <Input type="number" value={draft.kcal} onChange={(e) => setNewMeal((p) => ({ ...p, [s.key]: { ...draft, kcal: e.target.value } }))} placeholder="kcal" className="h-8 text-xs" />
                     <Input type="number" value={draft.protein} onChange={(e) => setNewMeal((p) => ({ ...p, [s.key]: { ...draft, protein: e.target.value } }))} placeholder="prot. g" className="h-8 text-xs" />
-                    <Button size="sm" className="h-8 px-2" onClick={() => addMeal(s.key)} disabled={!draft.name.trim()}>
+                    <Button size="sm" variant="outline" className="h-8 px-2" title="Calcul auto kcal/protéines"
+                      onClick={() => calcDraft(s.key)} disabled={!draft.name.trim() || calcing === s.key}>
+                      {calcing === s.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    </Button>
+                    <Button size="sm" className="h-8 px-2" onClick={() => addMeal(s.key)} disabled={!draft.name.trim() || calcing === s.key}>
                       <Plus className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground">Laissez kcal/prot. vides : le calcul est automatique à l'ajout.</p>
                 </div>
               </div>
             );
