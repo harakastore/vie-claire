@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, Sun, Rocket, Repeat } from "lucide-react";
+import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, Rocket, Repeat } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 
 const items = [
   { title: "Tableau de bord", url: "/", icon: LayoutDashboard },
-  { title: "Dashboard du jour", url: "/journee", icon: Sun },
   { title: "Dépenses & Revenus", url: "/depenses", icon: Receipt },
   { title: "Habitudes", url: "/habitudes", icon: CheckSquare },
   { title: "Crédits", url: "/credits", icon: CreditCard },

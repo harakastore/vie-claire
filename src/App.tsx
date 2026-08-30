@@ -20,7 +20,6 @@ import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
 import Routines from "./pages/Routines";
 
-import DailyDashboard from "./pages/DailyDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,7 +48,6 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/journee" element={<ProtectedRoute><DailyDashboard /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/habitudes" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
             <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
