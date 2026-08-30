@@ -89,14 +89,29 @@ export default function Routines() {
 
   const addMeal = async (slot: string) => {
     const draft = newMeal[slot] || { name: "", kcal: "", protein: "" };
-    const name = draft.name.trim();
+    let name = draft.name.trim();
     if (!name || !user) return;
+    let kcal = draft.kcal ? Number(draft.kcal) : null;
+    let protein: number | null = draft.protein ? Number(draft.protein) : null;
+    if (kcal === null && protein === null) {
+      setCalcing(slot);
+      try {
+        const r = await analyze(name);
+        name = r.name || name;
+        kcal = r.kcal;
+        protein = r.protein_g;
+      } catch {
+        toast.error("Calcul automatique indisponible");
+      } finally {
+        setCalcing(null);
+      }
+    }
     const row = {
       user_id: user.id,
       slot,
       name,
-      kcal: draft.kcal ? Number(draft.kcal) : null,
-      protein_g: draft.protein ? Number(draft.protein) : null,
+      kcal,
+      protein_g: protein,
       sort_order: meals.filter((x) => x.slot === slot).length,
     };
     setNewMeal((p) => ({ ...p, [slot]: { name: "", kcal: "", protein: "" } }));
