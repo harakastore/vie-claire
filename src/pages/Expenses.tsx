@@ -393,7 +393,21 @@ function RevenuesTab() {
 
   return (
     <>
+      <QuickAdd
+        kind="revenue"
+        fieldType="revenue_category"
+        onSubmit={async (v) => {
+          if (!user) return;
+          const { error } = await (supabase.from("revenues" as any) as any).insert({
+            user_id: user.id, amount: v.amount, date: v.date, category: v.category,
+          });
+          if (error) throw new Error(error.message);
+          fetchRevenues();
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
+
         <Input placeholder="Filtrer par catégorie..." value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-48" />
         <div className="ml-auto flex gap-2">
           <CsvUploadDialog
