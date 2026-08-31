@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
@@ -16,8 +16,8 @@ import { ManageChoices } from "@/components/ManageChoices";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Download, CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Pencil, Trash2, Download, CalendarIcon, Loader2, TrendingUp, TrendingDown, Wallet, PieChart, BarChart3 } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, parseISO, isSameMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +27,10 @@ import { CsvUploadDialog } from "@/components/CsvUploadDialog";
 interface Expense {
   id: string; user_id: string; amount: number; date: string; category: string | null;
   vendor: string | null; notes: string | null; sector: string;
+}
+interface Revenue {
+  id: string; user_id: string; amount: number; date: string; category: string | null;
+  notes: string | null;
 }
 
 export default function Expenses() {
