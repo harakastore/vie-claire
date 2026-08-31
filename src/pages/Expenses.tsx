@@ -220,7 +220,19 @@ function ExpensesTab() {
 
   return (
     <>
+      <QuickAdd
+        kind="expense"
+        fieldType="expense_category"
+        onSubmit={async (v) => {
+          if (!user) return;
+          const { error } = await supabase.from("expenses").insert({ user_id: user.id, ...v });
+          if (error) throw new Error(error.message);
+          fetchExpenses();
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
+
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
