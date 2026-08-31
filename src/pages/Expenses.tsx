@@ -34,17 +34,24 @@ interface Revenue {
 }
 
 export default function Expenses() {
-  const { user } = useAuth();
-  const [tab, setTab] = useState("expenses");
+  const [tab, setTab] = useState("entry");
 
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Dépenses & Revenus" description="Gérez vos flux financiers" />
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
+          <TabsTrigger value="entry">Saisie rapide</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="expenses">Dépenses</TabsTrigger>
           <TabsTrigger value="revenues">Revenus</TabsTrigger>
         </TabsList>
+        <TabsContent value="entry" className="space-y-6 mt-4">
+          <SimpleEntryTab />
+        </TabsContent>
+        <TabsContent value="dashboard" className="space-y-6 mt-4">
+          <DashboardTab />
+        </TabsContent>
         <TabsContent value="expenses" className="space-y-6 mt-4">
           <ExpensesTab />
         </TabsContent>
