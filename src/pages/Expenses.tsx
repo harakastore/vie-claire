@@ -52,6 +52,101 @@ export default function Expenses() {
   );
 }
 
+function QuickAdd({
+  kind,
+  fieldType,
+  onSubmit,
+}: {
+  kind: "expense" | "revenue";
+  fieldType: string;
+  onSubmit: (v: { amount: number; date: string; category: string | null; sector: string }) => Promise<void>;
+}) {
+  const { user } = useAuth();
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("");
+  const [sector, setSector] = useState("perso");
+  const [dayOffset, setDayOffset] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
+
+  const loadRecent = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("autocomplete_library")
+      .select("value")
+      .eq("field_type", fieldType)
+      .order("last_used_at", { ascending: false })
+      .limit(6);
+    setRecent(data?.map((d) => d.value) || []);
+  };
+  useEffect(() => { loadRecent(); }, [user, fieldType]);
+
+  const submit = async (ev?: React.FormEvent) => {
+    ev?.preventDefault();
+    const n = parseFloat(amount.replace(",", "."));
+    if (!user || !n) return;
+    setSaving(true);
+    const d = new Date();
+    d.setDate(d.getDate() - dayOffset);
+    try {
+      await onSubmit({ amount: n, date: format(d, "yyyy-MM-dd"), category: category.trim() || null, sector });
+      if (category.trim()) { saveAutocomplete(user.id, fieldType, category.trim()); loadRecent(); }
+      setAmount("");
+      toast({ title: kind === "expense" ? "Dépense ajoutée" : "Revenu ajouté", description: `${n.toLocaleString("fr-FR")} MAD` });
+    } catch (e: any) {
+      toast({ title: "Erreur", description: e.message, variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Card className="glass-card border-primary/20">
+      <CardContent className="p-4">
+        <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
+          <Input
+            type="number" step="0.01" inputMode="decimal" autoFocus
+            value={amount} onChange={(e) => setAmount(e.target.value)}
+            placeholder="Montant (MAD)" className="w-36 text-base font-semibold"
+          />
+          <div className="w-56"><AutocompleteInput fieldType={fieldType} value={category} onChange={setCategory} placeholder="Catégorie" /></div>
+          {kind === "expense" && (
+            <div className="flex rounded-md border border-border overflow-hidden">
+              {[{ v: "perso", l: "Perso" }, { v: "cabinet", l: "Cabinet" }].map((s) => (
+                <button key={s.v} type="button" onClick={() => setSector(s.v)}
+                  className={cn("px-3 py-2 text-xs font-medium transition-colors", sector === s.v ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
+                  {s.l}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex rounded-md border border-border overflow-hidden">
+            {[{ v: 0, l: "Aujourd'hui" }, { v: 1, l: "Hier" }, { v: 2, l: "-2j" }].map((d) => (
+              <button key={d.v} type="button" onClick={() => setDayOffset(d.v)}
+                className={cn("px-3 py-2 text-xs font-medium transition-colors", dayOffset === d.v ? "bg-secondary text-secondary-foreground" : "hover:bg-muted")}>
+                {d.l}
+              </button>
+            ))}
+          </div>
+          <Button type="submit" size="sm" disabled={saving || !amount}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}Ajouter
+          </Button>
+        </form>
+        {recent.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground mr-1">Rapide :</span>
+            {recent.map((r) => (
+              <button key={r} type="button" onClick={() => setCategory(r)}
+                className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", category === r ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted")}>
+                {r}
+              </button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ExpensesTab() {
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -125,7 +220,19 @@ function ExpensesTab() {
 
   return (
     <>
+      <QuickAdd
+        kind="expense"
+        fieldType="expense_category"
+        onSubmit={async (v) => {
+          if (!user) return;
+          const { error } = await supabase.from("expenses").insert({ user_id: user.id, ...v });
+          if (error) throw new Error(error.message);
+          fetchExpenses();
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
+
         <Select value={sectorFilter} onValueChange={setSectorFilter}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -286,7 +393,21 @@ function RevenuesTab() {
 
   return (
     <>
+      <QuickAdd
+        kind="revenue"
+        fieldType="revenue_category"
+        onSubmit={async (v) => {
+          if (!user) return;
+          const { error } = await (supabase.from("revenues" as any) as any).insert({
+            user_id: user.id, amount: v.amount, date: v.date, category: v.category,
+          });
+          if (error) throw new Error(error.message);
+          fetchRevenues();
+        }}
+      />
+
       <div className="flex flex-wrap items-center gap-3">
+
         <Input placeholder="Filtrer par catégorie..." value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-48" />
         <div className="ml-auto flex gap-2">
           <CsvUploadDialog
