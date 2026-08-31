@@ -1052,15 +1052,29 @@ export default function Goals() {
                   >
                     <div className="px-3 py-2.5" style={{ backgroundColor: `${block.color}12` }}>
                       <div className="flex items-center justify-between mb-1 gap-1">
-                        <button
-                          onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: isFocused ? null : block.key }))}
-                          className="text-xs font-bold uppercase tracking-wide truncate hover:underline cursor-pointer text-left flex items-center gap-1"
-                          style={{ color: block.color }}
-                          title={isFocused ? "Afficher tous les blocs" : "Voir uniquement ce bloc"}
-                        >
-                          {isFocused && <span>🔍</span>}
-                          {block.label}
-                        </button>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <button
+                            onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: isFocused ? null : block.key }))}
+                            className="text-xs font-bold uppercase tracking-wide truncate hover:underline cursor-pointer text-left flex items-center gap-1"
+                            style={{ color: block.color }}
+                            title={isFocused ? "Afficher tous les blocs" : "Voir uniquement ce bloc"}
+                          >
+                            {isFocused && <span>🔍</span>}
+                            {block.label}
+                          </button>
+                          <button
+                            onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: isFocused ? null : block.key }))}
+                            className={cn(
+                              "shrink-0 p-1 rounded-md transition-colors",
+                              isFocused
+                                ? "bg-white/60 dark:bg-black/30 text-foreground hover:bg-white dark:hover:bg-black/50"
+                                : "bg-white/40 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40"
+                            )}
+                            title={isFocused ? "Afficher tous les blocs" : "Voir uniquement les tâches de ce bloc"}
+                          >
+                            {isFocused ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" style={{ color: block.color }} />}
+                          </button>
+                        </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {bt.custom && <span className="text-[8px] font-bold px-1 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
                           {blockTasks.length > 0 && (
