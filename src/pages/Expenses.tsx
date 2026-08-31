@@ -66,6 +66,8 @@ function QuickAdd({
   const [category, setCategory] = useState("");
   const [sector, setSector] = useState("perso");
   const [dayOffset, setDayOffset] = useState(0);
+  const [customDate, setCustomDate] = useState<Date | undefined>();
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
 
@@ -81,17 +83,26 @@ function QuickAdd({
   };
   useEffect(() => { loadRecent(); }, [user, fieldType]);
 
+  const selectedDateLabel = () => {
+    if (customDate) return format(customDate, "dd/MM/yyyy", { locale: fr });
+    if (dayOffset === 0) return "Aujourd'hui";
+    if (dayOffset === 1) return "Hier";
+    return `-${dayOffset}j`;
+  };
+
   const submit = async (ev?: React.FormEvent) => {
     ev?.preventDefault();
     const n = parseFloat(amount.replace(",", "."));
     if (!user || !n) return;
     setSaving(true);
-    const d = new Date();
-    d.setDate(d.getDate() - dayOffset);
+    let d = customDate ? new Date(customDate) : new Date();
+    if (!customDate) d.setDate(d.getDate() - dayOffset);
     try {
       await onSubmit({ amount: n, date: format(d, "yyyy-MM-dd"), category: category.trim() || null, sector });
       if (category.trim()) { saveAutocomplete(user.id, fieldType, category.trim()); loadRecent(); }
       setAmount("");
+      setCustomDate(undefined);
+      setDayOffset(0);
       toast({ title: kind === "expense" ? "Dépense ajoutée" : "Revenu ajouté", description: `${n.toLocaleString("fr-FR")} MAD` });
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });
@@ -121,15 +132,33 @@ function QuickAdd({
           )}
           <div className="flex rounded-md border border-border overflow-hidden">
             {[{ v: 0, l: "Aujourd'hui" }, { v: 1, l: "Hier" }, { v: 2, l: "-2j" }].map((d) => (
-              <button key={d.v} type="button" onClick={() => setDayOffset(d.v)}
-                className={cn("px-3 py-2 text-xs font-medium transition-colors", dayOffset === d.v ? "bg-secondary text-secondary-foreground" : "hover:bg-muted")}>
+              <button key={d.v} type="button" onClick={() => { setDayOffset(d.v); setCustomDate(undefined); }}
+                className={cn("px-3 py-2 text-xs font-medium transition-colors", dayOffset === d.v && !customDate ? "bg-secondary text-secondary-foreground" : "hover:bg-muted")}>
                 {d.l}
               </button>
             ))}
+            <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
+              <PopoverTrigger asChild>
+                <button type="button"
+                  className={cn("px-3 py-2 text-xs font-medium transition-colors flex items-center gap-1.5", customDate ? "bg-secondary text-secondary-foreground" : "hover:bg-muted")}>
+                  <CalendarIcon className="h-3.5 w-3.5" /> {customDate ? format(customDate, "dd/MM", { locale: fr }) : "Date"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={customDate}
+                  onSelect={(d) => { setCustomDate(d); setDayOffset(0); setDatePopoverOpen(false); }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <Button type="submit" size="sm" disabled={saving || !amount}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}Ajouter
           </Button>
+          <span className="text-xs text-muted-foreground ml-1">{selectedDateLabel()}</span>
         </form>
         {recent.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
