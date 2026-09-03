@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays, Check, Shield } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays, Check, Shield, Copy } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -92,7 +94,12 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [copyFrom, setCopyFrom] = useState("");
+  const [copyTo, setCopyTo] = useState("");
+  const [copyMode, setCopyMode] = useState<"append" | "replace">("append");
+  const [copyOpen, setCopyOpen] = useState(false);
   const [blockOverrides, setBlockOverrides] = useState<Record<string, { start_time: string; end_time: string }>>({});
+
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [editingBlockTimes, setEditingBlockTimes] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [focusedBlocks, setFocusedBlocks] = useState<Record<string, string | null>>({});
@@ -360,7 +367,29 @@ export default function Goals() {
   };
 
   // Redistribute all current week tasks across blocks (max 3 per block, overflow to least loaded)
+  // Copy all tasks from one day to another day (same or other week days shown)
+  const copyDayToDay = async (fromDate: string, toDate: string, mode: "append" | "replace") => {
+    if (!user || !fromDate || !toDate || fromDate === toDate) return;
+    const source = dailyTasks.filter((t: any) => t.day_date === fromDate);
+    if (source.length === 0) { toast({ title: "Aucune tâche à copier", variant: "destructive" }); return; }
+    if (mode === "replace") {
+      const olds = dailyTasks.filter((t: any) => t.day_date === toDate);
+      setDailyTasks((prev) => prev.filter((t: any) => t.day_date !== toDate));
+      if (olds.length) await (supabase.from("daily_tasks" as any) as any).delete().in("id", olds.map((t: any) => t.id));
+    }
+    const rows = source.map((t: any) => ({
+      user_id: user.id, title: t.title, day_date: toDate, block: t.block || "fajr_dhuhr",
+      completed: false, scheduled_time: t.scheduled_time || null, priority: t.priority || "normal",
+      sort_order: t.sort_order ?? 0,
+    }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert(rows).select();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    setDailyTasks((prev) => [...prev, ...(data || [])]);
+    toast({ title: `${rows.length} tâche(s) copiée(s)`, description: `Vers ${format(parseISO(toDate), "EEEE d MMMM", { locale: fr })}` });
+  };
+
   const redistributeWeekTasks = async () => {
+
     if (!user) return;
     const MAX_PER_BLOCK = 3;
     const blockKeys = BLOCKS.map(b => b.key);
@@ -1830,6 +1859,56 @@ export default function Goals() {
                 <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-purple-50 to-fuchsia-50 border-purple-300 text-purple-700 hover:from-purple-100 hover:to-fuchsia-100 dark:from-purple-950/40 dark:to-fuchsia-950/40 dark:text-purple-300 dark:border-purple-800" onClick={redistributeWeekTasks}>
                   ⚖️ Répartir les tâches
                 </Button>
+                <Popover open={copyOpen} onOpenChange={setCopyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-950/40 dark:to-teal-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copier un jour
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-72 p-3 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dupliquer les tâches d'un jour</p>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Depuis</Label>
+                      <Select value={copyFrom} onValueChange={setCopyFrom}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Jour source" /></SelectTrigger>
+                        <SelectContent>
+                          {weekDays.map((d, i) => {
+                            const ds = format(d, "yyyy-MM-dd");
+                            const n = dailyTasks.filter((t: any) => t.day_date === ds).length;
+                            return <SelectItem key={ds} value={ds} className="text-xs">{DAY_NAMES[i]} {format(d, "d/MM")} ({n})</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Vers</Label>
+                      <Select value={copyTo} onValueChange={setCopyTo}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Jour cible" /></SelectTrigger>
+                        <SelectContent>
+                          {[...weekDays, ...eachDayOfInterval({ start: addWeeks(currentWeekStart, 1), end: addWeeks(weekEnd, 1) })].map((d, i) => {
+                            const ds = format(d, "yyyy-MM-dd");
+                            return <SelectItem key={ds} value={ds} className="text-xs">{DAY_NAMES[i % 7]} {format(d, "d/MM")}{i > 6 ? " (sem. +1)" : ""}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Mode</Label>
+                      <Select value={copyMode} onValueChange={(v) => setCopyMode(v as any)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="append" className="text-xs">Ajouter aux tâches existantes</SelectItem>
+                          <SelectItem value="replace" className="text-xs">Remplacer le jour cible</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button size="sm" className="w-full h-8 text-xs" disabled={!copyFrom || !copyTo || copyFrom === copyTo}
+                      onClick={async () => { await copyDayToDay(copyFrom, copyTo, copyMode); setCopyOpen(false); }}>
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copier
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+
                 {!isMobile && !expandedDay && (
                   <Button
                     variant="outline" size="sm"
