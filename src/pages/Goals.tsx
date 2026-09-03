@@ -92,7 +92,12 @@ export default function Goals() {
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
+  const [copyFrom, setCopyFrom] = useState("");
+  const [copyTo, setCopyTo] = useState("");
+  const [copyMode, setCopyMode] = useState<"append" | "replace">("append");
+  const [copyOpen, setCopyOpen] = useState(false);
   const [blockOverrides, setBlockOverrides] = useState<Record<string, { start_time: string; end_time: string }>>({});
+
   const [editingBlock, setEditingBlock] = useState<string | null>(null);
   const [editingBlockTimes, setEditingBlockTimes] = useState<{ start: string; end: string }>({ start: "", end: "" });
   const [focusedBlocks, setFocusedBlocks] = useState<Record<string, string | null>>({});
