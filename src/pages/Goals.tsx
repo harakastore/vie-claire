@@ -360,7 +360,29 @@ export default function Goals() {
   };
 
   // Redistribute all current week tasks across blocks (max 3 per block, overflow to least loaded)
+  // Copy all tasks from one day to another day (same or other week days shown)
+  const copyDayToDay = async (fromDate: string, toDate: string, mode: "append" | "replace") => {
+    if (!user || !fromDate || !toDate || fromDate === toDate) return;
+    const source = dailyTasks.filter((t: any) => t.day_date === fromDate);
+    if (source.length === 0) { toast({ title: "Aucune tâche à copier", variant: "destructive" }); return; }
+    if (mode === "replace") {
+      const olds = dailyTasks.filter((t: any) => t.day_date === toDate);
+      setDailyTasks((prev) => prev.filter((t: any) => t.day_date !== toDate));
+      if (olds.length) await (supabase.from("daily_tasks" as any) as any).delete().in("id", olds.map((t: any) => t.id));
+    }
+    const rows = source.map((t: any) => ({
+      user_id: user.id, title: t.title, day_date: toDate, block: t.block || "fajr_dhuhr",
+      completed: false, scheduled_time: t.scheduled_time || null, priority: t.priority || "normal",
+      sort_order: t.sort_order ?? 0,
+    }));
+    const { data, error } = await (supabase.from("daily_tasks" as any) as any).insert(rows).select();
+    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
+    setDailyTasks((prev) => [...prev, ...(data || [])]);
+    toast({ title: `${rows.length} tâche(s) copiée(s)`, description: `Vers ${format(parseISO(toDate), "EEEE d MMMM", { locale: fr })}` });
+  };
+
   const redistributeWeekTasks = async () => {
+
     if (!user) return;
     const MAX_PER_BLOCK = 3;
     const blockKeys = BLOCKS.map(b => b.key);
