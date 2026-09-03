@@ -1857,6 +1857,56 @@ export default function Goals() {
                 <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-purple-50 to-fuchsia-50 border-purple-300 text-purple-700 hover:from-purple-100 hover:to-fuchsia-100 dark:from-purple-950/40 dark:to-fuchsia-950/40 dark:text-purple-300 dark:border-purple-800" onClick={redistributeWeekTasks}>
                   ⚖️ Répartir les tâches
                 </Button>
+                <Popover open={copyOpen} onOpenChange={setCopyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-700 hover:from-emerald-100 hover:to-teal-100 dark:from-emerald-950/40 dark:to-teal-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copier un jour
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-72 p-3 space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Dupliquer les tâches d'un jour</p>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Depuis</Label>
+                      <Select value={copyFrom} onValueChange={setCopyFrom}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Jour source" /></SelectTrigger>
+                        <SelectContent>
+                          {weekDays.map((d, i) => {
+                            const ds = format(d, "yyyy-MM-dd");
+                            const n = dailyTasks.filter((t: any) => t.day_date === ds).length;
+                            return <SelectItem key={ds} value={ds} className="text-xs">{DAY_NAMES[i]} {format(d, "d/MM")} ({n})</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Vers</Label>
+                      <Select value={copyTo} onValueChange={setCopyTo}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Jour cible" /></SelectTrigger>
+                        <SelectContent>
+                          {[...weekDays, ...eachDayOfInterval({ start: addWeeks(currentWeekStart, 1), end: addWeeks(weekEnd, 1) })].map((d, i) => {
+                            const ds = format(d, "yyyy-MM-dd");
+                            return <SelectItem key={ds} value={ds} className="text-xs">{DAY_NAMES[i % 7]} {format(d, "d/MM")}{i > 6 ? " (sem. +1)" : ""}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Mode</Label>
+                      <Select value={copyMode} onValueChange={(v) => setCopyMode(v as any)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="append" className="text-xs">Ajouter aux tâches existantes</SelectItem>
+                          <SelectItem value="replace" className="text-xs">Remplacer le jour cible</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button size="sm" className="w-full h-8 text-xs" disabled={!copyFrom || !copyTo || copyFrom === copyTo}
+                      onClick={async () => { await copyDayToDay(copyFrom, copyTo, copyMode); setCopyOpen(false); }}>
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copier
+                    </Button>
+                  </PopoverContent>
+                </Popover>
+
                 {!isMobile && !expandedDay && (
                   <Button
                     variant="outline" size="sm"
