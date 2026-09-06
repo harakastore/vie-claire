@@ -19,6 +19,7 @@ import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
 import Routines from "./pages/Routines";
+import Timer from "./pages/Timer";
 
 import NotFound from "./pages/NotFound";
 
