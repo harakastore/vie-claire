@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, Rocket, Repeat } from "lucide-react";
+import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, Rocket, Repeat, TimerIcon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
