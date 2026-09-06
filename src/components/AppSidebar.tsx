@@ -30,6 +30,7 @@ const items = [
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
   { title: "Performances Sport", url: "/performances-sport", icon: Trophy },
   { title: "Routines", url: "/routines", icon: Repeat },
+  { title: "Timer travail", url: "/timer", icon: TimerIcon },
 ];
 
 export function AppSidebar() {
