@@ -19,6 +19,7 @@ import MoiMeme from "./pages/MoiMeme";
 import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
 import Routines from "./pages/Routines";
+import Timer from "./pages/Timer";
 
 import NotFound from "./pages/NotFound";
 
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/apprentissage" element={<ProtectedRoute><Apprentissage /></ProtectedRoute>} />
             <Route path="/performances-sport" element={<ProtectedRoute><SportPerf /></ProtectedRoute>} />
             <Route path="/routines" element={<ProtectedRoute><Routines /></ProtectedRoute>} />
+            <Route path="/timer" element={<ProtectedRoute><Timer /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
