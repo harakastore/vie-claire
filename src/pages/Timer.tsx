@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Play, Square, Trash2, Timer as TimerIcon, BarChart3, Clock } from "lucide-react";
+import { Play, Square, Trash2, Timer as TimerIcon, BarChart3, Clock, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -103,8 +103,38 @@ export default function Timer() {
   };
 
   const remove = async (id: string) => {
+    if (!window.confirm("Supprimer cette session ?")) return;
     setSessions((p) => p.filter((s) => s.id !== id));
     await supabase.from("work_sessions").delete().eq("id", id);
+  };
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState({ start: "", end: "", note: "" });
+  const toLocal = (iso: string) => {
+    const d = new Date(iso);
+    return `${dayKey(d)}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
+  const startEdit = (s: Session) => {
+    setEditId(s.id);
+    setEdit({ start: toLocal(s.started_at), end: s.ended_at ? toLocal(s.ended_at) : "", note: s.note || "" });
+  };
+  const saveEdit = async () => {
+    if (!editId) return;
+    const st = new Date(edit.start);
+    const en = new Date(edit.end);
+    if (isNaN(st.getTime()) || isNaN(en.getTime()) || en <= st) return toast.error("La fin doit être après le début");
+    const patch = {
+      started_at: st.toISOString(),
+      ended_at: en.toISOString(),
+      duration_seconds: Math.round((en.getTime() - st.getTime()) / 1000),
+      note: edit.note.trim() || null,
+    };
+    setSessions((p) => p.map((s) => (s.id === editId ? { ...s, ...patch } : s)));
+    const id = editId;
+    setEditId(null);
+    const { error } = await supabase.from("work_sessions").update(patch).eq("id", id);
+    if (error) toast.error("Erreur d'enregistrement");
+    else toast.success("Session modifiée");
   };
 
   const liveSec = running ? Math.max(0, Math.round((now - new Date(running.started_at).getTime()) / 1000)) : 0;
@@ -249,6 +279,18 @@ export default function Timer() {
           {filtered.map((s) => {
             const st = new Date(s.started_at);
             const en = s.ended_at ? new Date(s.ended_at) : null;
+            if (editId === s.id) {
+              return (
+                <div key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-primary/50 bg-primary/5 px-3 py-2">
+                  <Input type="datetime-local" value={edit.start} onChange={(e) => setEdit({ ...edit, start: e.target.value })} className="h-8 w-[190px] text-xs" />
+                  <span className="text-xs">→</span>
+                  <Input type="datetime-local" value={edit.end} onChange={(e) => setEdit({ ...edit, end: e.target.value })} className="h-8 w-[190px] text-xs" />
+                  <Input value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} placeholder="Tâche" className="h-8 flex-1 min-w-[140px] text-xs" />
+                  <Button size="sm" className="h-8" onClick={saveEdit}><Check className="h-3.5 w-3.5 mr-1" /> OK</Button>
+                  <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditId(null)}><X className="h-3.5 w-3.5" /></Button>
+                </div>
+              );
+            }
             return (
               <div key={s.id} className="group flex items-center gap-3 rounded-lg border bg-card px-3 py-2">
                 <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -261,7 +303,10 @@ export default function Timer() {
                 </span>
                 <span className="text-sm truncate flex-1">{s.note || ""}</span>
                 <span className="text-sm font-black tabular-nums text-primary shrink-0">{fmtHM(s.duration_seconds || 0)}</span>
-                <button onClick={() => remove(s.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0">
+                <button onClick={() => startEdit(s)} title="Modifier" className="opacity-50 group-hover:opacity-100 text-muted-foreground hover:text-foreground shrink-0">
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => remove(s.id)} title="Supprimer" className="opacity-50 group-hover:opacity-100 text-destructive shrink-0">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>

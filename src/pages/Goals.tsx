@@ -20,6 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { EditableText } from "@/components/EditableText";
+import { WorkTimerWidget } from "@/components/WorkTimerWidget";
+import { BlockRecurringList, useBlockRecurring } from "@/components/BlockRecurring";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -67,6 +69,7 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
 
 export default function Goals() {
   const { user } = useAuth();
+  const blockRecurring = useBlockRecurring();
   const isMobile = useIsMobile();
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
@@ -834,6 +837,7 @@ export default function Goals() {
                 </div>
 
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
+                  <BlockRecurringList api={blockRecurring} dateStr={dateStr} blockKey={block.key} />
                   {blockTasks.map((t: any) => (
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                       draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
@@ -905,6 +909,7 @@ export default function Goals() {
                       Vue détaillée — Time-blocking & priorités
                     </p>
                   </div>
+                  <WorkTimerWidget />
                   <Button variant="ghost" size="icon" className="h-9 w-9 text-primary-foreground hover:bg-white/20 shrink-0"
                     disabled={expandedDayIndex >= 6} onClick={() => navigateExpandedDay(1)}>
                     <ChevronRight className="h-5 w-5" />
@@ -1133,6 +1138,7 @@ export default function Goals() {
                     </div>
 
                     <div className={cn("px-3 py-3 space-y-1.5 flex-1", isFocused ? "min-h-[300px]" : "min-h-[120px]")}>
+                      <BlockRecurringList api={blockRecurring} dateStr={dateStr} blockKey={block.key} />
                       {blockTasks.map((t: any) => (
                         <div key={t.id}
                           className={cn(
