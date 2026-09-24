@@ -38,6 +38,80 @@ export type Database = {
         }
         Relationships: []
       }
+      block_recurring_logs: {
+        Row: {
+          created_at: string
+          day_date: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_date: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_date?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "block_recurring_logs_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "block_recurring_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      block_recurring_tasks: {
+        Row: {
+          active: boolean
+          block_key: string
+          color: string
+          created_at: string
+          days_of_week: number[] | null
+          id: string
+          scheduled_time: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          block_key: string
+          color?: string
+          created_at?: string
+          days_of_week?: number[] | null
+          id?: string
+          scheduled_time?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          block_key?: string
+          color?: string
+          created_at?: string
+          days_of_week?: number[] | null
+          id?: string
+          scheduled_time?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cabinet_marketing_strategies: {
         Row: {
           created_at: string
