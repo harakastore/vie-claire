@@ -1,0 +1,1 @@
+ALTER TABLE public.block_recurring_tasks ADD COLUMN IF NOT EXISTS habit_id uuid REFERENCES public.daily_habits(id) ON DELETE CASCADE;
