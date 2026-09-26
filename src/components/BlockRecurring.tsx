@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 
 export type BRTask = {
   id: string; title: string; block_key: string; scheduled_time: string | null;
-  days_of_week: number[] | null; color: string; active: boolean; sort_order: number;
+  days_of_week: number[] | null; color: string; active: boolean; sort_order: number; habit_id?: string | null;
 };
+export type DHabit = { id: string; title: string; category: string | null; days_of_week: number[] | null };
 
 export const BR_COLORS: Record<string, { label: string; hue: string }> = {
   violet: { label: "Mauve", hue: "270 70% 55%" },
@@ -31,15 +32,22 @@ export function useBlockRecurring() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<BRTask[]>([]);
   const [done, setDone] = useState<Set<string>>(new Set());
+  const [habits, setHabits] = useState<DHabit[]>([]);
+  const [hDone, setHDone] = useState<Map<string, { id: string; completed: boolean }>>(new Map());
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       const since = new Date(); since.setDate(since.getDate() - 60);
-      const [t, l] = await Promise.all([
+      const sinceStr = since.toISOString().slice(0, 10);
+      const [t, l, h, hl] = await Promise.all([
         tbl().select("*").order("scheduled_time", { ascending: true, nullsFirst: false }).order("sort_order"),
-        logs().select("task_id, day_date").gte("day_date", since.toISOString().slice(0, 10)),
+        logs().select("task_id, day_date").gte("day_date", sinceStr),
+        (supabase.from("daily_habits" as any) as any).select("id, title, category, days_of_week").eq("active", true).order("sort_order"),
+        (supabase.from("daily_habit_logs" as any) as any).select("id, habit_id, day_date, completed").gte("day_date", sinceStr),
       ]);
+      setHabits((h.data as DHabit[]) || []);
+      setHDone(new Map(((hl.data as any[]) || []).map((r) => [`${r.habit_id}_${r.day_date}`, { id: r.id, completed: r.completed }])));
       setTasks((t.data as BRTask[]) || []);
       setDone(new Set(((l.data as any[]) || []).map((r) => `${r.task_id}_${r.day_date}`)));
     })();
@@ -50,10 +58,28 @@ export function useBlockRecurring() {
     return tasks.filter((t) => t.active && t.block_key === blockKey && (!t.days_of_week || t.days_of_week.length === 0 || t.days_of_week.includes(dow)));
   }, [tasks]);
 
-  const isDone = (id: string, dateStr: string) => done.has(`${id}_${dateStr}`);
+  const habitOf = (id: string) => tasks.find((t) => t.id === id)?.habit_id || null;
+  const isDone = (id: string, dateStr: string) => {
+    const hid = habitOf(id);
+    if (hid) return !!hDone.get(`${hid}_${dateStr}`)?.completed;
+    return done.has(`${id}_${dateStr}`);
+  };
 
   const toggle = async (id: string, dateStr: string) => {
     if (!user) return;
+    const hid = habitOf(id);
+    if (hid) {
+      const hk = `${hid}_${dateStr}`;
+      const ex = hDone.get(hk);
+      const nv = !ex?.completed;
+      setHDone((p) => { const n = new Map(p); n.set(hk, { id: ex?.id || "tmp", completed: nv }); return n; });
+      if (ex && ex.id !== "tmp") await (supabase.from("daily_habit_logs" as any) as any).update({ completed: nv }).eq("id", ex.id);
+      else {
+        const { data } = await (supabase.from("daily_habit_logs" as any) as any).insert({ user_id: user.id, habit_id: hid, day_date: dateStr, completed: true }).select().single();
+        if (data) setHDone((p) => { const n = new Map(p); n.set(hk, { id: (data as any).id, completed: (data as any).completed }); return n; });
+      }
+      return;
+    }
     const k = `${id}_${dateStr}`;
     const was = done.has(k);
     setDone((p) => { const n = new Set(p); was ? n.delete(k) : n.add(k); return n; });
@@ -61,7 +87,7 @@ export function useBlockRecurring() {
     else await logs().insert({ user_id: user.id, task_id: id, day_date: dateStr });
   };
 
-  const add = async (v: { title: string; block_key: string; scheduled_time: string | null; days_of_week: number[] | null; color: string }) => {
+  const add = async (v: { title: string; block_key: string; scheduled_time: string | null; days_of_week: number[] | null; color: string; habit_id?: string | null }) => {
     if (!user) return;
     const { data } = await tbl().insert({ ...v, user_id: user.id }).select().single();
     if (data) setTasks((p) => [...p, data as BRTask]);
@@ -75,7 +101,7 @@ export function useBlockRecurring() {
     await tbl().delete().eq("id", id);
   };
 
-  return { tasks, forBlock, isDone, toggle, add, update, remove };
+  return { tasks, habits, forBlock, isDone, toggle, add, update, remove };
 }
 
 export type BlockRecurringApi = ReturnType<typeof useBlockRecurring>;
@@ -102,13 +128,26 @@ function DayPicker({ value, onChange }: { value: number[] | null; onChange: (v: 
   );
 }
 
-function TaskForm({ initial, onSubmit, submitLabel }: {
-  initial: { title: string; scheduled_time: string | null; days_of_week: number[] | null; color: string };
-  onSubmit: (v: typeof initial) => void; submitLabel: string;
+type FormV = { title: string; scheduled_time: string | null; days_of_week: number[] | null; color: string; habit_id?: string | null };
+function TaskForm({ initial, onSubmit, submitLabel, habits }: {
+  initial: FormV; onSubmit: (v: FormV) => void; submitLabel: string; habits: DHabit[];
 }) {
-  const [v, setV] = useState(initial);
+  const [v, setV] = useState<FormV>(initial);
   return (
     <div className="space-y-2.5">
+      {habits.length > 0 && (
+        <div>
+          <p className="text-[11px] text-muted-foreground mb-1">Lier à une tâche Discipline</p>
+          <div className="flex flex-wrap gap-1 max-h-28 overflow-auto">
+            {habits.map((h) => (
+              <button key={h.id} type="button"
+                onClick={() => setV(v.habit_id === h.id ? { ...v, habit_id: null } : { ...v, habit_id: h.id, title: h.title, days_of_week: h.days_of_week && h.days_of_week.length ? h.days_of_week : null })}
+                className={cn("px-2 h-6 rounded-md text-[11px] font-semibold border", v.habit_id === h.id ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")}
+              >{h.title}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <Input autoFocus placeholder="Ex : Apprentissage anglais" value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} className="h-8 text-sm" />
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-muted-foreground w-12">Heure</span>
@@ -149,13 +188,14 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
             <Checkbox checked={d} onCheckedChange={() => api.toggle(t.id, dateStr)} className="h-4 w-4" />
             {t.scheduled_time && <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: `hsl(${c.hue})` }}>{t.scheduled_time.slice(0, 5)}</span>}
             <span className={cn("text-sm font-semibold flex-1 leading-snug", d && "line-through opacity-60")}>{t.title}</span>
+            {t.habit_id && <span className="text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary shrink-0">Discipline</span>}
             <Popover open={editId === t.id} onOpenChange={(o) => setEditId(o ? t.id : null)}>
               <PopoverTrigger asChild>
                 <button title="Tâche fixe — modifier" className="shrink-0 opacity-60 hover:opacity-100"><Lock className="h-3 w-3" style={{ color: `hsl(${c.hue})` }} /></button>
               </PopoverTrigger>
               <PopoverContent className="w-72">
                 <p className="text-xs font-bold mb-2">Modifier la tâche fixe</p>
-                <TaskForm initial={{ title: t.title, scheduled_time: t.scheduled_time, days_of_week: t.days_of_week, color: t.color }} submitLabel="Enregistrer"
+                <TaskForm habits={api.habits} initial={{ title: t.title, scheduled_time: t.scheduled_time, days_of_week: t.days_of_week, color: t.color, habit_id: t.habit_id ?? null }} submitLabel="Enregistrer"
                   onSubmit={(v) => { api.update(t.id, v); setEditId(null); }} />
                 <Button size="sm" variant="ghost" className="w-full h-7 mt-1 text-destructive" onClick={() => { api.remove(t.id); setEditId(null); }}>
                   <Trash2 className="h-3 w-3 mr-1" /> Supprimer (tous les jours)
@@ -173,7 +213,7 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
         </PopoverTrigger>
         <PopoverContent className="w-72">
           <p className="text-xs font-bold mb-2">Nouvelle tâche fixe dans ce bloc</p>
-          <TaskForm initial={{ title: "", scheduled_time: null, days_of_week: null, color: "violet" }} submitLabel="Bloquer dans ce bloc"
+          <TaskForm habits={api.habits} initial={{ title: "", scheduled_time: null, days_of_week: null, color: "violet", habit_id: null }} submitLabel="Bloquer dans ce bloc"
             onSubmit={(v) => { api.add({ ...v, block_key: blockKey }); setOpenAdd(false); }} />
         </PopoverContent>
       </Popover>
