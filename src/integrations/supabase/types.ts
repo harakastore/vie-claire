@@ -77,6 +77,7 @@ export type Database = {
           color: string
           created_at: string
           days_of_week: number[] | null
+          habit_id: string | null
           id: string
           scheduled_time: string | null
           sort_order: number
@@ -90,6 +91,7 @@ export type Database = {
           color?: string
           created_at?: string
           days_of_week?: number[] | null
+          habit_id?: string | null
           id?: string
           scheduled_time?: string | null
           sort_order?: number
@@ -103,6 +105,7 @@ export type Database = {
           color?: string
           created_at?: string
           days_of_week?: number[] | null
+          habit_id?: string | null
           id?: string
           scheduled_time?: string | null
           sort_order?: number
@@ -110,7 +113,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "block_recurring_tasks_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "daily_habits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cabinet_marketing_strategies: {
         Row: {
