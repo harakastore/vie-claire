@@ -1002,6 +1002,24 @@ export type Database = {
         }
         Relationships: []
       }
+      life_mission: {
+        Row: {
+          mission_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          mission_text?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          mission_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           created_at: string
@@ -1068,6 +1086,42 @@ export type Database = {
           id?: string
           meal_type?: string
           sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mission_boards: {
+        Row: {
+          color: string
+          created_at: string
+          display: string
+          id: string
+          items: Json
+          sort_order: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display?: string
+          id?: string
+          items?: Json
+          sort_order?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display?: string
+          id?: string
+          items?: Json
+          sort_order?: number
+          title?: string
           updated_at?: string
           user_id?: string
         }
