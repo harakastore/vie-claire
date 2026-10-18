@@ -14,4 +14,6 @@ describe('Tracking rules',()=>{
  it('Calories retain the established 2000 kcal base',()=>expect(calorieBalance(1800,300)).toBe(-500));
  it('Only explicitly logged calorie days count, including zero entries',()=>{expect(hasCalorieEntry({kcal_logged:true})).toBe(true);expect(hasCalorieEntry({kcal_logged:false})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});
  it('Payments must be positive',()=>expect(paymentSchema.safeParse({amount:0,date:'2026-10-18',method:'cheque',reference:''}).success).toBe(false));
+ it('A credit with no payment is shown as unpaid (white row)',()=>{expect(creditPaymentState(5000,0)).toBe('unpaid');expect(creditStateClass.unpaid).toBe('credit-unpaid')});
+ it('A credit partly paid is orange, fully repaid is green',()=>{expect(creditPaymentState(5000,2000)).toBe('partial');expect(creditStateClass.partial).toBe('credit-partial');expect(creditPaymentState(5000,5000)).toBe('settled');expect(creditStateClass.settled).toBe('credit-settled')});
 });
