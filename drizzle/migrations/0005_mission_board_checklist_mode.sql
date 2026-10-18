@@ -1,0 +1,2 @@
+ALTER TABLE public.mission_boards DROP CONSTRAINT mission_boards_display_check;
+ALTER TABLE public.mission_boards ADD CONSTRAINT mission_boards_display_check CHECK (display IN ('list', 'table', 'roadmap', 'checklist'));
