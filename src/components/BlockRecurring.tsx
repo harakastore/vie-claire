@@ -5,7 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, Trash2, Plus } from "lucide-react";
+import { Lock, Trash2, Plus, Search, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { recurringTaskInBlock } from "@/lib/tracking";
 import { format, startOfWeek, endOfWeek, parseISO } from "date-fns";
@@ -135,22 +135,52 @@ function TaskForm({ initial, onSubmit, submitLabel, habits }: {
   initial: FormV; onSubmit: (v: FormV) => void; submitLabel: string; habits: DHabit[];
 }) {
   const [v, setV] = useState<FormV>(initial);
+  const [search, setSearch] = useState("");
+  const groups = [
+    { key: "recurring", label: "Récurrentes" },
+    { key: "personal", label: "Personnel" },
+    { key: "business", label: "Business" },
+  ];
+  const visibleHabits = habits.filter((h) => h.title.toLocaleLowerCase("fr").includes(search.trim().toLocaleLowerCase("fr")));
+  const selectedHabit = habits.find((h) => h.id === v.habit_id);
+  const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-4 min-w-0">
       {habits.length > 0 && (
-        <div>
-          <p className="text-[11px] text-muted-foreground mb-1">Lier à une tâche Discipline</p>
-          <div className="flex flex-wrap gap-1 max-h-28 overflow-auto">
-            {habits.map((h) => (
-              <button key={h.id} type="button"
-                onClick={() => setV(v.habit_id === h.id ? { ...v, habit_id: null } : { ...v, habit_id: h.id, title: h.title, days_of_week: h.days_of_week && h.days_of_week.length ? h.days_of_week : null })}
-                className={cn("px-2 h-6 rounded-md text-[11px] font-semibold border", v.habit_id === h.id ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted")}
-              >{h.title}</button>
-            ))}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">Tâches Discipline</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input autoFocus aria-label="Rechercher une tâche Discipline" placeholder="Rechercher une tâche…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 pl-9 text-sm" />
+          </div>
+          {selectedHabit && <div className="flex items-start gap-2 rounded-md bg-primary/10 px-3 py-2 text-primary">
+            <Check className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="flex-1 min-w-0 text-sm font-medium break-words">{selectedHabit.title}</span>
+            <Button type="button" size="icon" variant="ghost" aria-label="Délier la tâche Discipline" className="h-6 w-6 shrink-0" onClick={() => setV({ ...v, habit_id: null })}><X className="h-3.5 w-3.5" /></Button>
+          </div>}
+          <div className="max-h-60 overflow-y-auto overscroll-contain rounded-md border" aria-label="Liste des tâches Discipline">
+            {groups.map((group) => {
+              const rows = visibleHabits.filter((h) => group.key === "personal" ? !["recurring", "business"].includes(h.category || "personal") : h.category === group.key);
+              if (!rows.length) return null;
+              return <div key={group.key}>
+                <h4 className="sticky top-0 z-10 flex justify-between bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">{group.label}<span className="tabular-nums">{rows.length}</span></h4>
+                <div className="divide-y">
+                  {rows.map((h) => <Button key={h.id} type="button" variant="ghost" aria-pressed={v.habit_id === h.id}
+                    onClick={() => setV(v.habit_id === h.id ? { ...v, habit_id: null } : { ...v, habit_id: h.id, title: h.title, days_of_week: h.days_of_week?.length ? h.days_of_week : null })}
+                    className={cn("h-auto min-h-14 w-full justify-start items-start gap-2 rounded-none px-3 py-2.5 text-left whitespace-normal", v.habit_id === h.id && "bg-primary/10 text-primary")}>
+                    <span className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border", v.habit_id === h.id ? "border-primary bg-primary text-primary-foreground" : "border-input")}>
+                      {v.habit_id === h.id && <Check className="h-3 w-3" />}
+                    </span>
+                    <span className="flex-1 min-w-0"><span className="block break-words text-sm font-medium leading-5">{h.title}</span><span className="block mt-1 text-xs font-normal text-muted-foreground">{!h.days_of_week?.length || h.days_of_week.length === 7 ? "Tous les jours" : DAYS.filter((d) => h.days_of_week?.includes(d.v)).map((d) => dayNames[d.v]).join(" · ")}</span></span>
+                  </Button>)}
+                </div>
+              </div>;
+            })}
+            {!visibleHabits.length && <p className="px-3 py-5 text-sm text-muted-foreground">Aucune tâche trouvée.</p>}
           </div>
         </div>
       )}
-      <Input autoFocus placeholder="Ex : Apprentissage anglais" value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} className="h-8 text-sm" />
+      <Input aria-label="Titre de la tâche récurrente" placeholder="Ex : Apprentissage anglais" value={v.title} onChange={(e) => setV({ ...v, title: e.target.value })} className="h-8 text-sm" />
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-muted-foreground w-12">Heure</span>
         <input type="time" value={v.scheduled_time?.slice(0, 5) || ""} onChange={(e) => setV({ ...v, scheduled_time: e.target.value || null })} className="h-7 text-xs px-1.5 rounded border border-input bg-background tabular-nums" />
@@ -195,7 +225,7 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
               <PopoverTrigger asChild>
                 <button title="Tâche fixe — modifier" className="shrink-0 opacity-60 hover:opacity-100"><Lock className="h-3 w-3" style={{ color: `hsl(${c.hue})` }} /></button>
               </PopoverTrigger>
-              <PopoverContent className="w-72">
+              <PopoverContent className="w-[420px] max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto" side="bottom" align="start" collisionPadding={16}>
                 <p className="text-xs font-bold mb-2">Modifier la tâche fixe</p>
                 <TaskForm habits={api.habits} initial={{ title: t.title, scheduled_time: t.scheduled_time, days_of_week: t.days_of_week, color: t.color, habit_id: t.habit_id ?? null }} submitLabel="Enregistrer"
                   onSubmit={(v) => { api.update(t.id, v); setEditId(null); }} />
@@ -213,7 +243,7 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
             <Plus className="h-3 w-3" /> <Lock className="h-2.5 w-2.5" /> Tâche fixe récurrente
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-72">
+        <PopoverContent className="w-[420px] max-w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto" side="bottom" align="start" collisionPadding={16}>
           <p className="text-xs font-bold mb-2">Nouvelle tâche fixe dans ce bloc</p>
           <TaskForm habits={api.habits} initial={{ title: "", scheduled_time: null, days_of_week: null, color: "violet", habit_id: null }} submitLabel="Bloquer dans ce bloc"
             onSubmit={(v) => { api.add({ ...v, block_key: blockKey }); setOpenAdd(false); }} />
