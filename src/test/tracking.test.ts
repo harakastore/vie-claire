@@ -1,7 +1,10 @@
 import { describe,it,expect } from 'vitest';
+import { recurringTaskInBlock } from '@/lib/tracking';
 import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
+ it('Recurring tasks appear only on their scheduled date and assigned block',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[0]};expect(recurringTaskInBlock(task,'2026-10-18','asr_maghrib')).toBe(true);expect(recurringTaskInBlock(task,'2026-10-19','asr_maghrib')).toBe(false);expect(recurringTaskInBlock(task,'2026-10-18','fajr_dhuhr')).toBe(false)});
+ it('Everyday recurring tasks appear on any selected day unless paused',()=>{const task={active:true,block_key:'fajr_dhuhr',days_of_week:null};expect(recurringTaskInBlock(task,'2026-10-19','fajr_dhuhr')).toBe(true);expect(recurringTaskInBlock(task,'2026-07-01','fajr_dhuhr')).toBe(true);expect(recurringTaskInBlock({...task,active:false},'2026-10-19','fajr_dhuhr')).toBe(false)});
  it('Correcting 2000 to 1500 on a 5000 credit leaves 3500',()=>expect(remainingCredit(5000,correctedCreditPaid(5000,2000,2000,1500))).toBe(3500));
  it('Corrections retain older payments without dated entries',()=>expect(correctedCreditPaid(5000,3000,2000,1500)).toBe(2500));
  it('Corrections reject overpayment',()=>expect(()=>correctedCreditPaid(5000,3000,2000,4500)).toThrow());

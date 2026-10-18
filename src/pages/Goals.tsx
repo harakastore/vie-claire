@@ -72,7 +72,6 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
 
 export default function Goals() {
   const { user } = useAuth();
-  const blockRecurring = useBlockRecurring();
   const isMobile = useIsMobile();
   const now = new Date();
   const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(now, { weekStartsOn: 1 }));
@@ -82,6 +81,18 @@ export default function Goals() {
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(() => format(new Date(), "yyyy-MM-dd"));
+  const blockRecurring = useBlockRecurring(format(currentWeekStart, "yyyy-MM-dd"));
+  const selectDailyDate = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    const date = new Date(`${value}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return;
+    setCurrentWeekStart(startOfWeek(date, { weekStartsOn: 1 }));
+    setExpandedDay(value);
+  };
+  const navigateDailyWeek = (offset: number) => {
+    setCurrentWeekStart(addWeeks(currentWeekStart, offset));
+    if (expandedDay) setExpandedDay(format(addWeeks(new Date(`${expandedDay}T12:00:00`), offset), "yyyy-MM-dd"));
+  };
   const [focusTasksOnly, setFocusTasksOnly] = useState(false);
   const [showNonNego, setShowNonNego] = useState(true);
 
@@ -1725,13 +1736,14 @@ export default function Goals() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 rounded-lg border bg-background/60 backdrop-blur px-1 py-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
+                  <Input aria-label="Date des tâches quotidiennes" type="date" value={expandedDay || format(currentWeekStart, "yyyy-MM-dd")} onChange={(e) => selectDailyDate(e.target.value)} className="h-8 w-40 text-xs" />
+                  <Button aria-label="Semaine précédente" variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateDailyWeek(-1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <span className="text-xs font-semibold whitespace-nowrap px-2">
                     {format(currentWeekStart, "d MMM", { locale: fr })} → {format(weekEnd, "d MMM", { locale: fr })}
                   </span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
+                  <Button aria-label="Semaine suivante" variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigateDailyWeek(1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   {!isCurrentWeek && (
@@ -1739,7 +1751,7 @@ export default function Goals() {
                       variant="ghost"
                       size="sm"
                       className="h-7 text-[11px] font-semibold text-primary"
-                      onClick={() => setCurrentWeekStart(startOfWeek(now, { weekStartsOn: 1 }))}
+                      onClick={() => selectDailyDate(format(now, "yyyy-MM-dd"))}
                     >
                       Aujourd'hui
                     </Button>

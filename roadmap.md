@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Afficher les tâches récurrentes dans les blocs de la date choisie et vérifier le changement de jour
 - [x] Ajouter le mode Roadmap aux boutons de mission
 - [x] Ouvrir les objectifs annuels et 90 jours depuis des boutons avec checklist
 - [x] Vérifier les modes et la sauvegarde des cases

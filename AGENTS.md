@@ -8,3 +8,4 @@
 - Keep learning editing in a modal and sport entry/history behind exercise-level dialogs, so overview pages stay focused.
 - Use the explicit calorie-entry flag for calorie summaries, so default-zero sports schedules are not counted as food logs.
 - Use shared tracking controls and task-name selection across dedicated pages and the embedded work timer to keep behavior consistent.
+- Derive recurring block tasks from their schedules without copying daily tasks, and load completion logs for the selected week so navigating dates never hides scheduled items or loses checks.
