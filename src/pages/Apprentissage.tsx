@@ -1,190 +1,39 @@
-import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { PageHeader } from "@/components/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Check, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { LearningDashboard } from "@/components/tracking/LearningDashboard";
-
-type Learn = {
-  id: string; user_id: string; category: string; title: string;
-  resource_url: string | null; notes: string | null; status: string; order_index: number;
-  completed_at?: string | null;
-};
-
-const DEFAULT_CATEGORIES = [
-  "Langues",
-  "E-commerce",
-  "Gestion team & humain",
-  "Communication & élocution",
-  "Développement personnel",
-  "En tant que mari",
-];
-
-const statusColors: Record<string, string> = {
-  todo: "bg-muted text-muted-foreground",
-  in_progress: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  done: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-};
-const statusLabel = (s: string) => s === "todo" ? "À commencer" : s === "in_progress" ? "En cours" : "Terminé";
-const nextStatus = (s: string) => s === "todo" ? "in_progress" : s === "in_progress" ? "done" : "todo";
-
-export default function Apprentissage() {
-  const { user } = useAuth();
-  const [items, setItems] = useState<Learn[]>([]);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0]);
-  const [customCat, setCustomCat] = useState("");
-  const [url, setUrl] = useState("");
-  const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase.from("learning_items").select("*").order("order_index").order("created_at", { ascending: false });
-      setItems((data as any) || []);
-    })();
-  }, [user]);
-
-  const allCategories = useMemo(() => {
-    const set = new Set<string>(DEFAULT_CATEGORIES);
-    items.forEach(i => set.add(i.category));
-    return Array.from(set);
-  }, [items]);
-
-  const byCategory = useMemo(() => {
-    const g: Record<string, Learn[]> = {};
-    items.forEach(i => { (g[i.category] = g[i.category] || []).push(i); });
-    return g;
-  }, [items]);
-
-  async function addItem() {
-    const finalCat = (customCat.trim() || category).trim();
-    if (!user || !title.trim() || !finalCat) return;
-    const optimistic: Learn = {
-      id: "tmp-" + Math.random(), user_id: user.id, category: finalCat, title: title.trim(),
-      resource_url: url || null, notes: notes || null, status: "todo", order_index: 0,
-    };
-    setItems(p => [optimistic, ...p]);
-    const { data, error } = await supabase.from("learning_items").insert({
-      user_id: user.id, category: finalCat, title: title.trim(),
-      resource_url: url || null, notes: notes || null,
-    }).select().single();
-    if (error) { toast.error("Erreur"); setItems(p => p.filter(x => x.id !== optimistic.id)); return; }
-    setItems(p => p.map(x => x.id === optimistic.id ? (data as any) : x));
-    setTitle(""); setUrl(""); setNotes(""); setCustomCat("");
-  }
-  async function updateItem(id: string, patch: Partial<Learn>) {
-    const previous = items.find(x => x.id === id);
-    const update = patch.status ? { ...patch, completed_at: patch.status === "done" ? new Date().toISOString() : null } : patch;
-    setItems(p => p.map(x => x.id === id ? { ...x, ...update } : x));
-    const { error } = await supabase.from("learning_items").update(update).eq("id", id);
-    if (error) { if (previous) setItems(p => p.map(x => x.id === id ? previous : x)); toast.error("Modification impossible"); }
-  }
-  async function deleteItem(id: string) {
-    setItems(p => p.filter(x => x.id !== id));
-    await supabase.from("learning_items").delete().eq("id", id);
-  }
-
-  return (
-    <div>
-      <PageHeader title="Apprentissage" description="Mon parcours de formation continue, organisé par catégorie." />
-      <LearningDashboard items={items} />
-
-      <Card className="mb-6">
-        <CardHeader><CardTitle className="text-base">➕ Ajouter un sujet à apprendre</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2 md:grid-cols-2">
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Titre (ex: Apprendre l'anglais)" />
-            <div className="flex gap-2">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {allCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Input value={customCat} onChange={e => setCustomCat(e.target.value)} placeholder="ou nouvelle catégorie" className="flex-1" />
-            </div>
-          </div>
-          <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="Lien ressource (optionnel)" />
-          <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optionnel)" rows={2} />
-          <Button onClick={addItem}><Plus className="h-4 w-4 mr-1" />Ajouter</Button>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="all">Toutes</TabsTrigger>
-          {allCategories.map(c => (byCategory[c]?.length || 0) > 0 && (
-            <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
-          ))}
-        </TabsList>
-
-        <TabsContent value="all" className="mt-4 space-y-6">
-          {allCategories.map(c => {
-            const list = byCategory[c] || [];
-            if (list.length === 0) return null;
-            return <CategoryBlock key={c} title={c} items={list} onToggle={updateItem} onDelete={deleteItem} />;
-          })}
-          {items.length === 0 && <p className="text-sm text-muted-foreground italic">Aucun sujet pour l'instant.</p>}
-        </TabsContent>
-
-        {allCategories.map(c => (
-          <TabsContent key={c} value={c} className="mt-4">
-            <CategoryBlock title={c} items={byCategory[c] || []} onToggle={updateItem} onDelete={deleteItem} />
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  );
-
-  function CategoryBlock({ title, items, onToggle, onDelete }: {
-    title: string; items: Learn[];
-    onToggle: (id: string, p: Partial<Learn>) => void;
-    onDelete: (id: string) => void;
-  }) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            {title} <Badge variant="secondary">{items.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {items.length === 0 && <p className="text-xs text-muted-foreground italic">Vide.</p>}
-          {items.map(i => (
-            <div key={i.id} className="flex items-start gap-2 p-2 rounded border bg-card">
-              <button onClick={() => onToggle(i.id, { status: nextStatus(i.status) })}
-                className={cn("mt-0.5 h-5 w-5 rounded border flex items-center justify-center shrink-0",
-                  i.status === "done" ? "bg-emerald-500 border-emerald-500 text-white" : "")}>
-                {i.status === "done" && <Check className="h-3 w-3" />}
-              </button>
-              <div className="flex-1 min-w-0">
-                <p className={cn("text-sm font-medium", i.status === "done" && "line-through text-muted-foreground")}>{i.title}</p>
-                {i.notes && <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-1">{i.notes}</p>}
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <Badge variant="outline" className={statusColors[i.status]}>{statusLabel(i.status)}</Badge>
-                  {i.resource_url && (
-                    <a href={i.resource_url} target="_blank" rel="noreferrer"
-                      className="text-xs text-primary inline-flex items-center gap-1 hover:underline">
-                      <ExternalLink className="h-3 w-3" /> Ressource
-                    </a>
-                  )}
-                </div>
-              </div>
-              <Button size="icon" variant="ghost" onClick={() => onDelete(i.id)} className="h-7 w-7"><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
+import { useEffect,useMemo,useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog,DialogContent,DialogHeader,DialogTitle } from '@/components/ui/dialog';
+import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs';
+import { Choice } from '@/components/tracking/TrackingUI';
+import { LearningDashboard } from '@/components/tracking/LearningDashboard';
+import { EditableText } from '@/components/EditableText';
+import { Plus,Search,BookOpen,ArrowUpRight,Pencil,Trash2,GraduationCap,CheckCircle2,Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import type { Tables } from '@/integrations/supabase/types';
+type Learn=Tables<'learning_items'>;
+const domains=['Langues','E-commerce','Gestion team & humain','Communication & élocution','Développement personnel','En tant que mari'];
+const statuses={todo:'À commencer',in_progress:'En cours',done:'Terminé'};
+const blank=()=>({title:'',category:domains[0],resource_url:'',notes:'',status:'todo'});
+export default function Apprentissage(){
+ const {user}=useAuth();const [items,setItems]=useState<Learn[]>([]),[search,setSearch]=useState(''),[domain,setDomain]=useState('all'),[status,setStatus]=useState('all'),[open,setOpen]=useState(false),[editId,setEditId]=useState<string|null>(null),[draft,setDraft]=useState(blank),[saving,setSaving]=useState(false),[loading,setLoading]=useState(true);
+ useEffect(()=>{if(!user)return;let live=true;(async()=>{const {data,error}=await supabase.from('learning_items').select('*').eq('user_id',user.id).order('created_at',{ascending:false});if(!live)return;if(error)toast.error('Parcours indisponible');setItems(data||[]);setLoading(false)})();return()=>{live=false}},[user]);
+ const categories=useMemo(()=>Array.from(new Set([...domains,...items.map(i=>i.category)])),[items]);
+ const visible=items.filter(i=>(domain==='all'||i.category===domain)&&(status==='all'||i.status===status)&&`${i.title} ${i.notes||''}`.toLowerCase().includes(search.toLowerCase()));
+ function edit(i:Learn){setEditId(i.id);setDraft({title:i.title,category:i.category,resource_url:i.resource_url||'',notes:i.notes||'',status:i.status});setOpen(true)}
+ async function update(i:Learn,patch:Partial<Learn>){const change={...patch,...(patch.status?{completed_at:patch.status==='done'?new Date().toISOString():null}:{})};setItems(p=>p.map(x=>x.id===i.id?{...x,...change}:x));const {error}=await supabase.from('learning_items').update(change).eq('id',i.id).eq('user_id',user?.id||'');if(error){setItems(p=>p.map(x=>x.id===i.id?i:x));toast.error('Modification impossible')}}
+ async function save(e:React.FormEvent){e.preventDefault();if(!user||saving||!draft.title.trim()||!draft.category.trim())return;if(draft.resource_url){try{const u=new URL(draft.resource_url);if(!['http:','https:'].includes(u.protocol))throw Error()}catch{return toast.error('Lien http ou https requis')}}setSaving(true);const prior=items.find(i=>i.id===editId);const payload={...draft,title:draft.title.trim(),category:draft.category.trim(),notes:draft.notes||null,resource_url:draft.resource_url||null,completed_at:draft.status==='done'?(prior?.completed_at||new Date().toISOString()):null};const id=editId||crypto.randomUUID();const optimistic:Learn={...payload,id,user_id:user.id,order_index:prior?.order_index||0,created_at:prior?.created_at||new Date().toISOString(),updated_at:new Date().toISOString()};setItems(p=>prior?p.map(i=>i.id===id?optimistic:i):[optimistic,...p]);setOpen(false);const result=editId?await supabase.from('learning_items').update(payload).eq('id',editId).select().single():await supabase.from('learning_items').insert({...payload,user_id:user.id}).select().single();if(result.error){setItems(p=>prior?p.map(i=>i.id===id?prior:i):p.filter(i=>i.id!==id));toast.error('Enregistrement impossible');setOpen(true)}else{setItems(p=>p.map(i=>i.id===id?result.data:i));setDraft(blank());setEditId(null)}setSaving(false)}
+ async function remove(i:Learn){setItems(p=>p.filter(x=>x.id!==i.id));const {error}=await supabase.from('learning_items').delete().eq('id',i.id);if(error){setItems(p=>[i,...p]);toast.error('Suppression impossible')}}
+ const done=items.filter(i=>i.status==='done').length,ongoing=items.filter(i=>i.status==='in_progress').length;
+ return <div className="space-y-6"><PageHeader title="Apprentissage"><Button onClick={()=>{setEditId(null);setDraft(blank());setOpen(true)}}><Plus className="h-4 w-4 mr-2"/>Nouveau sujet</Button></PageHeader>
+ <div className="grid sm:grid-cols-3 gap-4 border-y py-5">{[{icon:BookOpen,label:'Ma bibliothèque',value:items.length,tone:'text-primary'},{icon:Clock,label:'En cours',value:ongoing,tone:'text-secondary'},{icon:CheckCircle2,label:'Terminés',value:done,tone:'text-primary'}].map(m=><div key={m.label} className="flex gap-4 items-center"><m.icon className={cn('h-6 w-6',m.tone)}/><div><p className="text-3xl font-bold tabular-nums">{m.value}</p><p className="text-sm text-muted-foreground">{m.label}</p></div></div>)}</div>
+ <Tabs defaultValue="library"><TabsList><TabsTrigger value="library">Bibliothèque</TabsTrigger><TabsTrigger value="progress">Progression</TabsTrigger></TabsList><TabsContent value="progress" className="pt-5"><LearningDashboard items={items}/></TabsContent><TabsContent value="library" className="pt-4">
+ <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-8"><aside className="space-y-1"><h2 className="text-xs font-semibold uppercase text-muted-foreground mb-3">Domaines</h2><Button variant={domain==='all'?'secondary':'ghost'} className="w-full justify-between" onClick={()=>setDomain('all')}>Tous les sujets<span>{items.length}</span></Button>{categories.map(c=><Button key={c} variant={domain===c?'secondary':'ghost'} className="w-full justify-between h-auto py-3 text-left whitespace-normal gap-2" onClick={()=>setDomain(c)}><span>{c}</span><span className="text-xs tabular-nums">{items.filter(i=>i.category===c).length}</span></Button>)}</aside>
+ <div className="min-w-0 space-y-5"><div className="flex flex-wrap gap-2"><div className="relative flex-1 min-w-48"><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"/><Input aria-label="Rechercher un sujet" placeholder="Rechercher un sujet…" value={search} onChange={e=>setSearch(e.target.value)} className="pl-9"/></div><div className="w-48"><Choice label="Statut du sujet" value={status} onChange={setStatus} options={{all:'Tous les statuts',...statuses}}/></div></div>
+ <div className="grid md:grid-cols-2 gap-4">{visible.map(i=><article key={i.id} className="border rounded-lg bg-card overflow-hidden flex flex-col"><div className={cn('h-1',i.status==='done'?'bg-secondary':i.status==='in_progress'?'bg-primary':'bg-muted')}/><div className="p-5 space-y-4 flex-1"><div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-4 w-4"/>{i.category}</div><h2 className="text-lg font-semibold break-words"><EditableText value={i.title} onSave={title=>update(i,{title})}/></h2>{i.notes&&<p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-3">{i.notes}</p>}</div><div className="border-t px-5 py-3 flex flex-wrap items-center gap-2"><div className="w-40"><Choice label={`Statut ${i.title}`} value={i.status} onChange={status=>update(i,{status})} options={statuses}/></div><div className="flex ml-auto gap-1">{i.resource_url&&/^https?:\/\//i.test(i.resource_url)&&<Button variant="ghost" size="icon" asChild><a href={i.resource_url} target="_blank" rel="noreferrer" aria-label={`Ressource ${i.title}`} title="Ouvrir la ressource"><ArrowUpRight className="h-4 w-4"/></a></Button>}<Button variant="ghost" size="icon" aria-label={`Modifier ${i.title}`} onClick={()=>edit(i)}><Pencil className="h-4 w-4"/></Button><Button variant="ghost" size="icon" aria-label={`Supprimer ${i.title}`} onClick={()=>remove(i)}><Trash2 className="h-4 w-4"/></Button></div></div></article>)}</div>{!visible.length&&<div className="py-14 text-center"><BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3"/><p className="text-muted-foreground">{loading?'Chargement…':'Aucun sujet pour cette sélection.'}</p></div>}
+ </div></div></TabsContent></Tabs>
+ <Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>{editId?'Modifier le sujet':'Nouveau sujet'}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-4"><label className="block text-sm">Sujet<Input aria-label="Titre du sujet" required value={draft.title} onChange={e=>setDraft({...draft,title:e.target.value})}/></label><label className="block text-sm">Domaine<Input aria-label="Domaine du sujet" list="learning-domains" required value={draft.category} onChange={e=>setDraft({...draft,category:e.target.value})}/><datalist id="learning-domains">{categories.map(c=><option key={c} value={c}/>)}</datalist></label><Choice label="Statut initial" value={draft.status} onChange={status=>setDraft({...draft,status})} options={statuses}/><label className="block text-sm">Ressource<Input aria-label="Lien ressource" type="url" value={draft.resource_url} onChange={e=>setDraft({...draft,resource_url:e.target.value})}/></label><label className="block text-sm">Notes<Textarea aria-label="Notes du sujet" rows={4} value={draft.notes} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label><Button type="submit" disabled={saving} className="w-full">Enregistrer</Button></form></DialogContent></Dialog></div>;
 }

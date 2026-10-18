@@ -208,13 +208,7 @@ export default function Dashboard() {
           variant="expense"
           onClick={() => navigate("/depenses")}
         />
-        <KPICard
-          title="Habitudes"
-          value={`${completedHabits}/${totalHabits}`}
-          icon={<CheckCircle2 className="h-5 w-5" />}
-          variant="habits"
-          onClick={() => navigate("/habitudes")}
-        />
+
       </div>
 
       {/* Discipline Dashboard */}
