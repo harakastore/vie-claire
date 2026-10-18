@@ -13,6 +13,9 @@ import { Plus, Trash2, Trophy, ChevronDown, TrendingUp, TrendingDown, Minus } fr
 import { toast } from "sonner";
 
 import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Discipline = { id: string; user_id: string; name: string; unit: string; type: string; notes: string | null };
@@ -31,7 +34,7 @@ export default function SportPerf() {
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("kg");
   const [type, setType] = useState("max");
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [selected, setSelected] = useState<Discipline | null>(null);
 
   const [newValues, setNewValues] = useState<Record<string, string>>({});
   const [newDates, setNewDates] = useState<Record<string, string>>({});
@@ -110,136 +113,24 @@ export default function SportPerf() {
     return better ? 1 : -1;
   };
 
-  return (
-    <div className="w-full py-2">
-      <PageHeader title="Performances Sport" description="Tes records par discipline, en tableau" />
-
-      <Card className="mb-6">
-        <CardHeader><CardTitle className="text-base">Ajouter une discipline</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-2">
-          <Input placeholder="ex: Développé couché, Footing 5km..." value={name} onChange={(e) => setName(e.target.value)} className="md:col-span-2" />
-          <Input placeholder="Unité (kg, min, km...)" value={unit} onChange={(e) => setUnit(e.target.value)} />
-          <div className="flex gap-2">
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TYPES.map((t) => <SelectItem key={t.v} value={t.v}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button onClick={addDiscipline}><Plus className="h-4 w-4" /></Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {disciplines.length === 0 ? (
-        <div className="text-center text-muted-foreground py-12">Aucune discipline. Ajoute ta première ci-dessus 💪</div>
-      ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8" />
-                  <TableHead>Discipline</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Record</TableHead>
-                  <TableHead className="text-right">Dernier</TableHead>
-                  <TableHead className="text-center">Tendance</TableHead>
-                  <TableHead className="text-center">Entrées</TableHead>
-                  <TableHead className="w-[320px]">Nouvelle perf</TableHead>
-                  <TableHead className="w-10" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {disciplines.map((d) => {
-                  const list = listFor(d.id);
-                  const best = bestFor(d, records);
-                  const last = list[list.length - 1];
-                  const trend = trendOf(d);
-                  const isOpen = !!open[d.id];
-                  
-                  return (
-                    <Collapsible key={d.id} asChild open={isOpen} onOpenChange={(v) => setOpen((p) => ({ ...p, [d.id]: v }))}>
-                      <>
-                        <TableRow className="align-middle">
-                          <TableCell>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <ChevronDown className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")} />
-                              </Button>
-                            </CollapsibleTrigger>
-                          </TableCell>
-                          <TableCell className="font-semibold">{d.name}</TableCell>
-                          <TableCell><Badge variant="outline">{TYPES.find((t) => t.v === d.type)?.v ?? d.type} · {d.unit}</Badge></TableCell>
-                          <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400">
-                            {best ? (
-                              <span className="inline-flex items-center gap-1"><Trophy className="h-3.5 w-3.5" />{best.value} {d.unit}</span>
-                            ) : <span className="text-muted-foreground font-normal">—</span>}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {last ? <span>{last.value} {d.unit} <span className="text-xs text-muted-foreground">({format(new Date(last.recorded_at), "dd/MM/yy")})</span></span> : "—"}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {trend > 0 ? <TrendingUp className="h-4 w-4 mx-auto text-emerald-500" />
-                              : trend < 0 ? <TrendingDown className="h-4 w-4 mx-auto text-destructive" />
-                              : <Minus className="h-4 w-4 mx-auto text-muted-foreground" />}
-                          </TableCell>
-                          <TableCell className="text-center text-muted-foreground">{list.length}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1.5">
-                              <Input type="number" step="0.01" placeholder={d.unit} value={newValues[d.id] || ""} onChange={(e) => setNewValues((p) => ({ ...p, [d.id]: e.target.value }))} className="h-8 w-24" />
-                              <Input type="date" value={newDates[d.id] || format(new Date(), "yyyy-MM-dd")} onChange={(e) => setNewDates((p) => ({ ...p, [d.id]: e.target.value }))} className="h-8 w-36" />
-                              <Button size="sm" className="h-8" onClick={() => addRecord(d)}><Plus className="h-4 w-4" /></Button>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeDiscipline(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                          </TableCell>
-                        </TableRow>
-                        <CollapsibleContent asChild>
-                          <TableRow className="bg-muted/30 hover:bg-muted/30">
-                            <TableCell colSpan={9} className="p-4">
-                              <div className="grid gap-4">
-                                <div className="max-h-60 overflow-auto rounded-md border bg-card">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead className="h-8 text-xs">Date</TableHead>
-                                        <TableHead className="h-8 text-xs text-right">Valeur</TableHead>
-                                        <TableHead className="h-8 w-8" />
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {[...list].reverse().map((r) => (
-                                        <TableRow key={r.id}>
-                                          <TableCell className="py-1.5 text-sm">{format(new Date(r.recorded_at), "dd/MM/yyyy")}</TableCell>
-                                          <TableCell className="py-1.5 text-sm text-right font-medium">
-                                            {r.value} {d.unit} {best?.id === r.id && <Trophy className="inline h-3 w-3 text-emerald-500 ml-1" />}
-                                          </TableCell>
-                                          <TableCell className="py-1.5">
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeRecord(r.id)}><Trash2 className="h-3 w-3" /></Button>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                      {list.length === 0 && (
-                                        <TableRow><TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-4">Aucune entrée</TableCell></TableRow>
-                                      )}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        </CollapsibleContent>
-                      </>
-                    </Collapsible>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </Card>
-      )}
+  return <div className="space-y-6">
+    <PageHeader title="Performances Sport" />
+    <div className="flex flex-wrap gap-2 border-b pb-5">
+      <Input aria-label="Nom de l’exercice" placeholder="Nouvel exercice" value={name} onChange={e=>setName(e.target.value)} className="w-full sm:w-64" />
+      <Input aria-label="Unité" value={unit} onChange={e=>setUnit(e.target.value)} className="w-24" />
+      <Select value={type} onValueChange={setType}><SelectTrigger className="w-64"><SelectValue/></SelectTrigger><SelectContent>{TYPES.map(t=><SelectItem key={t.v} value={t.v}>{t.label}</SelectItem>)}</SelectContent></Select>
+      <Button onClick={addDiscipline}><Plus className="h-4 w-4 mr-2"/>Ajouter</Button>
     </div>
-  );
+    <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">{disciplines.map(d=>{const best=bestFor(d,records);return <article key={d.id} className="border rounded-lg bg-card p-5 space-y-5">
+      <div className="flex justify-between gap-2"><h2 className="font-semibold break-words">{d.name}</h2><Trophy className="h-5 w-5 text-primary shrink-0"/></div>
+      <p className="text-4xl font-bold tabular-nums">{best?.value??'—'} <span className="text-base font-normal text-muted-foreground">{d.unit}</span></p>
+      <div className="flex justify-between gap-2"><Button variant="outline" size="sm" onClick={()=>setSelected(d)}><History className="h-4 w-4 mr-2"/>Data entry / Historique</Button><Button variant="ghost" size="icon" aria-label={`Supprimer ${d.name}`} onClick={()=>removeDiscipline(d.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
+    </article>})}</div>
+    {!disciplines.length&&<p className="text-muted-foreground py-8">Aucun exercice enregistré.</p>}
+    <Dialog open={!!selected} onOpenChange={v=>{if(!v)setSelected(null)}}><DialogContent className="max-w-2xl max-h-[90vh] overflow-auto"><DialogHeader><DialogTitle>{selected?.name}</DialogTitle></DialogHeader>{selected&&<Tabs defaultValue="entry"><TabsList><TabsTrigger value="entry">Data entry</TabsTrigger><TabsTrigger value="history">Historique</TabsTrigger></TabsList><TabsContent value="entry" className="space-y-4">
+      <label className="block text-sm">Valeur ({selected.unit})<Input aria-label="Performance" type="number" step="0.01" value={newValues[selected.id]||''} onChange={e=>setNewValues(p=>({...p,[selected.id]:e.target.value}))}/></label>
+      <label className="block text-sm">Date<Input aria-label="Date de performance" type="date" value={newDates[selected.id]||format(new Date(),'yyyy-MM-dd')} onChange={e=>setNewDates(p=>({...p,[selected.id]:e.target.value}))}/></label>
+      <Button onClick={()=>addRecord(selected)}><Plus className="h-4 w-4 mr-2"/>Enregistrer</Button>
+    </TabsContent><TabsContent value="history"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Performance</TableHead><TableHead/></TableRow></TableHeader><TableBody>{listFor(selected.id).reverse().map(r=><TableRow key={r.id}><TableCell>{format(new Date(r.recorded_at),'dd/MM/yyyy')}</TableCell><TableCell>{r.value} {selected.unit}</TableCell><TableCell><Button variant="ghost" size="icon" aria-label="Supprimer cette performance" onClick={()=>removeRecord(r.id)}><Trash2 className="h-4 w-4"/></Button></TableCell></TableRow>)}</TableBody></Table>{!listFor(selected.id).length&&<p className="text-muted-foreground py-4">Aucune performance.</p>}</TabsContent></Tabs>}</DialogContent></Dialog>
+  </div>;
 }
