@@ -5,3 +5,4 @@
 - [x] Crédits : fonds colorés et correction auditée des paiements
 - [x] Refaire entièrement l’apprentissage
 - [x] Tester les règles et vérifier les parcours
+- [x] Crédits : ligne blanche non payée, orange partiellement payée, verte remboursée

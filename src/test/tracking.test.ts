@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry } from '@/lib/tracking';
+import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
  it('Correcting 2000 to 1500 on a 5000 credit leaves 3500',()=>expect(remainingCredit(5000,correctedCreditPaid(5000,2000,2000,1500))).toBe(3500));
@@ -14,4 +14,6 @@ describe('Tracking rules',()=>{
  it('Calories retain the established 2000 kcal base',()=>expect(calorieBalance(1800,300)).toBe(-500));
  it('Only explicitly logged calorie days count, including zero entries',()=>{expect(hasCalorieEntry({kcal_logged:true})).toBe(true);expect(hasCalorieEntry({kcal_logged:false})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});
  it('Payments must be positive',()=>expect(paymentSchema.safeParse({amount:0,date:'2026-10-18',method:'cheque',reference:''}).success).toBe(false));
+ it('A credit with no payment is shown as unpaid (white row)',()=>{expect(creditPaymentState(5000,0)).toBe('unpaid');expect(creditStateClass.unpaid).toBe('credit-unpaid')});
+ it('A credit partly paid is orange, fully repaid is green',()=>{expect(creditPaymentState(5000,2000)).toBe('partial');expect(creditStateClass.partial).toBe('credit-partial');expect(creditPaymentState(5000,5000)).toBe('settled');expect(creditStateClass.settled).toBe('credit-settled')});
 });
