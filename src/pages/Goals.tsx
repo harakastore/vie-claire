@@ -23,6 +23,7 @@ import { EditableText } from "@/components/EditableText";
 import { WorkTimerWidget } from "@/components/WorkTimerWidget";
 import { ResponsibilityTasks } from "@/components/tracking/ResponsibilityTasks";
 import { BlockRecurringList, useBlockRecurring } from "@/components/BlockRecurring";
+import { MissionBoards } from "@/components/MissionBoards";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -1453,26 +1454,7 @@ export default function Goals() {
 
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
-      {!focusTasksOnly && (
-        <div className="relative overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-950/40 dark:via-yellow-950/30 dark:to-orange-950/40 p-5 shadow-sm">
-          <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-amber-300/20 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-orange-300/20 blur-3xl pointer-events-none" />
-          <div className="relative flex items-start gap-4">
-            <div className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
-              <Trophy className="h-6 w-6 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3" /> Mission de vie
-              </p>
-              <p className="text-sm sm:text-base font-bold leading-snug text-foreground">
-                Atteindre la liberté financière <span className="text-amber-600 dark:text-amber-400">5–10K$/mois</span> grâce au business
-                <span className="block text-xs sm:text-sm font-medium text-muted-foreground mt-0.5">— le cabinet n'est qu'un bonus.</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {!focusTasksOnly && <MissionBoards />}
       {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
       {/* Action toolbar */}
