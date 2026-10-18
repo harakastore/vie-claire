@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_history: {
+        Row: {
+          action: string
+          after_data: Json | null
+          before_data: Json | null
+          id: string
+          occurred_at: string
+          record_id: string
+          section: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          after_data?: Json | null
+          before_data?: Json | null
+          id?: string
+          occurred_at?: string
+          record_id: string
+          section: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          after_data?: Json | null
+          before_data?: Json | null
+          id?: string
+          occurred_at?: string
+          record_id?: string
+          section?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       autocomplete_library: {
         Row: {
           field_type: string
@@ -300,6 +333,39 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_id: string
+          id: string
+          method: string
+          paid_at: string
+          reference: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_id: string
+          id?: string
+          method?: string
+          paid_at: string
+          reference?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_id?: string
+          id?: string
+          method?: string
+          paid_at?: string
+          reference?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credits: {
         Row: {
           amount: number | null
@@ -313,11 +379,14 @@ export type Database = {
           name: string | null
           notes: string | null
           paid_amount: number | null
+          payment_method: string
           person_name: string | null
+          sector: string
           start_date: string | null
           status: string
           total_amount: number | null
           updated_at: string
+          urgency: string
           user_id: string
         }
         Insert: {
@@ -332,11 +401,14 @@ export type Database = {
           name?: string | null
           notes?: string | null
           paid_amount?: number | null
+          payment_method?: string
           person_name?: string | null
+          sector?: string
           start_date?: string | null
           status?: string
           total_amount?: number | null
           updated_at?: string
+          urgency?: string
           user_id: string
         }
         Update: {
@@ -351,11 +423,14 @@ export type Database = {
           name?: string | null
           notes?: string | null
           paid_amount?: number | null
+          payment_method?: string
           person_name?: string | null
+          sector?: string
           start_date?: string | null
           status?: string
           total_amount?: number | null
           updated_at?: string
+          urgency?: string
           user_id?: string
         }
         Relationships: []
@@ -888,6 +963,7 @@ export type Database = {
       learning_items: {
         Row: {
           category: string
+          completed_at: string | null
           created_at: string
           id: string
           notes: string | null
@@ -900,6 +976,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -912,6 +989,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1119,6 +1197,89 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      responsibilities: {
+        Row: {
+          active: boolean
+          block_key: string
+          color: string
+          created_at: string
+          days_of_week: number[]
+          end_date: string | null
+          frequency: string
+          id: string
+          kind: string
+          scheduled_time: string | null
+          selected_dates: string[]
+          start_date: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          block_key?: string
+          color?: string
+          created_at?: string
+          days_of_week?: number[]
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          kind?: string
+          scheduled_time?: string | null
+          selected_dates?: string[]
+          start_date: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          block_key?: string
+          color?: string
+          created_at?: string
+          days_of_week?: number[]
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          kind?: string
+          scheduled_time?: string | null
+          selected_dates?: string[]
+          start_date?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      responsibility_logs: {
+        Row: {
+          completed: boolean
+          day_date: string
+          id: string
+          responsibility_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          day_date: string
+          id?: string
+          responsibility_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          day_date?: string
+          id?: string
+          responsibility_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsibility_logs_responsibility_id_fkey"
+            columns: ["responsibility_id"]
+            isOneToOne: false
+            referencedRelation: "responsibilities"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenues: {
         Row: {
@@ -1550,7 +1711,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_credit_payment: {
+        Args: {
+          p_amount: number
+          p_credit_id: string
+          p_date: string
+          p_method?: string
+          p_reference?: string
+        }
+        Returns: {
+          amount: number | null
+          created_at: string
+          credit_date: string | null
+          credit_type: string
+          end_date: string | null
+          id: string
+          lender: string | null
+          monthly_payment: number | null
+          name: string | null
+          notes: string | null
+          paid_amount: number | null
+          payment_method: string
+          person_name: string | null
+          sector: string
+          start_date: string | null
+          status: string
+          total_amount: number | null
+          updated_at: string
+          urgency: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
