@@ -9,6 +9,6 @@ describe('Tracking rules',()=>{
  it('Annual responsibilities repeat on month and day',()=>{const r={...base,frequency:'annual'};expect(occursOn(r,'2027-10-18')).toBe(true);expect(occursOn(r,'2027-09-18')).toBe(false)});
  it('Recurring tasks stop at end date',()=>expect(occursOn({...base,end_date:'2026-10-24'},'2026-10-25')).toBe(false));
  it('Calories retain the established 2000 kcal base',()=>expect(calorieBalance(1800,300)).toBe(-500));
- it('Explicit zero-calorie entries count as tracked days',()=>{expect(hasCalorieEntry({kcal_eaten:0,kcal_burned:0})).toBe(true);expect(hasCalorieEntry({kcal_eaten:null,kcal_burned:null})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});
+ it('Only explicitly logged calorie days count, including zero entries',()=>{expect(hasCalorieEntry({kcal_logged:true})).toBe(true);expect(hasCalorieEntry({kcal_logged:false})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});
  it('Payments must be positive',()=>expect(paymentSchema.safeParse({amount:0,date:'2026-10-18',method:'cheque',reference:''}).success).toBe(false));
 });
