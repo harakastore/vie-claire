@@ -7,10 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles } from "lucide-react";
+import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route } from "lucide-react";
 
 type Item = { id: string; text: string; detail?: string; color: string };
-type Board = { id: string; title: string; display: "list" | "table"; color: string; items: Item[]; sort_order: number };
+type Board = { id: string; title: string; display: "list" | "table" | "roadmap"; color: string; items: Item[]; sort_order: number };
 
 const COLORS: Record<string, { dot: string; chip: string; row: string }> = {
   amber: { dot: "bg-amber-500", chip: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", row: "bg-amber-50 dark:bg-amber-950/30 border-l-amber-500" },
@@ -78,7 +78,8 @@ export function MissionBoards() {
     const { data, error } = await supabase.from("mission_boards")
       .insert({ user_id: user.id, title: t, color: "violet", display: "list", sort_order: boards.length }).select().single();
     if (error) return toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    setBoards(bs => [...bs, data as unknown as Board]); setNewTitle(""); setCreating(false); setOpenId(data!.id);
+    if (!data) return;
+    setBoards(bs => [...bs, data as unknown as Board]); setNewTitle(""); setCreating(false); setOpenId(data.id);
   };
 
   const deleteBoard = async (id: string) => {
@@ -167,9 +168,10 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2 border-b pb-3">
-          <div className="flex rounded-lg border p-0.5">
+          <div className="flex flex-wrap rounded-lg border p-0.5">
             <Button size="sm" variant={board.display === "list" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "list" })}><List className="h-3.5 w-3.5 mr-1" />Liste</Button>
             <Button size="sm" variant={board.display === "table" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "table" })}><Table2 className="h-3.5 w-3.5 mr-1" />Tableau</Button>
+            <Button size="sm" variant={board.display === "roadmap" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "roadmap" })}><Route className="h-3.5 w-3.5 mr-1" />Roadmap</Button>
           </div>
           <Button size="sm" variant={edit ? "default" : "outline"} className="h-8" onClick={() => setEdit(!edit)}>
             <Pencil className="h-3.5 w-3.5 mr-1" />{edit ? "Terminer" : "Modifier"}
@@ -180,7 +182,23 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
 
         {board.items.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Rien encore. Cliquez sur « Modifier » pour écrire.</p>}
 
-        {board.display === "list" ? (
+        {board.display === "roadmap" ? (
+          <ol className="relative space-y-4 border-l-2 border-border ml-4 pl-6 py-2">
+            {board.items.map((i, idx) => (
+              <li key={i.id} className="relative min-w-0">
+                <span className={cn("absolute -left-10 top-3 flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold", COLORS[i.color]?.chip)}>{idx + 1}</span>
+                <div className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
+                  {editItem === i.id ? <ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /> : (
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0 break-words"><p className="font-semibold whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}</div>
+                      {edit && <ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} />}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : board.display === "list" ? (
           <ul className="space-y-2">
             {board.items.map(i => (
               <li key={i.id} className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
