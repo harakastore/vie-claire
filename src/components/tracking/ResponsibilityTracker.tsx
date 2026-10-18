@@ -1,0 +1,31 @@
+import { useState } from 'react';
+import { useQuery,useQueryClient } from '@tanstack/react-query';
+import { eachDayOfInterval,format,parseISO,startOfMonth,isValid } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { occursOn } from '@/lib/tracking';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Dialog,DialogContent,DialogHeader,DialogTitle } from '@/components/ui/dialog';
+import { History,CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import type { Tables } from '@/integrations/supabase/types';
+type Item=Tables<'responsibilities'>;
+export function ResponsibilityTracker({items}:{items:Item[]}){
+ const {user}=useAuth();const client=useQueryClient();
+ const [from,setFrom]=useState(format(startOfMonth(new Date()),'yyyy-MM-dd')),[to,setTo]=useState(format(new Date(),'yyyy-MM-dd')),[selected,setSelected]=useState<Item|null>(null);
+ const start=parseISO(from),end=parseISO(to);const valid=isValid(start)&&isValid(end)&&start<=end;
+ const days=valid?eachDayOfInterval({start,end}).slice(0,366).map(d=>format(d,'yyyy-MM-dd')):[];
+ const key=['responsibility-tracker',user?.id,from,to];
+ const {data:logs=[],isLoading}=useQuery({queryKey:key,enabled:!!user&&valid,queryFn:async()=>{const {data,error}=await supabase.from('responsibility_logs').select('*').eq('user_id',user?.id||'').gte('day_date',from).lte('day_date',to);if(error)throw error;return data||[]}});
+ const {data:history=[]}=useQuery({queryKey:['responsibility-history',user?.id,selected?.id,from,to],enabled:!!user&&!!selected&&valid,queryFn:async()=>{const {data,error}=await supabase.from('responsibility_logs').select('*').eq('user_id',user?.id||'').eq('responsibility_id',selected?.id||'').gte('day_date',from).lte('day_date',to).order('day_date',{ascending:false});if(error)throw error;return data||[]}});
+ async function toggle(item:Item,day:string,done:boolean){if(!user)return;const previous=logs;const optimistic={id:crypto.randomUUID(),user_id:user.id,responsibility_id:item.id,day_date:day,completed:!done};client.setQueryData(key,[...logs.filter(l=>!(l.responsibility_id===item.id&&l.day_date===day)),optimistic]);const {error}=await supabase.from('responsibility_logs').upsert({user_id:user.id,responsibility_id:item.id,day_date:day,completed:!done},{onConflict:'user_id,responsibility_id,day_date'});if(error){client.setQueryData(key,previous);toast.error('Enregistrement impossible')}else{client.invalidateQueries({queryKey:['responsibility-logs',user.id,day]});client.invalidateQueries({queryKey:['responsibility-history']});}}
+ const datesFor=(i:Item)=>days.filter(d=>occursOn(i,d)||logs.some(l=>l.responsibility_id===i.id&&l.day_date===d));
+ const scheduled=items.reduce((sum,i)=>sum+datesFor(i).length,0),done=items.reduce((sum,i)=>sum+datesFor(i).filter(d=>logs.some(l=>l.responsibility_id===i.id&&l.day_date===d&&l.completed)).length,0);
+ return <section className="space-y-4 border-y py-5"><div className="flex flex-wrap justify-between items-center gap-4"><div><h2 className="font-semibold text-lg">Suivi des responsabilités</h2><p className="text-sm text-muted-foreground">{done} / {scheduled} réalisées · {scheduled?Math.round(done/scheduled*100):0} %</p></div><div className="flex flex-wrap gap-2"><label className="text-xs text-muted-foreground">Du<Input aria-label="Suivi depuis" type="date" value={from} onChange={e=>setFrom(e.target.value)} className="w-40"/></label><label className="text-xs text-muted-foreground">Au<Input aria-label="Suivi jusqu’au" type="date" value={to} onChange={e=>setTo(e.target.value)} className="w-40"/></label></div></div>
+ {!valid?<p className="text-destructive">La fin doit suivre le début.</p>:<div className="overflow-auto max-h-[460px]"><table className="w-full text-sm border-collapse"><thead><tr><th className="text-left sticky left-0 bg-background z-10 min-w-56 p-3">Responsabilité</th>{days.map(d=><th key={d} className="min-w-12 p-2 text-xs font-normal text-muted-foreground">{format(parseISO(d),'EEE',{locale:fr})}<br/>{format(parseISO(d),'dd/MM')}</th>)}<th className="p-3">Total</th></tr></thead><tbody>{items.map(i=>{const dates=datesFor(i),count=dates.filter(d=>logs.some(l=>l.responsibility_id===i.id&&l.day_date===d&&l.completed)).length;return <tr key={i.id} className="border-t"><td className="sticky left-0 bg-background z-10 p-3"><Button variant="ghost" className="h-auto text-left justify-start whitespace-normal px-0 gap-2" onClick={()=>setSelected(i)}><History className="h-4 w-4 shrink-0"/>{i.title}</Button></td>{days.map(d=>{const completed=logs.some(l=>l.responsibility_id===i.id&&l.day_date===d&&l.completed),due=dates.includes(d);return <td key={d} className={cn('text-center p-2',completed&&'bg-secondary/15')}>{due?<Checkbox aria-label={`${i.title} ${d}`} checked={completed} disabled={isLoading} onCheckedChange={()=>toggle(i,d,completed)}/>:<span className="text-muted-foreground">·</span>}</td>})}<td className="p-3 whitespace-nowrap tabular-nums font-semibold">{count}/{dates.length}</td></tr>})}</tbody></table>{!items.length&&<p className="text-muted-foreground py-6">Aucune responsabilité pour ces filtres.</p>}</div>}
+ <Dialog open={!!selected} onOpenChange={v=>{if(!v)setSelected(null)}}><DialogContent className="max-h-[85vh] overflow-auto"><DialogHeader><DialogTitle>{selected?.title}</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Du {from} au {to}</p><div className="divide-y">{history.map(l=><div key={l.id} className="flex gap-3 py-3 items-center"><CheckCircle2 className={cn('h-4 w-4',l.completed?'text-secondary':'text-muted-foreground')}/><time>{format(parseISO(l.day_date),'dd MMMM yyyy',{locale:fr})}</time><span className="ml-auto text-sm">{l.completed?'Réalisée':'Non réalisée'}</span></div>)}{!history.length&&<p className="text-muted-foreground py-4">Aucune case renseignée sur cette période.</p>}</div></DialogContent></Dialog></section>;
+}
