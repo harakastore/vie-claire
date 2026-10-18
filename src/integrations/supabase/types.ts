@@ -1582,6 +1582,7 @@ export type Database = {
           id: string
           kcal_burned: number | null
           kcal_eaten: number | null
+          kcal_logged: boolean
           program: string
           sport_time: string | null
           updated_at: string
@@ -1595,6 +1596,7 @@ export type Database = {
           id?: string
           kcal_burned?: number | null
           kcal_eaten?: number | null
+          kcal_logged?: boolean
           program?: string
           sport_time?: string | null
           updated_at?: string
@@ -1608,6 +1610,7 @@ export type Database = {
           id?: string
           kcal_burned?: number | null
           kcal_eaten?: number | null
+          kcal_logged?: boolean
           program?: string
           sport_time?: string | null
           updated_at?: string
