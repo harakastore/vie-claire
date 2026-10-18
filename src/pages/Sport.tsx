@@ -78,6 +78,7 @@ export default function Sport() {
   // ===== SPORT =====
   const upsertSport = async (dayIndex: number, patch: any) => {
     if (!user) return;
+    if ("kcal_eaten" in patch || "kcal_burned" in patch) patch = { ...patch, kcal_logged: true };
     const existing = weeklySports.find((s: any) => s.day_index === dayIndex && s.id);
     if (existing) {
       await (supabase.from("weekly_sports" as any) as any).update(patch).eq("id", existing.id);
