@@ -1,0 +1,53 @@
+CREATE TABLE public.activity_history (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, section text NOT NULL, record_id uuid NOT NULL, action text NOT NULL, before_data jsonb, after_data jsonb, occurred_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.activity_history TO authenticated; GRANT ALL ON public.activity_history TO service_role;
+ALTER TABLE public.activity_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY history_read ON public.activity_history FOR SELECT TO authenticated USING(user_id = auth.uid());
+CREATE INDEX activity_history_user_date ON public.activity_history(user_id,occurred_at DESC);
+CREATE OR REPLACE FUNCTION public.capture_activity_history() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE b jsonb; a jsonb; uid uuid; rid uuid;
+BEGIN
+ IF TG_OP <> 'INSERT' THEN b := to_jsonb(OLD); END IF;
+ IF TG_OP <> 'DELETE' THEN a := to_jsonb(NEW); END IF;
+ IF TG_OP = 'UPDATE' AND (b - 'updated_at') = (a - 'updated_at') THEN RETURN NEW; END IF;
+ uid := COALESCE((a->>'user_id')::uuid,(b->>'user_id')::uuid); rid := COALESCE((a->>'id')::uuid,(b->>'id')::uuid);
+ INSERT INTO public.activity_history(user_id,section,record_id,action,before_data,after_data) VALUES(uid,TG_TABLE_NAME,rid,TG_OP,b,a);
+ IF TG_OP='DELETE' THEN RETURN OLD; END IF; RETURN NEW;
+END $$;
+REVOKE ALL ON FUNCTION public.capture_activity_history() FROM PUBLIC;
+CREATE TRIGGER expenses_history AFTER INSERT OR UPDATE OR DELETE ON public.expenses FOR EACH ROW EXECUTE FUNCTION public.capture_activity_history();
+CREATE TRIGGER revenues_history AFTER INSERT OR UPDATE OR DELETE ON public.revenues FOR EACH ROW EXECUTE FUNCTION public.capture_activity_history();
+CREATE TRIGGER credits_history AFTER INSERT OR UPDATE OR DELETE ON public.credits FOR EACH ROW EXECUTE FUNCTION public.capture_activity_history();
+CREATE TRIGGER tasks_history AFTER INSERT OR UPDATE OR DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.capture_activity_history();
+ALTER TABLE public.credits ADD COLUMN urgency text NOT NULL DEFAULT 'optional' CHECK(urgency IN ('optional','not_urgent','extreme')), ADD COLUMN sector text NOT NULL DEFAULT 'vie' CHECK(sector IN ('vie','cabinet','business')), ADD COLUMN payment_method text NOT NULL DEFAULT 'other' CHECK(payment_method IN ('other','cash','transfer','cheque','effet'));
+CREATE TABLE public.credit_payments (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, credit_id uuid NOT NULL, amount numeric NOT NULL CHECK(amount>0), paid_at date NOT NULL, method text NOT NULL DEFAULT 'other' CHECK(method IN ('other','cash','transfer','cheque','effet')), reference text CHECK(length(reference)<=250), created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.credit_payments TO authenticated; GRANT ALL ON public.credit_payments TO service_role;
+ALTER TABLE public.credit_payments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY credit_payments_read ON public.credit_payments FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE INDEX credit_payments_credit ON public.credit_payments(user_id,credit_id,paid_at DESC);
+CREATE TRIGGER credit_payments_history AFTER INSERT ON public.credit_payments FOR EACH ROW EXECUTE FUNCTION public.capture_activity_history();
+CREATE OR REPLACE FUNCTION public.record_credit_payment(p_credit_id uuid,p_amount numeric,p_date date,p_method text DEFAULT 'other',p_reference text DEFAULT NULL) RETURNS public.credits LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE c public.credits; new_paid numeric;
+BEGIN
+ IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Connexion requise'; END IF;
+ SELECT * INTO c FROM public.credits WHERE id=p_credit_id AND user_id=auth.uid() FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Crédit introuvable'; END IF;
+ IF p_amount IS NULL OR p_amount<=0 OR p_date IS NULL THEN RAISE EXCEPTION 'Montant ou date invalide'; END IF;
+ new_paid:=COALESCE(c.paid_amount,0)+p_amount;
+ IF new_paid>COALESCE(c.amount,c.total_amount,0) THEN RAISE EXCEPTION 'Le paiement dépasse le reste dû'; END IF;
+ INSERT INTO public.credit_payments(user_id,credit_id,amount,paid_at,method,reference) VALUES(auth.uid(),c.id,p_amount,p_date,p_method,p_reference);
+ UPDATE public.credits SET paid_amount=new_paid,status=CASE WHEN new_paid=COALESCE(c.amount,c.total_amount,0) THEN 'rembourse' ELSE 'partiel' END WHERE id=c.id RETURNING * INTO c;
+ RETURN c;
+END $$;
+REVOKE ALL ON FUNCTION public.record_credit_payment(uuid,numeric,date,text,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.record_credit_payment(uuid,numeric,date,text,text) TO authenticated;
+CREATE TABLE public.responsibilities (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL,title text NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 200),kind text NOT NULL DEFAULT 'responsibility' CHECK(kind IN ('responsibility','life')),frequency text NOT NULL DEFAULT 'once' CHECK(frequency IN ('once','weekly','monthly','annual')),start_date date NOT NULL,end_date date,selected_dates date[] NOT NULL DEFAULT '{}',days_of_week integer[] NOT NULL DEFAULT '{}',block_key text NOT NULL DEFAULT 'asr_maghrib',scheduled_time time,color text NOT NULL DEFAULT 'blue' CHECK(color IN ('blue','violet','teal','rose')),active boolean NOT NULL DEFAULT true,created_at timestamptz NOT NULL DEFAULT now(),CHECK(end_date IS NULL OR end_date>=start_date));
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.responsibilities TO authenticated; GRANT ALL ON public.responsibilities TO service_role;
+ALTER TABLE public.responsibilities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY responsibilities_own ON public.responsibilities FOR ALL TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid());
+CREATE TABLE public.responsibility_logs (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL,responsibility_id uuid NOT NULL REFERENCES public.responsibilities(id) ON DELETE CASCADE,day_date date NOT NULL,completed boolean NOT NULL DEFAULT true,UNIQUE(user_id,responsibility_id,day_date));
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.responsibility_logs TO authenticated; GRANT ALL ON public.responsibility_logs TO service_role;
+ALTER TABLE public.responsibility_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY responsibility_logs_own ON public.responsibility_logs FOR ALL TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid() AND EXISTS(SELECT 1 FROM public.responsibilities r WHERE r.id=responsibility_id AND r.user_id=auth.uid()));
+ALTER TABLE public.learning_items ADD COLUMN completed_at timestamptz;
+COMMENT ON TABLE public.routine_meals IS 'Archived routines data: standalone Routines page retired, preserved for existing users.';
+COMMENT ON TABLE public.routine_schedule IS 'Archived routines data: standalone Routines page retired, preserved for existing users.';

@@ -1,242 +1,37 @@
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { PageHeader } from "@/components/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { AutocompleteInput, saveAutocomplete } from "@/components/AutocompleteInput";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-
-const statusConfig: Record<string, { label: string; className: string }> = {
-  en_cours: { label: "En cours", className: "bg-status-partial-bg text-status-partial border-[hsl(var(--status-partial-border))]" },
-  rembourse: { label: "Remboursé", className: "bg-status-paid-bg text-status-paid border-[hsl(var(--status-paid-border))]" },
-  partiel: { label: "Partiel", className: "bg-status-pending-bg text-status-pending border-[hsl(var(--status-pending-border))]" },
-};
-
-export default function Credits() {
-  const { user } = useAuth();
-  const [credits, setCredits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  // Form
-  const [personName, setPersonName] = useState("");
-  const [creditType, setCreditType] = useState("they_owe");
-  const [amount, setAmount] = useState("");
-  const [paidAmount, setPaidAmount] = useState("");
-  const [creditDate, setCreditDate] = useState<Date>(new Date());
-  const [status, setStatus] = useState("en_cours");
-  const [notes, setNotes] = useState("");
-
-  const fetchCredits = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data } = await supabase.from("credits").select("*").order("created_at", { ascending: false });
-    setCredits(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchCredits(); }, [user]);
-
-  const resetForm = () => { setPersonName(""); setCreditType("they_owe"); setAmount(""); setPaidAmount(""); setCreditDate(new Date()); setStatus("en_cours"); setNotes(""); setEditId(null); };
-
-  const openEdit = (c: any) => {
-    setEditId(c.id); setPersonName(c.person_name || c.lender || ""); setCreditType(c.credit_type || "they_owe");
-    setAmount(String(c.amount || c.total_amount || 0)); setPaidAmount(String(c.paid_amount || 0));
-    setCreditDate(new Date(c.credit_date || c.start_date || new Date()));
-    setStatus(c.status); setNotes(c.notes || "");
-    setSheetOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !personName.trim() || !amount) return;
-    setSaving(true);
-    const paidVal = parseFloat(paidAmount) || 0;
-    const amountVal = parseFloat(amount);
-    const payload: any = {
-      person_name: personName.trim(), credit_type: creditType,
-      amount: amountVal, paid_amount: paidVal,
-      credit_date: format(creditDate, "yyyy-MM-dd"),
-      status, notes: notes.trim() || null,
-      name: personName.trim(), lender: personName.trim(), total_amount: amountVal,
-      monthly_payment: 0, start_date: format(creditDate, "yyyy-MM-dd"), end_date: format(creditDate, "yyyy-MM-dd"),
-    };
-    let error;
-    if (editId) {
-      ({ error } = await supabase.from("credits").update(payload as any).eq("id", editId));
-    } else {
-      payload.user_id = user.id;
-      ({ error } = await supabase.from("credits").insert(payload));
-    }
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else {
-      saveAutocomplete(user.id, "credit_person", personName.trim());
-      toast({ title: editId ? "Crédit modifié" : "Crédit ajouté" });
-      resetForm(); setSheetOpen(false); fetchCredits();
-    }
-    setSaving(false);
-  };
-
-  const handleDelete = async (id: string) => {
-    await supabase.from("credits").delete().eq("id", id);
-    toast({ title: "Crédit supprimé" }); fetchCredits();
-  };
-
-  const quickStatus = async (id: string, newStatus: string) => {
-    await supabase.from("credits").update({ status: newStatus } as any).eq("id", id);
-    fetchCredits();
-  };
-
-  const totalOwedToMe = credits.filter((c) => (c.credit_type || "they_owe") === "they_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
-  const totalIOwe = credits.filter((c) => c.credit_type === "i_owe" && c.status !== "rembourse").reduce((s, c) => s + (Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)), 0);
-  const filteredCredits = statusFilter === "all" ? credits : credits.filter((c) => c.status === statusFilter);
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <PageHeader title="Crédits" description="Dettes et créances entre personnes">
-        <Sheet open={sheetOpen} onOpenChange={(o) => { setSheetOpen(o); if (!o) resetForm(); }}>
-          <SheetTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" />Ajouter</Button></SheetTrigger>
-          <SheetContent className="overflow-auto">
-            <SheetHeader><SheetTitle>{editId ? "Modifier" : "Nouveau crédit"}</SheetTitle></SheetHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-              <div className="space-y-2"><Label>Nom de la personne</Label>
-                <AutocompleteInput fieldType="credit_person" value={personName} onChange={setPersonName} placeholder="Ex: Khalid, Papa..." />
-              </div>
-              <div className="space-y-2"><Label>Type</Label>
-                <Select value={creditType} onValueChange={setCreditType}><SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="i_owe">Je dois</SelectItem><SelectItem value="they_owe">On me doit</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2"><Label>Montant (DH)</Label><Input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required /></div>
-              <div className="space-y-2"><Label>Montant payé (DH)</Label><Input type="number" step="0.01" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="0" /></div>
-              {amount && <div className="text-sm">Reste : <span className={cn("font-semibold", (parseFloat(amount) - (parseFloat(paidAmount) || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(parseFloat(amount) - (parseFloat(paidAmount) || 0)).toLocaleString("fr-FR")} DH</span></div>}
-              <div className="space-y-2"><Label>Date</Label>
-                <Popover><PopoverTrigger asChild><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2 h-4 w-4" />{format(creditDate, "PPP", { locale: fr })}</Button></PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={creditDate} onSelect={(d) => d && setCreditDate(d)} initialFocus className="p-3 pointer-events-auto" /></PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2"><Label>Statut</Label>
-                <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="en_cours">En cours</SelectItem><SelectItem value="rembourse">Remboursé</SelectItem><SelectItem value="partiel">Partiel</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2"><Label>Notes</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notes..." rows={2} /></div>
-              <Button type="submit" className="w-full" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{editId ? "Modifier" : "Ajouter"}</Button>
-            </form>
-          </SheetContent>
-        </Sheet>
-      </PageHeader>
-
-      {/* Totals */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card style={{ backgroundColor: "hsl(var(--kpi-revenue))" }} className="border-0 shadow-md">
-          <CardContent className="p-5">
-            <p className="text-sm text-white/80">Total qu'on me doit</p>
-            <p className="text-2xl font-semibold tabular-nums mt-1 text-white">{totalOwedToMe.toLocaleString("fr-FR")} DH</p>
-          </CardContent>
-        </Card>
-        <Card style={{ backgroundColor: "hsl(var(--kpi-expenses))" }} className="border-0 shadow-md">
-          <CardContent className="p-5">
-            <p className="text-sm text-white/80">Total que je dois</p>
-            <p className="text-2xl font-semibold tabular-nums mt-1 text-white">{totalIOwe.toLocaleString("fr-FR")} DH</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Table */}
-      {/* Status filter */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold uppercase text-muted-foreground">Statut :</span>
-        {[
-          { v: "all", label: "Tous" },
-          { v: "en_cours", label: "En cours" },
-          { v: "partiel", label: "Partiel" },
-          { v: "rembourse", label: "Remboursé" },
-        ].map((f) => (
-          <Button key={f.v} size="sm" variant={statusFilter === f.v ? "default" : "outline"}
-            className="h-7 text-xs" onClick={() => setStatusFilter(f.v)}>
-            {f.label}
-            <span className="ml-1.5 opacity-70 tabular-nums">
-              {f.v === "all" ? credits.length : credits.filter((c) => c.status === f.v).length}
-            </span>
-          </Button>
-        ))}
-      </div>
-
-      <Card className="glass-card">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-6 space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10" />)}</div>
-          ) : filteredCredits.length === 0 ? (
-            <div className="p-12 text-center text-sm text-muted-foreground">Aucun crédit pour ce statut.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Personne</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Payé</TableHead>
-                  <TableHead>Reste</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCredits.map((c) => {
-                  const type = c.credit_type || "they_owe";
-                  const st = statusConfig[c.status] || statusConfig.en_cours;
-                  return (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.person_name || c.lender || c.name}</TableCell>
-                      <TableCell className="text-sm">{type === "i_owe" ? "Je dois" : "On me doit"}</TableCell>
-                      <TableCell className="font-medium tabular-nums">{Number(c.amount || c.total_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
-                      <TableCell className="tabular-nums">{Number(c.paid_amount || 0).toLocaleString("fr-FR")} DH</TableCell>
-                      <TableCell className={cn("font-medium tabular-nums", (Number(c.amount || 0) - Number(c.paid_amount || 0)) > 0 ? "text-destructive" : "text-green-600")}>{(Number(c.amount || c.total_amount || 0) - Number(c.paid_amount || 0)).toLocaleString("fr-FR")} DH</TableCell>
-                      <TableCell className="text-sm">{c.credit_date || c.start_date ? format(new Date(c.credit_date || c.start_date), "dd/MM/yyyy") : "—"}</TableCell>
-                      <TableCell>
-                        <Select value={c.status} onValueChange={(v) => quickStatus(c.id, v)}>
-                          <SelectTrigger className="w-28 h-8 text-xs border-0 p-0">
-                            <Badge variant="outline" className={cn("text-xs", st.className)}>{st.label}</Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="en_cours">En cours</SelectItem>
-                            <SelectItem value="rembourse">Remboursé</SelectItem>
-                            <SelectItem value="partiel">Partiel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+import { useEffect,useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { PageHeader } from '@/components/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog,DialogContent,DialogHeader,DialogTitle } from '@/components/ui/dialog';
+import { Table,TableHeader,TableBody,TableRow,TableHead,TableCell } from '@/components/ui/table';
+import { Tabs,TabsList,TabsTrigger,TabsContent } from '@/components/ui/tabs';
+import { AutocompleteInput,saveAutocomplete } from '@/components/AutocompleteInput';
+import { Choice,Metrics,money } from '@/components/tracking/TrackingUI';
+import { ActivityList } from '@/components/tracking/ActivityList';
+import { remainingCredit,paymentSchema,moneySchema } from '@/lib/tracking';
+import { Plus,Pencil,Trash2,History,Wallet } from 'lucide-react';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import type { Tables } from '@/integrations/supabase/types';
+type Credit=Tables<'credits'>;type Payment=Tables<'credit_payments'>;
+const sectors={vie:'Vie',cabinet:'Cabinet',business:'Business'};
+const urgencies={optional:'Non obligatoire',not_urgent:'À faire, pas urgent',extreme:'Extrêmement urgent'};
+const methods={other:'Autre',cash:'Espèces',transfer:'Virement',cheque:'Chèque',effet:'Effet'};
+const statuses={en_cours:'En cours',partiel:'Partiel',rembourse:'Remboursé',active:'Actif',settled:'Soldé',late:'En retard'};
+const initial=()=>({person_name:'',credit_type:'i_owe',amount:'',credit_date:format(new Date(),'yyyy-MM-dd'),sector:'vie',urgency:'optional',payment_method:'other',notes:''});
+export default function Credits(){
+ const {user}=useAuth();const [credits,setCredits]=useState<Credit[]>([]),[loading,setLoading]=useState(true),[filters,setFilters]=useState({status:'all',sector:'all',urgency:'all',method:'all',search:''}),[draft,setDraft]=useState(initial),[open,setOpen]=useState(false),[editId,setEditId]=useState<string|null>(null),[saving,setSaving]=useState(false),[paymentCredit,setPaymentCredit]=useState<Credit|null>(null),[payment,setPayment]=useState({amount:'',date:format(new Date(),'yyyy-MM-dd'),method:'other',reference:''}),[historyCredit,setHistoryCredit]=useState<Credit|null>(null),[payments,setPayments]=useState<Payment[]>([]),[payLoading,setPayLoading]=useState(false);
+ useEffect(()=>{if(!user)return;(async()=>{const {data,error}=await supabase.from('credits').select('*').eq('user_id',user.id).order('created_at',{ascending:false});if(error)toast.error('Crédits indisponibles');setCredits(data||[]);setLoading(false)})();},[user]);
+ useEffect(()=>{if(!historyCredit||!user)return;setPayLoading(true);(async()=>{const {data,error}=await supabase.from('credit_payments').select('*').eq('user_id',user.id).eq('credit_id',historyCredit.id).order('paid_at',{ascending:false});if(error)toast.error('Paiements indisponibles');setPayments(data||[]);setPayLoading(false)})();},[historyCredit,user]);
+ function edit(c:Credit){setEditId(c.id);setDraft({person_name:c.person_name||c.lender||c.name||'',credit_type:c.credit_type,amount:String(c.amount??c.total_amount??0),credit_date:c.credit_date||c.start_date||format(new Date(),'yyyy-MM-dd'),sector:c.sector,urgency:c.urgency,payment_method:c.payment_method,notes:c.notes||''});setOpen(true)}
+ async function save(e:React.FormEvent){e.preventDefault();if(!user||!draft.person_name.trim())return;const amount=moneySchema.safeParse(draft.amount);if(!amount.success||amount.data<=0)return toast.error('Montant positif requis');const current=credits.find(c=>c.id===editId);if(amount.data<Number(current?.paid_amount||0))return toast.error('Le montant doit couvrir les paiements déjà enregistrés');setSaving(true);const paid=Number(current?.paid_amount||0);const payload={person_name:draft.person_name.trim(),name:draft.person_name.trim(),lender:draft.person_name.trim(),credit_type:draft.credit_type,amount:amount.data,total_amount:amount.data,credit_date:draft.credit_date,start_date:draft.credit_date,end_date:draft.credit_date,monthly_payment:0,sector:draft.sector,urgency:draft.urgency,payment_method:draft.payment_method,notes:draft.notes.trim()||null,status:paid===amount.data?'rembourse':paid>0?'partiel':'en_cours'};const previous=credits;const temp=editId||crypto.randomUUID();if(current)setCredits(p=>p.map(c=>c.id===editId?{...c,...payload}:c));const result=editId?await supabase.from('credits').update(payload).eq('id',editId).select().single():await supabase.from('credits').insert({...payload,user_id:user.id}).select().single();if(result.error){setCredits(previous);toast.error('Enregistrement impossible');}else{setCredits(p=>editId?p.map(c=>c.id===temp?result.data:c):[result.data,...p]);saveAutocomplete(user.id,'credit_person',draft.person_name);setOpen(false);setEditId(null);setDraft(initial());toast.success('Crédit enregistré');}setSaving(false);}
+ async function pay(e:React.FormEvent){e.preventDefault();if(!paymentCredit)return;const parsed=paymentSchema.safeParse(payment);if(!parsed.success)return toast.error('Vérifie le montant du paiement');const c=paymentCredit;const rest=remainingCredit(Number(c.amount??c.total_amount??0),Number(c.paid_amount||0));if(parsed.data.amount>rest)return toast.error('Le paiement dépasse le reste dû');setSaving(true);const previous=credits;const paid=Number(c.paid_amount||0)+parsed.data.amount;setCredits(p=>p.map(x=>x.id===c.id?{...x,paid_amount:paid,status:paid===Number(c.amount??c.total_amount)?'rembourse':'partiel'}:x));const {data,error}=await supabase.rpc('record_credit_payment',{p_credit_id:c.id,p_amount:parsed.data.amount,p_date:parsed.data.date,p_method:parsed.data.method,p_reference:parsed.data.reference||null});if(error){setCredits(previous);toast.error(error.message);}else{setCredits(p=>p.map(x=>x.id===c.id?data:x));setPaymentCredit(null);toast.success('Paiement enregistré');}setSaving(false);}
+ async function remove(c:Credit){if(!window.confirm('Supprimer ce crédit ? Son historique restera disponible.'))return;const old=credits;setCredits(p=>p.filter(x=>x.id!==c.id));const {error}=await supabase.from('credits').delete().eq('id',c.id);if(error){setCredits(old);toast.error('Suppression impossible');}}
+ const visible=credits.filter(c=>(filters.status==='all'||c.status===filters.status)&&(filters.sector==='all'||c.sector===filters.sector)&&(filters.urgency==='all'||c.urgency===filters.urgency)&&(filters.method==='all'||c.payment_method===filters.method)&&(c.person_name||c.lender||c.name||'').toLowerCase().includes(filters.search.toLowerCase()));
+ const rest=(c:Credit)=>remainingCredit(Number(c.amount??c.total_amount??0),Number(c.paid_amount||0));const debt=visible.filter(c=>c.credit_type==='i_owe');
+ return <div className="space-y-6"><PageHeader title="Crédits & paiements" description="Dettes, créances et remboursements"><Button onClick={()=>{setEditId(null);setDraft(initial());setOpen(true)}}><Plus className="h-4 w-4 mr-2"/>Nouveau crédit</Button></PageHeader><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5"><Input placeholder="Rechercher une personne…" aria-label="Rechercher un crédit" value={filters.search} onChange={e=>setFilters({...filters,search:e.target.value})}/><Choice label="Statut" value={filters.status} onChange={v=>setFilters({...filters,status:v})} options={{all:'Tous les statuts',...statuses}}/><Choice label="Secteur" value={filters.sector} onChange={v=>setFilters({...filters,sector:v})} options={{all:'Vie · Cabinet · Business',...sectors}}/><Choice label="Urgence" value={filters.urgency} onChange={v=>setFilters({...filters,urgency:v})} options={{all:'Toutes les urgences',...urgencies}}/><Choice label="Mode de paiement" value={filters.method} onChange={v=>setFilters({...filters,method:v})} options={{all:'Tous les modes',...methods}}/></div><Metrics items={[{label:'Je dois encore',value:money(debt.reduce((s,c)=>s+rest(c),0))},{label:'On me doit encore',value:money(visible.filter(c=>c.credit_type!=='i_owe').reduce((s,c)=>s+rest(c),0))},{label:'Déjà payé',value:money(visible.reduce((s,c)=>s+Number(c.paid_amount||0),0))},{label:'Extrêmement urgent',value:money(debt.filter(c=>c.urgency==='extreme').reduce((s,c)=>s+rest(c),0)),detail:`${visible.length} crédit(s) · filtres actifs`} ]}/><div className="border rounded-lg overflow-hidden"><Table><TableHeader><TableRow><TableHead>Personne / secteur</TableHead><TableHead>Montant</TableHead><TableHead>Payé</TableHead><TableHead>Reste</TableHead><TableHead>Urgence / mode</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader><TableBody>{visible.map(c=><TableRow key={c.id}><TableCell><p className="font-semibold">{c.person_name||c.lender||c.name}</p><p className="text-xs text-muted-foreground">{c.credit_type==='i_owe'?'Je dois':'On me doit'} · {sectors[c.sector as keyof typeof sectors]}</p></TableCell><TableCell className="tabular-nums whitespace-nowrap">{money(Number(c.amount??c.total_amount??0))}</TableCell><TableCell className="tabular-nums whitespace-nowrap">{money(Number(c.paid_amount||0))}</TableCell><TableCell className="font-bold tabular-nums whitespace-nowrap text-primary">{money(rest(c))}</TableCell><TableCell><span className={c.urgency==='extreme'?'text-destructive font-semibold':''}>{urgencies[c.urgency as keyof typeof urgencies]}</span><p className="text-xs text-muted-foreground">{methods[c.payment_method as keyof typeof methods]}</p></TableCell><TableCell>{statuses[c.status as keyof typeof statuses]||c.status}</TableCell><TableCell><div className="flex justify-end gap-1"><Button variant="outline" size="sm" disabled={rest(c)<=0} aria-label={`Paiement ${c.person_name||c.name}`} onClick={()=>{setPaymentCredit(c);setPayment({amount:'',date:format(new Date(),'yyyy-MM-dd'),method:c.payment_method,reference:''})}}><Wallet className="h-4 w-4 mr-1"/>Paiement</Button><Button variant="ghost" size="icon" aria-label={`Historique ${c.person_name||c.name}`} title="Historique" onClick={()=>setHistoryCredit(c)}><History className="h-4 w-4"/></Button><Button variant="ghost" size="icon" aria-label={`Modifier ${c.person_name||c.name}`} onClick={()=>edit(c)}><Pencil className="h-4 w-4"/></Button><Button variant="ghost" size="icon" aria-label={`Supprimer ${c.person_name||c.name}`} onClick={()=>remove(c)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div></TableCell></TableRow>)}</TableBody></Table>{!visible.length&&<p className="p-8 text-center text-muted-foreground">{loading?'Chargement…':'Aucun crédit pour ces filtres.'}</p>}</div><Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-auto"><DialogHeader><DialogTitle>{editId?'Modifier le crédit':'Nouveau crédit'}</DialogTitle></DialogHeader><form onSubmit={save} className="space-y-4"><div><Label>Personne</Label><AutocompleteInput fieldType="credit_person" value={draft.person_name} onChange={v=>setDraft({...draft,person_name:v})} placeholder="Nom de la personne"/></div><Choice label="Type de crédit" value={draft.credit_type} onChange={v=>setDraft({...draft,credit_type:v})} options={{i_owe:'Je dois',they_owe:'On me doit'}}/><div className="grid grid-cols-2 gap-2"><div><Label htmlFor="credit-amount">Montant (DH)</Label><Input id="credit-amount" type="number" min="0.01" step="0.01" required value={draft.amount} onChange={e=>setDraft({...draft,amount:e.target.value})}/></div><div><Label htmlFor="credit-date">Date du crédit</Label><Input id="credit-date" type="date" required value={draft.credit_date} onChange={e=>setDraft({...draft,credit_date:e.target.value})}/></div></div><Choice label="Secteur du crédit" value={draft.sector} onChange={v=>setDraft({...draft,sector:v})} options={sectors}/><Choice label="Urgence du crédit" value={draft.urgency} onChange={v=>setDraft({...draft,urgency:v})} options={urgencies}/><Choice label="Paiement prévu" value={draft.payment_method} onChange={v=>setDraft({...draft,payment_method:v})} options={methods}/><Textarea placeholder="Notes" value={draft.notes} onChange={e=>setDraft({...draft,notes:e.target.value})}/><Button type="submit" className="w-full" disabled={saving}>Enregistrer</Button></form></DialogContent></Dialog><Dialog open={!!paymentCredit} onOpenChange={v=>{if(!v)setPaymentCredit(null)}}><DialogContent><DialogHeader><DialogTitle>Paiement · {paymentCredit?.person_name||paymentCredit?.name}</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">Reste dû : <strong className="text-foreground">{paymentCredit?money(rest(paymentCredit)):''}</strong></p><form onSubmit={pay} className="space-y-4"><div><Label htmlFor="payment-amount">Paiement (DH)</Label><Input id="payment-amount" type="number" step="0.01" min="0.01" max={paymentCredit?rest(paymentCredit):undefined} required value={payment.amount} onChange={e=>setPayment({...payment,amount:e.target.value})}/></div><div><Label htmlFor="payment-date">Date du paiement</Label><Input id="payment-date" type="date" required value={payment.date} onChange={e=>setPayment({...payment,date:e.target.value})}/></div><Choice label="Mode du paiement" value={payment.method} onChange={v=>setPayment({...payment,method:v})} options={methods}/><Input placeholder="Référence chèque / effet (optionnelle)" maxLength={250} value={payment.reference} onChange={e=>setPayment({...payment,reference:e.target.value})}/>{paymentCredit&&<p className="text-sm">Après paiement : <strong>{money(remainingCredit(rest(paymentCredit),Number(payment.amount)||0))}</strong></p>}<Button type="submit" disabled={saving} className="w-full">Enregistrer le paiement</Button></form></DialogContent></Dialog><Dialog open={!!historyCredit} onOpenChange={v=>{if(!v)setHistoryCredit(null)}}><DialogContent className="max-w-3xl max-h-[90vh] overflow-auto"><DialogHeader><DialogTitle>Historique · {historyCredit?.person_name||historyCredit?.name}</DialogTitle></DialogHeader><Tabs defaultValue="payments"><TabsList><TabsTrigger value="payments">Paiements</TabsTrigger><TabsTrigger value="changes">Modifications</TabsTrigger></TabsList><TabsContent value="payments"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Montant</TableHead><TableHead>Mode</TableHead><TableHead>Référence</TableHead></TableRow></TableHeader><TableBody>{payments.map(p=><TableRow key={p.id}><TableCell>{p.paid_at}</TableCell><TableCell>{money(Number(p.amount))}</TableCell><TableCell>{methods[p.method as keyof typeof methods]}</TableCell><TableCell>{p.reference||'—'}</TableCell></TableRow>)}</TableBody></Table>{payLoading?<p>Chargement…</p>:!payments.length&&<p className="text-sm text-muted-foreground mt-4">Aucun paiement daté enregistré.</p>}{historyCredit&&Number(historyCredit.paid_amount||0)>payments.reduce((s,p)=>s+Number(p.amount),0)&&<p className="text-sm text-muted-foreground mt-4">Solde payé antérieur sans détail de date : {money(Number(historyCredit.paid_amount)-payments.reduce((s,p)=>s+Number(p.amount),0))}.</p>}</TabsContent><TabsContent value="changes">{historyCredit&&<ActivityList creditId={historyCredit.id}/>}</TabsContent></Tabs></DialogContent></Dialog></div>
 }
