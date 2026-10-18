@@ -24,6 +24,7 @@ import { WorkTimerWidget } from "@/components/WorkTimerWidget";
 import { ResponsibilityTasks } from "@/components/tracking/ResponsibilityTasks";
 import { BlockRecurringList, useBlockRecurring } from "@/components/BlockRecurring";
 import { MissionBoards } from "@/components/MissionBoards";
+import { GoalChecklistButton } from "@/components/GoalChecklistButton";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -273,7 +274,13 @@ export default function Goals() {
     setGoalsYearly((prev) => updateList(prev));
     setGoalsMonthly((prev) => updateList(prev));
     setGoalsWeekly((prev) => updateList(prev));
-    await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
+    const previous = [...goals90, ...goalsYearly, ...goalsMonthly, ...goalsWeekly].find(g => g.id === id)?.status;
+    const { error } = await (supabase.from("goals" as any) as any).update({ status }).eq("id", id);
+    if (error) {
+      const restore = (list: any[]) => list.map(g => g.id === id ? { ...g, status: previous } : g);
+      setGoals90(restore); setGoalsYearly(restore); setGoalsMonthly(restore); setGoalsWeekly(restore);
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    }
   };
 
   const deleteGoal = async (id: string) => {
@@ -1455,6 +1462,72 @@ export default function Goals() {
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
       {!focusTasksOnly && <MissionBoards />}
+      {!focusTasksOnly && (
+              <div className="flex flex-wrap gap-2">
+                <GoalChecklistButton title={`Objectifs ${currentYear}`} completed={goalsYearly.filter(g => g.status === "achieved").length} total={goalsYearly.length}>
+                  {goalsYearly.map((g: any) => (
+                    <div key={g.id} className="flex items-start gap-2 group">
+                      <Checkbox aria-label={`Fait : ${g.title}`} checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "todo")} />
+                      <span className="text-xs text-muted-foreground shrink-0">{g.status === "achieved" ? "Fait" : "Pas fait"}</span>
+                      <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 min-w-0 break-words text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2 mt-2">
+                    <Input placeholder="Nouvel objectif annuel..." value={newYearly} onChange={(e) => setNewYearly(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addGoal("yearly", newYearly, () => setNewYearly(""))} className="h-8 text-sm" />
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("yearly", newYearly, () => setNewYearly(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </GoalChecklistButton>
+                <GoalChecklistButton title="Objectifs 90 jours" completed={goals90.filter(g => g.status === "achieved").length} total={goals90.length}>
+                  {goals90.map((g: any) => {
+                    const remaining = get90DayRemaining(g);
+                    const expired = is90DayExpired(g);
+                    return (
+                      <div key={g.id} className="space-y-1">
+                        <div className="flex items-start gap-2 group">
+                          <Checkbox aria-label={`Fait : ${g.title}`} checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "todo")} />
+                      <span className="text-xs text-muted-foreground shrink-0">{g.status === "achieved" ? "Fait" : "Pas fait"}</span>
+                          <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 min-w-0 break-words text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
+                          {expired && (
+                            <Button size="sm" variant="outline" className="h-7 text-[10px] border-border text-primary hover:bg-accent" onClick={() => restart90DayGoal(g)}>
+                              🔄 Relancer 90j
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </div>
+                        {g.start_date && g.end_date && (
+                          <div className="flex items-center gap-2 ml-6 flex-wrap text-[10px]">
+                            <span className="text-muted-foreground">
+                              📅 {format(new Date(g.start_date), "d MMM yyyy", { locale: fr })} → {format(new Date(g.end_date), "d MMM yyyy", { locale: fr })}
+                            </span>
+                            {remaining !== null && !expired && (
+                              <span className={cn(
+                                "font-bold px-1.5 py-0.5 rounded-full",
+                                remaining <= 7 ? "bg-destructive/10 text-destructive" : remaining <= 30 ? "bg-muted text-foreground" : "bg-secondary/10 text-secondary"
+                              )}>
+                                {remaining}j restants
+                              </span>
+                            )}
+                            {expired && (
+                              <span className="font-bold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                                ⏰ Expiré
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="flex gap-2 mt-2">
+                    <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </GoalChecklistButton>
+              </div>
+
+      )}
       {!focusTasksOnly && <PageHeader title="Objectifs & Tâches" description="Planifiez vos objectifs et tâches quotidiennes" />}
 
       {/* Action toolbar */}
@@ -1499,99 +1572,6 @@ export default function Goals() {
 
           {showGoals && (
             <>
-              {/* Annual goals 2026 */}
-              <Card className="glass-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-expenses))" }} />
-                    🎯 Objectifs Annuels {currentYear}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {goalsYearly.map((g: any) => (
-                    <div key={g.id} className="flex items-center gap-2 group">
-                      <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                        <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todo">À faire</SelectItem>
-                          <SelectItem value="in_progress">En cours</SelectItem>
-                          <SelectItem value="achieved">Atteint</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
-                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                    </div>
-                  ))}
-                  <div className="flex gap-2 mt-2">
-                    <Input placeholder="Nouvel objectif annuel..." value={newYearly} onChange={(e) => setNewYearly(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addGoal("yearly", newYearly, () => setNewYearly(""))} className="h-8 text-sm" />
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("yearly", newYearly, () => setNewYearly(""))}><Plus className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 90-day goals with dates */}
-              <Card className="glass-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Target className="h-4 w-4" style={{ color: "hsl(var(--kpi-credits))" }} />
-                    Objectifs 90 jours
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {goals90.map((g: any) => {
-                    const remaining = get90DayRemaining(g);
-                    const expired = is90DayExpired(g);
-                    return (
-                      <div key={g.id} className="space-y-1">
-                        <div className="flex items-center gap-2 group">
-                          <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
-                            <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="todo">À faire</SelectItem>
-                              <SelectItem value="in_progress">En cours</SelectItem>
-                              <SelectItem value="achieved">Atteint</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm", g.status === "achieved" && "line-through text-muted-foreground")} />
-                          {expired && (
-                            <Button size="sm" variant="outline" className="h-7 text-[10px] border-amber-400 text-amber-600 hover:bg-amber-50" onClick={() => restart90DayGoal(g)}>
-                              🔄 Relancer 90j
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                        </div>
-                        {g.start_date && g.end_date && (
-                          <div className="flex items-center gap-2 ml-[104px] text-[10px]">
-                            <span className="text-muted-foreground">
-                              📅 {format(new Date(g.start_date), "d MMM yyyy", { locale: fr })} → {format(new Date(g.end_date), "d MMM yyyy", { locale: fr })}
-                            </span>
-                            {remaining !== null && !expired && (
-                              <span className={cn(
-                                "font-bold px-1.5 py-0.5 rounded-full",
-                                remaining <= 7 ? "bg-red-100 text-red-600" : remaining <= 30 ? "bg-amber-100 text-amber-600" : "bg-green-100 text-green-600"
-                              )}>
-                                {remaining}j restants
-                              </span>
-                            )}
-                            {expired && (
-                              <span className="font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">
-                                ⏰ Expiré
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div className="flex gap-2 mt-2">
-                    <Input placeholder="Nouvel objectif 90 jours..." value={new90} onChange={(e) => setNew90(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
-                    <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Monthly goals - 4 sections */}
               <Card className="glass-card">
                 <CardHeader className="pb-3">

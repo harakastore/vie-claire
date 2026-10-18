@@ -1,4 +1,5 @@
 # Project architecture
+- Keep annual and 90-day checklist dialogs backed by existing goals records; persist custom board presentation modes and item completion in mission boards, so changing views never duplicates objectives or loses checks.
 - Capture financial and engagement changes with database triggers into user-scoped, read-only activity history, so every entry path is audited.
 - Record and correct credit payments through authenticated, credit-row-locking transactional RPCs; apply correction deltas to retain older repayments and audit payment updates.
 - Render dated responsibilities from independent schedules and completion logs in daily blocks, never materializing duplicate daily tasks.

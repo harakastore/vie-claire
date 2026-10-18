@@ -29,6 +29,20 @@
       "when": 1792350119218,
       "tag": "0003_mission_boards",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792353759425,
+      "tag": "0004_mission_board_roadmap_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792353886410,
+      "tag": "0005_mission_board_checklist_mode",
+      "breakpoints": true
     }
   ]
 }

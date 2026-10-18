@@ -1,4 +1,8 @@
 # Roadmap
+- [x] Ajouter le mode Roadmap aux boutons de mission
+- [x] Ouvrir les objectifs annuels et 90 jours depuis des boutons avec checklist
+- [x] Vérifier les modes et la sauvegarde des cases
+- [x] Permettre des boutons personnalisés en mode Checklist
 - [x] Retirer Calories, Habitudes, Engagements et le panneau Récurrentes du jour sans effacer les données
 - [x] Responsabilités : grille datée, cases synchronisées et historique individuel
 - [x] Performances sport : record seul, saisie et évolution à la demande

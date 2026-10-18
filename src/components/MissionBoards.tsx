@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles } from "lucide-react";
+import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route, CheckSquare } from "lucide-react";
 
-type Item = { id: string; text: string; detail?: string; color: string };
-type Board = { id: string; title: string; display: "list" | "table"; color: string; items: Item[]; sort_order: number };
+type Item = { id: string; text: string; detail?: string; color: string; completed?: boolean };
+type Board = { id: string; title: string; display: "list" | "table" | "roadmap" | "checklist"; color: string; items: Item[]; sort_order: number };
 
 const COLORS: Record<string, { dot: string; chip: string; row: string }> = {
   amber: { dot: "bg-amber-500", chip: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800", row: "bg-amber-50 dark:bg-amber-950/30 border-l-amber-500" },
@@ -78,7 +79,8 @@ export function MissionBoards() {
     const { data, error } = await supabase.from("mission_boards")
       .insert({ user_id: user.id, title: t, color: "violet", display: "list", sort_order: boards.length }).select().single();
     if (error) return toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    setBoards(bs => [...bs, data as unknown as Board]); setNewTitle(""); setCreating(false); setOpenId(data!.id);
+    if (!data) return;
+    setBoards(bs => [...bs, data as unknown as Board]); setNewTitle(""); setCreating(false); setOpenId(data.id);
   };
 
   const deleteBoard = async (id: string) => {
@@ -117,10 +119,11 @@ export function MissionBoards() {
           )}
           <div className="flex flex-wrap items-center gap-2 mt-3">
             {boards.map(b => (
-              <button key={b.id} onClick={() => setOpenId(b.id)}
-                className={cn("px-3 py-1.5 rounded-full border text-xs font-bold uppercase tracking-wide hover:scale-105 transition-transform", COLORS[b.color]?.chip)}>
-                {b.title} <span className="opacity-60 font-medium">· {b.items.length}</span>
-              </button>
+              <Button key={b.id} variant="outline" size="sm" onClick={() => setOpenId(b.id)}
+                className={cn("h-auto max-w-full px-3 py-1.5 rounded-full text-xs font-bold uppercase whitespace-normal break-words", COLORS[b.color]?.chip)}>
+                {b.display === "checklist" && <CheckSquare className="h-3.5 w-3.5 mr-1 shrink-0" />}
+                {b.title} <span className="opacity-60 font-medium">· {b.display === "checklist" ? `${b.items.filter(i => i.completed).length}/` : ""}{b.items.length}</span>
+              </Button>
             ))}
             {creating ? (
               <div className="flex items-center gap-1">
@@ -167,9 +170,11 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2 border-b pb-3">
-          <div className="flex rounded-lg border p-0.5">
+          <div className="flex flex-wrap rounded-lg border p-0.5">
             <Button size="sm" variant={board.display === "list" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "list" })}><List className="h-3.5 w-3.5 mr-1" />Liste</Button>
             <Button size="sm" variant={board.display === "table" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "table" })}><Table2 className="h-3.5 w-3.5 mr-1" />Tableau</Button>
+            <Button size="sm" variant={board.display === "roadmap" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "roadmap" })}><Route className="h-3.5 w-3.5 mr-1" />Roadmap</Button>
+            <Button size="sm" variant={board.display === "checklist" ? "default" : "ghost"} className="h-7" onClick={() => onUpdate({ display: "checklist" })}><CheckSquare className="h-3.5 w-3.5 mr-1" />Checklist</Button>
           </div>
           <Button size="sm" variant={edit ? "default" : "outline"} className="h-8" onClick={() => setEdit(!edit)}>
             <Pencil className="h-3.5 w-3.5 mr-1" />{edit ? "Terminer" : "Modifier"}
@@ -180,7 +185,44 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
 
         {board.items.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Rien encore. Cliquez sur « Modifier » pour écrire.</p>}
 
-        {board.display === "list" ? (
+        {board.display === "checklist" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">{board.items.filter(i => i.completed).length} / {board.items.length} faits</p>
+            <ul className="space-y-2">
+              {board.items.map(i => (
+                <li key={i.id} className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
+                  {editItem === i.id ? <ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /> : (
+                    <div className="flex items-start gap-3">
+                      <Checkbox className="mt-1 shrink-0" aria-label={`Fait : ${i.text}`} checked={Boolean(i.completed)} onCheckedChange={checked => patchItem(i.id, { completed: checked === true })} />
+                      <div className="flex-1 min-w-0 break-words">
+                        <p className={cn("font-semibold whitespace-pre-wrap", i.completed && "line-through text-muted-foreground")}>{i.text}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{i.completed ? "Fait" : "Pas fait"}</p>
+                        {i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}
+                      </div>
+                      {edit && <ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} />}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : board.display === "roadmap" ? (
+          <ol className="relative space-y-4 border-l-2 border-border ml-4 pl-6 py-2">
+            {board.items.map((i, idx) => (
+              <li key={i.id} className="relative min-w-0">
+                <span className={cn("absolute -left-10 top-3 flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold", COLORS[i.color]?.chip)}>{idx + 1}</span>
+                <div className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
+                  {editItem === i.id ? <ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /> : (
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0 break-words"><p className="font-semibold whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}</div>
+                      {edit && <ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} />}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        ) : board.display === "list" ? (
           <ul className="space-y-2">
             {board.items.map(i => (
               <li key={i.id} className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
