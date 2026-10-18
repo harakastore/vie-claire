@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry } from '@/lib/tracking';
+import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
  it('Correcting 2000 to 1500 on a 5000 credit leaves 3500',()=>expect(remainingCredit(5000,correctedCreditPaid(5000,2000,2000,1500))).toBe(3500));
