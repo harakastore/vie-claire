@@ -21,6 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { EditableText } from "@/components/EditableText";
 import { WorkTimerWidget } from "@/components/WorkTimerWidget";
+import { ResponsibilityTasks } from "@/components/tracking/ResponsibilityTasks";
 import { BlockRecurringList, useBlockRecurring } from "@/components/BlockRecurring";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -838,6 +839,7 @@ export default function Goals() {
 
                 <div className="px-4 py-2 space-y-1.5 min-h-[40px]">
                   <BlockRecurringList api={blockRecurring} dateStr={dateStr} blockKey={block.key} />
+                  <ResponsibilityTasks dateStr={dateStr} blockKey={block.key} />
                   {blockTasks.map((t: any) => (
                     <div key={t.id} className="flex items-start gap-2 group cursor-grab active:cursor-grabbing"
                       draggable onDragStart={(e) => handleDragStart(e as any, t.id)}>
@@ -1139,6 +1141,7 @@ export default function Goals() {
 
                     <div className={cn("px-3 py-3 space-y-1.5 flex-1", isFocused ? "min-h-[300px]" : "min-h-[120px]")}>
                       <BlockRecurringList api={blockRecurring} dateStr={dateStr} blockKey={block.key} />
+                      <ResponsibilityTasks dateStr={dateStr} blockKey={block.key} />
                       {blockTasks.map((t: any) => (
                         <div key={t.id}
                           className={cn(

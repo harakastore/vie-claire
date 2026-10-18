@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Play, Square, Trash2, Timer as TimerIcon, BarChart3, Clock, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TimerTaskPicker } from "@/components/tracking/TimerTaskPicker";
 
 type Session = {
   id: string;
@@ -198,7 +199,7 @@ export default function Timer() {
           </div>
           <div className="flex flex-col gap-2 min-w-[220px]">
             {!running && (
-              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Sur quoi tu travailles ? (optionnel)" className="h-9 text-sm" />
+              <TimerTaskPicker value={note} onChange={setNote} />
             )}
             {running ? (
               <Button size="lg" variant="destructive" onClick={stop} className="font-bold">
