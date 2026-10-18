@@ -12,10 +12,12 @@ import { Plus, Trash2, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LearningDashboard } from "@/components/tracking/LearningDashboard";
 
 type Learn = {
   id: string; user_id: string; category: string; title: string;
   resource_url: string | null; notes: string | null; status: string; order_index: number;
+  completed_at?: string | null;
 };
 
 const DEFAULT_CATEGORIES = [
@@ -81,8 +83,11 @@ export default function Apprentissage() {
     setTitle(""); setUrl(""); setNotes(""); setCustomCat("");
   }
   async function updateItem(id: string, patch: Partial<Learn>) {
-    setItems(p => p.map(x => x.id === id ? { ...x, ...patch } : x));
-    await supabase.from("learning_items").update(patch).eq("id", id);
+    const previous = items.find(x => x.id === id);
+    const update = patch.status ? { ...patch, completed_at: patch.status === "done" ? new Date().toISOString() : null } : patch;
+    setItems(p => p.map(x => x.id === id ? { ...x, ...update } : x));
+    const { error } = await supabase.from("learning_items").update(update).eq("id", id);
+    if (error) { if (previous) setItems(p => p.map(x => x.id === id ? previous : x)); toast.error("Modification impossible"); }
   }
   async function deleteItem(id: string) {
     setItems(p => p.filter(x => x.id !== id));
@@ -92,6 +97,7 @@ export default function Apprentissage() {
   return (
     <div>
       <PageHeader title="Apprentissage" description="Mon parcours de formation continue, organisé par catégorie." />
+      <LearningDashboard items={items} />
 
       <Card className="mb-6">
         <CardHeader><CardTitle className="text-base">➕ Ajouter un sujet à apprendre</CardTitle></CardHeader>

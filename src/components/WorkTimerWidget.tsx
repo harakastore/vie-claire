@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Play, Square, Timer as TimerIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { TimerTaskPicker } from "@/components/tracking/TimerTaskPicker";
+import { Button } from "@/components/ui/button";
 
 type Session = { id: string; started_at: string; ended_at: string | null; duration_seconds: number | null; note: string | null };
 
@@ -56,18 +58,20 @@ export function WorkTimerWidget() {
     const id = running.id;
     setRunning(null);
     setTodayDone((t) => t + dur);
-    await supabase.from("work_sessions").update({ ended_at: end.toISOString(), duration_seconds: dur }).eq("id", id);
+    const previous = running;
+    const { error } = await supabase.from("work_sessions").update({ ended_at: end.toISOString(), duration_seconds: dur }).eq("id", id);
+    if (error) { setRunning(previous); setTodayDone(t => t - dur); return toast.error("Enregistrement impossible"); }
     toast.success(`Session enregistrée : ${fmtHM(dur)}`);
   };
 
   return (
     <div className={cn(
-      "flex items-center gap-2 rounded-2xl border px-2.5 py-1.5 backdrop-blur-sm transition-all",
-      running ? "bg-white/25 border-white/50 shadow-lg" : "bg-white/10 border-white/25"
+      "flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 bg-background text-foreground transition-all",
+      running ? "border-primary shadow-md" : "border-border"
     )}>
       <div className="flex flex-col leading-none min-w-[92px]">
         <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest opacity-85">
-          {running ? <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> : <TimerIcon className="h-2.5 w-2.5" />}
+          {running ? <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" /> : <TimerIcon className="h-2.5 w-2.5" />}
           {running ? "En cours" : "Timer"}
         </span>
         <span className="text-xl font-black tabular-nums tracking-tight">{fmtHMS(live)}</span>
@@ -76,15 +80,10 @@ export function WorkTimerWidget() {
       {running ? (
         <span className="max-w-[160px] truncate text-xs font-semibold opacity-95" title={running.note || ""}>{running.note || "Travail"}</span>
       ) : (
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && start()}
-          placeholder="Tâche en cours…"
-          className="h-8 w-[150px] rounded-lg bg-white/15 border border-white/30 px-2 text-xs placeholder:text-current placeholder:opacity-60 outline-none focus:bg-white/25"
-        />
+        <TimerTaskPicker value={note} onChange={setNote} compact />
       )}
-      <button
+      <Button size="icon" variant={running ? "destructive" : "default"}
+        disabled={running?.id === "tmp"}
         onClick={running ? stop : start}
         className={cn(
           "h-9 w-9 shrink-0 rounded-xl flex items-center justify-center shadow-md transition-transform hover:scale-105",
@@ -93,7 +92,7 @@ export function WorkTimerWidget() {
         title={running ? "Stopper" : "Démarrer"}
       >
         {running ? <Square className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
-      </button>
+      </Button>
     </div>
   );
 }

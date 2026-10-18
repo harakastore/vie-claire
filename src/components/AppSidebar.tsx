@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, Rocket, Repeat, TimerIcon } from "lucide-react";
+import { LayoutDashboard, Receipt, CheckSquare, CreditCard, ListTodo, Target, Shield, Dumbbell, LogOut, Briefcase, User, GraduationCap, Trophy, History, CalendarCheck, Flame, TimerIcon } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,7 +29,9 @@ const items = [
   { title: "Discipline", url: "/discipline", icon: Shield },
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
   { title: "Performances Sport", url: "/performances-sport", icon: Trophy },
-  { title: "Routines", url: "/routines", icon: Repeat },
+  { title: "Responsabilités & vie", url: "/responsabilites", icon: CalendarCheck },
+  { title: "Calories", url: "/calories", icon: Flame },
+  { title: "Historique", url: "/historique", icon: History },
   { title: "Timer travail", url: "/timer", icon: TimerIcon },
 ];
 
