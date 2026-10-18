@@ -185,12 +185,12 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
         const c = BR_COLORS[t.color] || BR_COLORS.violet;
         const d = api.isDone(t.id, dateStr);
         return (
-          <div key={t.id} className="group flex items-center gap-2 rounded-md px-2 py-1.5 border-l-4"
+          <div key={t.id} className="group flex flex-wrap items-center gap-2 rounded-md px-2 py-1.5 border-l-4"
             style={{ backgroundColor: `hsl(${c.hue} / ${d ? 0.08 : 0.16})`, borderLeftColor: `hsl(${c.hue})` }}>
             <Checkbox aria-label={`${t.title} ${dateStr}`} checked={d} onCheckedChange={() => api.toggle(t.id, dateStr)} className="h-4 w-4" />
             {t.scheduled_time && <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: `hsl(${c.hue})` }}>{t.scheduled_time.slice(0, 5)}</span>}
-            <span className={cn("text-sm font-semibold flex-1 leading-snug", d && "line-through opacity-60")}>{t.title}</span>
-            {t.habit_id && <span className="text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary shrink-0">Discipline</span>}
+            <span className={cn("text-sm font-semibold flex-1 min-w-0 break-words leading-snug", d && "line-through opacity-60")}>{t.title}</span>
+            {t.habit_id && <span className="order-last basis-full text-right text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary">Discipline</span>}
             <Popover open={editId === t.id} onOpenChange={(o) => setEditId(o ? t.id : null)}>
               <PopoverTrigger asChild>
                 <button title="Tâche fixe — modifier" className="shrink-0 opacity-60 hover:opacity-100"><Lock className="h-3 w-3" style={{ color: `hsl(${c.hue})` }} /></button>
