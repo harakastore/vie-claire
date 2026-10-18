@@ -8,6 +8,12 @@ export function correctedCreditPaid(total:number,paid:number,oldPayment:number,n
   if(!Number.isFinite(result)||newPayment<=0||result<0||result>total)throw new Error('Paiement invalide');
   return result;
 }
+export type CreditState = 'unpaid' | 'partial' | 'settled';
+export function creditPaymentState(total: number, paid: number): CreditState {
+  if (paid <= 0) return 'unpaid';
+  return paid >= total ? 'settled' : 'partial';
+}
+export const creditStateClass: Record<CreditState, string> = { unpaid: 'credit-unpaid', partial: 'credit-partial', settled: 'credit-settled' };
 export type Schedule = { active: boolean; start_date: string; end_date: string | null; selected_dates: string[]; frequency: string; days_of_week: number[] };
 export function occursOn(item: Schedule, date: string) {
   if (!item.active || date < item.start_date || (item.end_date && date > item.end_date)) return false;
