@@ -8,9 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Expenses from "./pages/Expenses";
-import Habits from "./pages/Habits";
 import Credits from "./pages/Credits";
-import Engagements from "./pages/Engagements";
 import Goals from "./pages/Goals";
 import Discipline from "./pages/Discipline";
 import Sport from "./pages/Sport";
@@ -20,7 +18,6 @@ import Apprentissage from "./pages/Apprentissage";
 import SportPerf from "./pages/SportPerf";
 import History from "./pages/History";
 import Responsibilities from "./pages/Responsibilities";
-import Calories from "./pages/Calories";
 import Timer from "./pages/Timer";
 
 import NotFound from "./pages/NotFound";
@@ -52,9 +49,9 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/depenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
-            <Route path="/habitudes" element={<ProtectedRoute><Habits /></ProtectedRoute>} />
+            <Route path="/habitudes" element={<Navigate to="/discipline" replace />} />
             <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
-            <Route path="/engagements" element={<ProtectedRoute><Engagements /></ProtectedRoute>} />
+            <Route path="/engagements" element={<Navigate to="/objectifs" replace />} />
             <Route path="/objectifs" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
             <Route path="/discipline" element={<ProtectedRoute><Discipline /></ProtectedRoute>} />
             <Route path="/sport" element={<ProtectedRoute><Sport /></ProtectedRoute>} />
@@ -64,7 +61,7 @@ const App = () => (
             <Route path="/performances-sport" element={<ProtectedRoute><SportPerf /></ProtectedRoute>} />
             <Route path="/historique" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/responsabilites" element={<ProtectedRoute><Responsibilities /></ProtectedRoute>} />
-            <Route path="/calories" element={<ProtectedRoute><Calories /></ProtectedRoute>} />
+            <Route path="/calories" element={<Navigate to="/sport" replace />} />
             <Route path="/routines" element={<Navigate to="/responsabilites" replace />} />
             <Route path="/timer" element={<ProtectedRoute><Timer /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

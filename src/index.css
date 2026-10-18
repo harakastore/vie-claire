@@ -131,6 +131,11 @@
 }
 
 @layer utilities {
+  .credit-personal { background: hsl(var(--secondary) / .09); }
+  .credit-cabinet { background: hsl(var(--primary) / .09); }
+  .credit-business { background: hsl(var(--status-partial) / .12); }
+  .credit-urgent { background: hsl(var(--destructive) / .12); }
+  .credit-settled { background: hsl(var(--status-paid) / .12); }
   .schedule-violet {
     color: hsl(var(--schedule-violet));
     background: hsl(var(--schedule-violet) / 0.12);

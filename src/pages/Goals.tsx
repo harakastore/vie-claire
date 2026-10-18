@@ -776,23 +776,6 @@ export default function Goals() {
             );
           })()}
 
-          {/* Récurrentes par jour - violet */}
-          {showNonNego && dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).length > 0 && (
-            <div className="px-4 py-3 border-b border-dashed" style={{ backgroundColor: "hsl(270, 60%, 95%)" }}>
-              <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: "hsl(270, 60%, 40%)" }}>
-                📅 RÉCURRENTES
-              </p>
-              {dailyHabits.filter((h: any) => h.category === "recurring" && habitVisibleOnDate(h, dateStr)).map((h: any) => (
-                <div key={h.id} className="flex items-center gap-2 py-0.5 group">
-                  <Checkbox checked={isHabitCompleted(h.id, dateStr)} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                  <EditableText value={h.title} onSave={(v) => updateDailyHabit(h.id, v)} className={cn("text-sm font-medium flex-1", isHabitCompleted(h.id, dateStr) && "line-through text-muted-foreground")} />
-                  <button onClick={() => deleteDailyHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-            </div>
-          )}
-
-
           {BLOCKS.map((block) => {
             const blockTasks = dayTasks.filter((t: any) => (t.block || "fajr_dhuhr") === block.key);
             const bt = getBlockTimes(dateStr, block);
@@ -950,10 +933,6 @@ export default function Goals() {
                   </div>
                 </div>
                 <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
-                  <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Récurrentes</p>
-                  <p className="text-lg font-bold tabular-nums">{recurringDone}<span className="opacity-60 text-sm">/{recurringForDay.length}</span></p>
-                </div>
-                <div className="bg-white/15 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/20">
                   <p className="text-[10px] uppercase tracking-wider opacity-80 font-semibold">Priorités</p>
                   <p className="text-lg font-bold tabular-nums">
                     {dayTasks.filter((t: any) => t.block === "day_priority" && t.completed).length}
@@ -999,40 +978,6 @@ export default function Goals() {
                 </div>
               );
             })()}
-
-            {/* === Récurrentes === */}
-            {showNonNego && recurringForDay.length > 0 && (
-              <div className="rounded-xl border-2 border-purple-300/60 dark:border-purple-700/40 bg-gradient-to-br from-purple-50 to-purple-100/40 dark:from-purple-950/30 dark:to-purple-900/10 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-lg bg-purple-500 dark:bg-purple-600 flex items-center justify-center shadow-sm">
-                      <CalendarDays className="h-4 w-4 text-white" />
-                    </div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-purple-900 dark:text-purple-200">
-                      Récurrentes
-                    </h3>
-                  </div>
-                  <span className="text-xs font-bold tabular-nums text-purple-700 dark:text-purple-300 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full">
-                    {recurringDone}/{recurringForDay.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {recurringForDay.map((h: any) => {
-                    const done = isHabitCompleted(h.id, dateStr);
-                    return (
-                      <div key={h.id} className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg transition-all group",
-                        done ? "bg-purple-200/50 dark:bg-purple-800/30" : "bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40"
-                      )}>
-                        <Checkbox checked={done} onCheckedChange={() => toggleHabitLog(h.id, dateStr)} className="h-4 w-4" />
-                        <EditableText value={h.title} onSave={(v) => updateDailyHabit(h.id, v)} className={cn("text-sm font-medium text-purple-950 dark:text-purple-100 flex-1", done && "line-through opacity-50")} />
-                        <button onClick={() => deleteDailyHabit(h.id)} className="opacity-0 group-hover:opacity-100 text-destructive shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* === Time-blocks === */}
             {(() => {

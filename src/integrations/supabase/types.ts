@@ -1714,6 +1714,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      correct_credit_payment: {
+        Args: {
+          p_amount: number
+          p_date: string
+          p_method?: string
+          p_payment_id: string
+          p_reference?: string
+        }
+        Returns: {
+          amount: number | null
+          created_at: string
+          credit_date: string | null
+          credit_type: string
+          end_date: string | null
+          id: string
+          lender: string | null
+          monthly_payment: number | null
+          name: string | null
+          notes: string | null
+          paid_amount: number | null
+          payment_method: string
+          person_name: string | null
+          sector: string
+          start_date: string | null
+          status: string
+          total_amount: number | null
+          updated_at: string
+          urgency: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "credits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_credit_payment: {
         Args: {
           p_amount: number

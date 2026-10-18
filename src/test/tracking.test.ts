@@ -1,7 +1,10 @@
 import { describe,it,expect } from 'vitest';
-import { remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry } from '@/lib/tracking';
+import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
+ it('Correcting 2000 to 1500 on a 5000 credit leaves 3500',()=>expect(remainingCredit(5000,correctedCreditPaid(5000,2000,2000,1500))).toBe(3500));
+ it('Corrections retain older payments without dated entries',()=>expect(correctedCreditPaid(5000,3000,2000,1500)).toBe(2500));
+ it('Corrections reject overpayment',()=>expect(()=>correctedCreditPaid(5000,3000,2000,4500)).toThrow());
  it('5000 DH minus a 2000 DH payment leaves 3000 DH',()=>expect(remainingCredit(5000,2000)).toBe(3000));
  it('Sunday routine appears every Sunday and not Monday',()=>{expect(occursOn(base,'2026-10-25')).toBe(true);expect(occursOn(base,'2026-10-26')).toBe(false)});
  it('Selected dates only appear on selected days',()=>{const r={...base,frequency:'once',selected_dates:['2026-10-21','2026-10-22']};expect(occursOn(r,'2026-10-21')).toBe(true);expect(occursOn(r,'2026-10-23')).toBe(false)});

@@ -3,6 +3,11 @@ import { parseISO, getDaysInMonth } from 'date-fns';
 export const moneySchema = z.coerce.number().finite().nonnegative();
 export const paymentSchema = z.object({ amount: z.coerce.number().finite().positive(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), method: z.enum(['other','cash','transfer','cheque','effet']), reference: z.string().max(250) });
 export function remainingCredit(amount: number, paid: number) { return Math.max(0, amount - paid); }
+export function correctedCreditPaid(total:number,paid:number,oldPayment:number,newPayment:number){
+  const result=paid-oldPayment+newPayment;
+  if(!Number.isFinite(result)||newPayment<=0||result<0||result>total)throw new Error('Paiement invalide');
+  return result;
+}
 export type Schedule = { active: boolean; start_date: string; end_date: string | null; selected_dates: string[]; frequency: string; days_of_week: number[] };
 export function occursOn(item: Schedule, date: string) {
   if (!item.active || date < item.start_date || (item.end_date && date > item.end_date)) return false;

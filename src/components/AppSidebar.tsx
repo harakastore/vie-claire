@@ -19,9 +19,7 @@ import { Button } from "@/components/ui/button";
 const items = [
   { title: "Tableau de bord", url: "/", icon: LayoutDashboard },
   { title: "Dépenses & Revenus", url: "/depenses", icon: Receipt },
-  { title: "Habitudes", url: "/habitudes", icon: CheckSquare },
   { title: "Crédits", url: "/credits", icon: CreditCard },
-  { title: "Engagements", url: "/engagements", icon: ListTodo },
   { title: "Objectifs & Tâches", url: "/objectifs", icon: Target },
   { title: "Cabinet", url: "/cabinet", icon: Briefcase },
   { title: "Moi-même", url: "/moi-meme", icon: User },
@@ -30,7 +28,6 @@ const items = [
   { title: "Sport & Nutrition", url: "/sport", icon: Dumbbell },
   { title: "Performances Sport", url: "/performances-sport", icon: Trophy },
   { title: "Responsabilités & vie", url: "/responsabilites", icon: CalendarCheck },
-  { title: "Calories", url: "/calories", icon: Flame },
   { title: "Historique", url: "/historique", icon: History },
   { title: "Timer travail", url: "/timer", icon: TimerIcon },
 ];
