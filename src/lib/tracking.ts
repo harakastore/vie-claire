@@ -15,6 +15,10 @@ export function creditPaymentState(total: number, paid: number): CreditState {
 }
 export const creditStateClass: Record<CreditState, string> = { unpaid: 'credit-unpaid', partial: 'credit-partial', settled: 'credit-settled' };
 export type Schedule = { active: boolean; start_date: string; end_date: string | null; selected_dates: string[]; frequency: string; days_of_week: number[] };
+export function recurringTaskInBlock(task: { active: boolean; block_key: string; days_of_week: number[] | null }, date: string, block: string) {
+  const day = parseISO(date).getDay();
+  return task.active && task.block_key === block && (!task.days_of_week?.length || task.days_of_week.includes(day));
+}
 export function occursOn(item: Schedule, date: string) {
   if (!item.active || date < item.start_date || (item.end_date && date > item.end_date)) return false;
   if (item.selected_dates.includes(date)) return true;

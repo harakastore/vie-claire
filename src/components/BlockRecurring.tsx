@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Lock, Trash2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { recurringTaskInBlock } from "@/lib/tracking";
+import { format, startOfWeek, endOfWeek, parseISO } from "date-fns";
 
 export type BRTask = {
   id: string; title: string; block_key: string; scheduled_time: string | null;
@@ -28,7 +30,7 @@ const DAYS = [
 const tbl = () => supabase.from("block_recurring_tasks" as any) as any;
 const logs = () => supabase.from("block_recurring_logs" as any) as any;
 
-export function useBlockRecurring() {
+export function useBlockRecurring(selectedDate: string) {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<BRTask[]>([]);
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -38,24 +40,24 @@ export function useBlockRecurring() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const since = new Date(); since.setDate(since.getDate() - 60);
-      const sinceStr = since.toISOString().slice(0, 10);
+      const date = parseISO(selectedDate);
+      const sinceStr = format(startOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd");
+      const untilStr = format(endOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd");
       const [t, l, h, hl] = await Promise.all([
         tbl().select("*").order("scheduled_time", { ascending: true, nullsFirst: false }).order("sort_order"),
-        logs().select("task_id, day_date").gte("day_date", sinceStr),
+        logs().select("task_id, day_date").gte("day_date", sinceStr).lte("day_date", untilStr),
         (supabase.from("daily_habits" as any) as any).select("id, title, category, days_of_week").eq("active", true).order("sort_order"),
-        (supabase.from("daily_habit_logs" as any) as any).select("id, habit_id, day_date, completed").gte("day_date", sinceStr),
+        (supabase.from("daily_habit_logs" as any) as any).select("id, habit_id, day_date, completed").gte("day_date", sinceStr).lte("day_date", untilStr),
       ]);
       setHabits((h.data as DHabit[]) || []);
       setHDone(new Map(((hl.data as any[]) || []).map((r) => [`${r.habit_id}_${r.day_date}`, { id: r.id, completed: r.completed }])));
       setTasks((t.data as BRTask[]) || []);
       setDone(new Set(((l.data as any[]) || []).map((r) => `${r.task_id}_${r.day_date}`)));
     })();
-  }, [user]);
+  }, [user, selectedDate]);
 
   const forBlock = useCallback((dateStr: string, blockKey: string) => {
-    const dow = new Date(`${dateStr}T12:00:00`).getDay();
-    return tasks.filter((t) => t.active && t.block_key === blockKey && (!t.days_of_week || t.days_of_week.length === 0 || t.days_of_week.includes(dow)));
+    return tasks.filter((t) => recurringTaskInBlock(t, dateStr, blockKey));
   }, [tasks]);
 
   const habitOf = (id: string) => tasks.find((t) => t.id === id)?.habit_id || null;
@@ -112,11 +114,11 @@ function DayPicker({ value, onChange }: { value: number[] | null; onChange: (v: 
     <div className="flex items-center gap-1 flex-wrap">
       <button type="button" onClick={() => onChange(null)} className={cn("h-6 px-2 rounded-md text-[10px] font-bold border", all ? "bg-primary text-primary-foreground border-primary" : "bg-background")}>Tous</button>
       {DAYS.map((d) => {
-        const on = !all && value!.includes(d.v);
+        const on = !all && !!value?.includes(d.v);
         return (
           <button key={d.v} type="button"
             onClick={() => {
-              const cur = all ? [] : [...value!];
+              const cur = all ? [] : [...(value || [])];
               const next = on ? cur.filter((x) => x !== d.v) : [...cur, d.v];
               onChange(next.length === 0 || next.length === 7 ? null : next);
             }}
@@ -178,17 +180,17 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
   const [editId, setEditId] = useState<string | null>(null);
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" data-recurring-date={dateStr} data-recurring-block={blockKey}>
       {items.map((t) => {
         const c = BR_COLORS[t.color] || BR_COLORS.violet;
         const d = api.isDone(t.id, dateStr);
         return (
-          <div key={t.id} className="group flex items-center gap-2 rounded-md px-2 py-1.5 border-l-4"
+          <div key={t.id} className="group flex flex-wrap items-center gap-2 rounded-md px-2 py-1.5 border-l-4"
             style={{ backgroundColor: `hsl(${c.hue} / ${d ? 0.08 : 0.16})`, borderLeftColor: `hsl(${c.hue})` }}>
-            <Checkbox checked={d} onCheckedChange={() => api.toggle(t.id, dateStr)} className="h-4 w-4" />
+            <Checkbox aria-label={`${t.title} ${dateStr}`} checked={d} onCheckedChange={() => api.toggle(t.id, dateStr)} className="h-4 w-4" />
             {t.scheduled_time && <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: `hsl(${c.hue})` }}>{t.scheduled_time.slice(0, 5)}</span>}
-            <span className={cn("text-sm font-semibold flex-1 leading-snug", d && "line-through opacity-60")}>{t.title}</span>
-            {t.habit_id && <span className="text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary shrink-0">Discipline</span>}
+            <span className={cn("text-sm font-semibold flex-1 min-w-0 break-words leading-snug", d && "line-through opacity-60")}>{t.title}</span>
+            {t.habit_id && <span className="order-last basis-full text-right text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary">Discipline</span>}
             <Popover open={editId === t.id} onOpenChange={(o) => setEditId(o ? t.id : null)}>
               <PopoverTrigger asChild>
                 <button title="Tâche fixe — modifier" className="shrink-0 opacity-60 hover:opacity-100"><Lock className="h-3 w-3" style={{ color: `hsl(${c.hue})` }} /></button>
