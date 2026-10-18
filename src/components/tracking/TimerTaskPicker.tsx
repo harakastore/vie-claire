@@ -1,0 +1,12 @@
+import { useEffect,useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Popover,PopoverTrigger,PopoverContent } from '@/components/ui/popover';
+import { History } from 'lucide-react';
+export function TimerTaskPicker({value,onChange,compact=false}:{value:string;onChange:(v:string)=>void;compact?:boolean}){
+ const {user}=useAuth();const [names,setNames]=useState<string[]>([]),[open,setOpen]=useState(false),[search,setSearch]=useState('');
+ useEffect(()=>{if(!user)return;(async()=>{const all:string[]=[];for(const table of ['work_sessions','daily_tasks','tasks'] as const){let offset=0;for(;;){const q=table==='work_sessions'?supabase.from(table).select('note').eq('user_id',user.id).order('started_at',{ascending:false}):supabase.from(table).select('title').eq('user_id',user.id).order('created_at',{ascending:false});const {data,error}=await q.range(offset,offset+499);if(error||!data)break;for(const r of data){const name='note' in r?r.note:'title' in r?r.title:null;if(name?.trim())all.push(name.trim());}if(data.length<500)break;offset+=500;}}setNames(Array.from(new Set(all)));})();},[user]);
+ return <div className="flex items-center gap-1 min-w-0"><Input aria-label="Tâche du timer" value={value} onChange={e=>onChange(e.target.value)} placeholder="Tâche en cours…" className={compact?'h-8 w-[150px] text-xs bg-background text-foreground':''}/><Popover open={open} onOpenChange={setOpen}><PopoverTrigger asChild><Button size="icon" variant="outline" className="shrink-0 text-foreground" title="Choisir une tâche précédente" aria-label="Choisir une tâche précédente"><History className="h-4 w-4"/></Button></PopoverTrigger><PopoverContent className="w-80 max-w-[90vw]"><Input placeholder="Rechercher une tâche…" aria-label="Rechercher une tâche précédente" value={search} onChange={e=>setSearch(e.target.value)}/><div className="mt-2 max-h-64 overflow-auto">{names.filter(n=>n.toLowerCase().includes(search.toLowerCase())).map(n=><Button key={n} variant="ghost" className="w-full justify-start h-auto whitespace-normal text-left" onClick={()=>{onChange(n);setOpen(false)}}>{n}</Button>)}{!names.length&&<p className="text-xs text-muted-foreground p-2">Aucune tâche précédente.</p>}</div></PopoverContent></Popover></div>
+}
