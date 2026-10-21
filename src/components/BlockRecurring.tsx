@@ -71,8 +71,15 @@ export function useBlockRecurring(selectedDate: string) {
   }, [user, selectedDate]);
 
   const forBlock = useCallback((dateStr: string, blockKey: string) => {
-    return tasks.filter((t) => recurringTaskVisible(t, dateStr, blockKey, lastDone.get(t.id) ?? null));
-  }, [tasks, lastDone]);
+    return tasks.filter((t) => {
+      if (t.block_key !== blockKey) return false;
+      if (recurringTaskVisible(t, dateStr, blockKey, lastDone.get(t.id) ?? null)) return true;
+      // keep a completed occurrence visible (checked) on the day it was done
+      const hid = t.habit_id;
+      if (hid) return !!hDone.get(`${hid}_${dateStr}`)?.completed;
+      return done.has(`${t.id}_${dateStr}`);
+    });
+  }, [tasks, lastDone, done, hDone]);
 
   const habitOf = (id: string) => tasks.find((t) => t.id === id)?.habit_id || null;
   const isDone = (id: string, dateStr: string) => {
