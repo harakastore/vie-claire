@@ -23,4 +23,5 @@ describe('Tracking rules',()=>{
  it('Payments must be positive',()=>expect(paymentSchema.safeParse({amount:0,date:'2026-10-18',method:'cheque',reference:''}).success).toBe(false));
  it('A credit with no payment is shown as unpaid (white row)',()=>{expect(creditPaymentState(5000,0)).toBe('unpaid');expect(creditStateClass.unpaid).toBe('credit-unpaid')});
  it('A credit partly paid is orange, fully repaid is green',()=>{expect(creditPaymentState(5000,2000)).toBe('partial');expect(creditStateClass.partial).toBe('credit-partial');expect(creditPaymentState(5000,5000)).toBe('settled');expect(creditStateClass.settled).toBe('credit-settled')});
+ it('Pasted text becomes one list item per line, bullets and numbering stripped',()=>{expect(parsePastedLines("-hamdolah je suis en bonne santé\n- j'ai pas d'handicap dans ma vie hamdolah\n1. Je construis chaque jour\n2) Je pense comme un CEO\n• Je transforme\n\n   ")).toEqual(["hamdolah je suis en bonne santé","j'ai pas d'handicap dans ma vie hamdolah","Je construis chaque jour","Je pense comme un CEO","Je transforme"])});
 });
