@@ -15,3 +15,4 @@
 - [x] Tâches récurrentes non quotidiennes : report automatique au jour suivant jusqu'à ce qu'elles soient cochées
 - [x] Tâches reportées : mention « Reporté de <jour> » affichée dans leur cadre
 - [x] Boutons de mission : coller un texte multiligne converti en liste, affirmations et gratitudes pré-remplies
+- [x] Gratiudes : coller les 6 sections du fichier déposé (couple, parcours, argent, santé, développement, foi)
