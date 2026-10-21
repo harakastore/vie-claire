@@ -88,6 +88,12 @@ export function useBlockRecurring(selectedDate: string) {
       const hk = `${hid}_${dateStr}`;
       const ex = hDone.get(hk);
       const nv = !ex?.completed;
+      setLastDone((p) => {
+        const n = new Map(p);
+        if (nv && (!n.get(id) || dateStr > n.get(id)!)) n.set(id, dateStr);
+        else if (!nv && n.get(id) === dateStr) n.delete(id);
+        return n;
+      });
       setHDone((p) => { const n = new Map(p); n.set(hk, { id: ex?.id || "tmp", completed: nv }); return n; });
       if (ex && ex.id !== "tmp") await (supabase.from("daily_habit_logs" as any) as any).update({ completed: nv }).eq("id", ex.id);
       else {
@@ -99,6 +105,12 @@ export function useBlockRecurring(selectedDate: string) {
     const k = `${id}_${dateStr}`;
     const was = done.has(k);
     setDone((p) => { const n = new Set(p); was ? n.delete(k) : n.add(k); return n; });
+    setLastDone((p) => {
+      const n = new Map(p);
+      if (!was && (!n.get(id) || dateStr > n.get(id)!)) n.set(id, dateStr);
+      else if (was && n.get(id) === dateStr) n.delete(id);
+      return n;
+    });
     if (was) await logs().delete().eq("task_id", id).eq("day_date", dateStr);
     else await logs().insert({ user_id: user.id, task_id: id, day_date: dateStr });
   };
