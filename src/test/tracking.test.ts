@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { recurringTaskInBlock } from '@/lib/tracking';
+import { recurringTaskInBlock, recurringTaskVisible } from '@/lib/tracking';
 import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
@@ -13,6 +13,8 @@ describe('Tracking rules',()=>{
  it('Selected dates only appear on selected days',()=>{const r={...base,frequency:'once',selected_dates:['2026-10-21','2026-10-22']};expect(occursOn(r,'2026-10-21')).toBe(true);expect(occursOn(r,'2026-10-23')).toBe(false)});
  it('Monthly responsibilities repeat on their monthly date',()=>{const r={...base,frequency:'monthly'};expect(occursOn(r,'2026-11-18')).toBe(true);expect(occursOn(r,'2026-11-19')).toBe(false)});
  it('Annual responsibilities repeat on month and day',()=>{const r={...base,frequency:'annual'};expect(occursOn(r,'2027-10-18')).toBe(true);expect(occursOn(r,'2027-09-18')).toBe(false)});
+ it('A Tuesday task not checked reappears Wednesday until done',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskVisible(task,'2026-10-21','asr_maghrib',null)).toBe(true);expect(recurringTaskVisible(task,'2026-10-22','asr_maghrib',null)).toBe(true)});
+ it('Once checked, a carried-over task stops reappearing',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskVisible(task,'2026-10-22','asr_maghrib','2026-10-21')).toBe(false);expect(recurringTaskVisible(task,'2026-10-28','asr_maghrib','2026-10-21')).toBe(true)});
  it('Recurring tasks stop at end date',()=>expect(occursOn({...base,end_date:'2026-10-24'},'2026-10-25')).toBe(false));
  it('Calories retain the established 2000 kcal base',()=>expect(calorieBalance(1800,300)).toBe(-500));
  it('Only explicitly logged calorie days count, including zero entries',()=>{expect(hasCalorieEntry({kcal_logged:true})).toBe(true);expect(hasCalorieEntry({kcal_logged:false})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});

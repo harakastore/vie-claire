@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Lock, Trash2, Plus, Search, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { recurringTaskInBlock } from "@/lib/tracking";
+import { recurringTaskVisible } from "@/lib/tracking";
 import { format, startOfWeek, endOfWeek, parseISO } from "date-fns";
 
 export type BRTask = {
@@ -36,6 +36,7 @@ export function useBlockRecurring(selectedDate: string) {
   const [done, setDone] = useState<Set<string>>(new Set());
   const [habits, setHabits] = useState<DHabit[]>([]);
   const [hDone, setHDone] = useState<Map<string, { id: string; completed: boolean }>>(new Map());
+  const [lastDone, setLastDone] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!user) return;
@@ -43,22 +44,42 @@ export function useBlockRecurring(selectedDate: string) {
       const date = parseISO(selectedDate);
       const sinceStr = format(startOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd");
       const untilStr = format(endOfWeek(date, { weekStartsOn: 1 }), "yyyy-MM-dd");
-      const [t, l, h, hl] = await Promise.all([
+      const [t, l, h, hl, allL, allHl] = await Promise.all([
         tbl().select("*").order("scheduled_time", { ascending: true, nullsFirst: false }).order("sort_order"),
         logs().select("task_id, day_date").gte("day_date", sinceStr).lte("day_date", untilStr),
         (supabase.from("daily_habits" as any) as any).select("id, title, category, days_of_week").eq("active", true).order("sort_order"),
         (supabase.from("daily_habit_logs" as any) as any).select("id, habit_id, day_date, completed").gte("day_date", sinceStr).lte("day_date", untilStr),
+        logs().select("task_id, day_date").order("day_date", { ascending: false }).limit(2000),
+        (supabase.from("daily_habit_logs" as any) as any).select("habit_id, day_date").eq("completed", true).order("day_date", { ascending: false }).limit(2000),
       ]);
+      const taskRows = (t.data as BRTask[]) || [];
+      const habitLast = new Map<string, string>();
+      for (const r of (allHl.data as any[]) || []) if (!habitLast.has(r.habit_id)) habitLast.set(r.habit_id, r.day_date);
+      const taskLast = new Map<string, string>();
+      for (const r of (allL.data as any[]) || []) if (!taskLast.has(r.task_id)) taskLast.set(r.task_id, r.day_date);
+      for (const task of taskRows) {
+        if (!task.habit_id) continue;
+        const hl2 = habitLast.get(task.habit_id);
+        if (hl2 && (!taskLast.get(task.id) || hl2 > taskLast.get(task.id)!)) taskLast.set(task.id, hl2);
+      }
+      setLastDone(taskLast);
       setHabits((h.data as DHabit[]) || []);
       setHDone(new Map(((hl.data as any[]) || []).map((r) => [`${r.habit_id}_${r.day_date}`, { id: r.id, completed: r.completed }])));
-      setTasks((t.data as BRTask[]) || []);
+      setTasks(taskRows);
       setDone(new Set(((l.data as any[]) || []).map((r) => `${r.task_id}_${r.day_date}`)));
     })();
   }, [user, selectedDate]);
 
   const forBlock = useCallback((dateStr: string, blockKey: string) => {
-    return tasks.filter((t) => recurringTaskInBlock(t, dateStr, blockKey));
-  }, [tasks]);
+    return tasks.filter((t) => {
+      if (t.block_key !== blockKey) return false;
+      if (recurringTaskVisible(t, dateStr, blockKey, lastDone.get(t.id) ?? null)) return true;
+      // keep a completed occurrence visible (checked) on the day it was done
+      const hid = t.habit_id;
+      if (hid) return !!hDone.get(`${hid}_${dateStr}`)?.completed;
+      return done.has(`${t.id}_${dateStr}`);
+    });
+  }, [tasks, lastDone, done, hDone]);
 
   const habitOf = (id: string) => tasks.find((t) => t.id === id)?.habit_id || null;
   const isDone = (id: string, dateStr: string) => {
@@ -74,6 +95,12 @@ export function useBlockRecurring(selectedDate: string) {
       const hk = `${hid}_${dateStr}`;
       const ex = hDone.get(hk);
       const nv = !ex?.completed;
+      setLastDone((p) => {
+        const n = new Map(p);
+        if (nv && (!n.get(id) || dateStr > n.get(id)!)) n.set(id, dateStr);
+        else if (!nv && n.get(id) === dateStr) n.delete(id);
+        return n;
+      });
       setHDone((p) => { const n = new Map(p); n.set(hk, { id: ex?.id || "tmp", completed: nv }); return n; });
       if (ex && ex.id !== "tmp") await (supabase.from("daily_habit_logs" as any) as any).update({ completed: nv }).eq("id", ex.id);
       else {
@@ -85,6 +112,12 @@ export function useBlockRecurring(selectedDate: string) {
     const k = `${id}_${dateStr}`;
     const was = done.has(k);
     setDone((p) => { const n = new Set(p); was ? n.delete(k) : n.add(k); return n; });
+    setLastDone((p) => {
+      const n = new Map(p);
+      if (!was && (!n.get(id) || dateStr > n.get(id)!)) n.set(id, dateStr);
+      else if (was && n.get(id) === dateStr) n.delete(id);
+      return n;
+    });
     if (was) await logs().delete().eq("task_id", id).eq("day_date", dateStr);
     else await logs().insert({ user_id: user.id, task_id: id, day_date: dateStr });
   };

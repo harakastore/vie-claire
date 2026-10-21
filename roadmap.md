@@ -12,3 +12,4 @@
 - [x] Refaire entièrement l’apprentissage
 - [x] Tester les règles et vérifier les parcours
 - [x] Crédits : ligne blanche non payée, orange partiellement payée, verte remboursée
+- [x] Tâches récurrentes non quotidiennes : report automatique au jour suivant jusqu'à ce qu'elles soient cochées
