@@ -54,3 +54,8 @@ export function occursOn(item: Schedule, date: string) {
 export const calorieBalance = (eaten: number, burned: number, basal = 2000) => eaten - basal - burned;
 export const hasCalorieEntry = (row: { kcal_logged: boolean } | undefined) => row?.kcal_logged === true;
 export const scheduleSchema = z.object({ title: z.string().trim().min(1).max(200), start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), end_date: z.string().nullable(), frequency: z.enum(['once','weekly','monthly','annual']), kind: z.enum(['responsibility','life']), days_of_week: z.array(z.number().int().min(0).max(6)), selected_dates: z.array(z.string()), block_key: z.string(), scheduled_time: z.string().nullable(), color: z.enum(['blue','violet','teal','rose']), active: z.boolean() }).refine(v => !v.end_date || v.end_date >= v.start_date, { message: 'La date de fin doit suivre le début.' });
+// One pasted line becomes one list item; leading bullets, dashes and numbering
+// (e.g. "- texte", "• texte", "1. texte", "2) texte") are stripped.
+export function parsePastedLines(text: string): string[] {
+  return text.split(/\r?\n/).map(l => l.replace(/^\s*(?:[-–•*]\s*|\d+[.)]\s+)/, '').trim()).filter(Boolean);
+}

@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route, CheckSquare } from "lucide-react";
+import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route, CheckSquare, ClipboardPaste } from "lucide-react";
+import { parsePastedLines } from "@/lib/tracking";
 
 type Item = { id: string; text: string; detail?: string; color: string; completed?: boolean };
 type Board = { id: string; title: string; display: "list" | "table" | "roadmap" | "checklist"; color: string; items: Item[]; sort_order: number };
@@ -150,6 +151,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
   const [text, setText] = useState(""); const [detail, setDetail] = useState(""); const [color, setColor] = useState(board.color);
   const [editItem, setEditItem] = useState<string | null>(null);
   const [title, setTitle] = useState(board.title);
+  const [paste, setPaste] = useState(""); const [pasteColor, setPasteColor] = useState(board.color);
 
   const setItems = (items: Item[]) => onUpdate({ items });
   const add = () => {
@@ -158,6 +160,12 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
     setText(""); setDetail("");
   };
   const patchItem = (id: string, p: Partial<Item>) => setItems(board.items.map(i => i.id === id ? { ...i, ...p } : i));
+  const pasteAsList = () => {
+    const lines = parsePastedLines(paste);
+    if (!lines.length) return;
+    setItems([...board.items, ...lines.map(t => ({ id: uid(), text: t, color: pasteColor }))]);
+    setPaste("");
+  };
 
   return (
     <Dialog open onOpenChange={o => !o && onClose()}>
@@ -253,13 +261,25 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
           </div>
         )}
 
-        {edit && (
+        {edit && (<>
           <div className="rounded-lg border border-dashed p-3 space-y-2">
             <Input value={text} onChange={e => setText(e.target.value)} placeholder="Ex : Je suis discipliné et constant" onKeyDown={e => e.key === "Enter" && add()} />
             <Input value={detail} onChange={e => setDetail(e.target.value)} placeholder="Détail (optionnel)" onKeyDown={e => e.key === "Enter" && add()} />
             <div className="flex items-center justify-between"><ColorPick value={color} onChange={setColor} /><Button size="sm" onClick={add}><Plus className="h-3.5 w-3.5 mr-1" />Ajouter</Button></div>
           </div>
-        )}
+          <div className="rounded-lg border border-dashed p-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coller un texte</p>
+            <Textarea value={paste} onChange={e => setPaste(e.target.value)} rows={5}
+              placeholder="Collez votre texte ici — chaque ligne devient un élément de la liste" />
+            <div className="flex items-center justify-between gap-2">
+              <ColorPick value={pasteColor} onChange={setPasteColor} />
+              <Button size="sm" variant="outline" onClick={pasteAsList} disabled={!paste.trim()}>
+                <ClipboardPaste className="h-3.5 w-3.5 mr-1" />Coller comme liste
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Les tirets, puces et numéros en début de ligne sont retirés automatiquement.</p>
+          </div>
+        </>)}
       </DialogContent>
     </Dialog>
   );

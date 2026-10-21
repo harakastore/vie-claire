@@ -1,6 +1,6 @@
 import { describe,it,expect } from 'vitest';
 import { recurringTaskInBlock, recurringTaskVisible, recurringTaskCarryover } from '@/lib/tracking';
-import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
+import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass,parsePastedLines } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
  it('Recurring tasks appear only on their scheduled date and assigned block',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[0]};expect(recurringTaskInBlock(task,'2026-10-18','asr_maghrib')).toBe(true);expect(recurringTaskInBlock(task,'2026-10-19','asr_maghrib')).toBe(false);expect(recurringTaskInBlock(task,'2026-10-18','fajr_dhuhr')).toBe(false)});
@@ -23,4 +23,5 @@ describe('Tracking rules',()=>{
  it('Payments must be positive',()=>expect(paymentSchema.safeParse({amount:0,date:'2026-10-18',method:'cheque',reference:''}).success).toBe(false));
  it('A credit with no payment is shown as unpaid (white row)',()=>{expect(creditPaymentState(5000,0)).toBe('unpaid');expect(creditStateClass.unpaid).toBe('credit-unpaid')});
  it('A credit partly paid is orange, fully repaid is green',()=>{expect(creditPaymentState(5000,2000)).toBe('partial');expect(creditStateClass.partial).toBe('credit-partial');expect(creditPaymentState(5000,5000)).toBe('settled');expect(creditStateClass.settled).toBe('credit-settled')});
+ it('Pasted text becomes one list item per line, bullets and numbering stripped',()=>{expect(parsePastedLines("-hamdolah je suis en bonne santé\n- j'ai pas d'handicap dans ma vie hamdolah\n1. Je construis chaque jour\n2) Je pense comme un CEO\n• Je transforme\n\n   ")).toEqual(["hamdolah je suis en bonne santé","j'ai pas d'handicap dans ma vie hamdolah","Je construis chaque jour","Je pense comme un CEO","Je transforme"])});
 });
