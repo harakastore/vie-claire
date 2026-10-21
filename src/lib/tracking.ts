@@ -19,21 +19,27 @@ export function recurringTaskInBlock(task: { active: boolean; block_key: string;
   const day = parseISO(date).getDay();
   return task.active && task.block_key === block && (!task.days_of_week?.length || task.days_of_week.includes(day));
 }
-// A task scheduled on specific days that was not checked on its day stays visible
-// on the following days until it is completed.
-export function recurringTaskVisible(task: { active: boolean; block_key: string; days_of_week: number[] | null }, date: string, block: string, lastDone: string | null) {
-  if (recurringTaskInBlock(task, date, block)) return true;
-  if (!task.active || task.block_key !== block || !task.days_of_week?.length) return false;
+// The date of the scheduled day a task was missed, i.e. the day it is carried
+// over from. Null when the task is not a carried-over occurrence.
+export function recurringTaskCarryover(task: { active: boolean; block_key: string; days_of_week: number[] | null }, date: string, block: string) {
+  if (!task.active || task.block_key !== block || !task.days_of_week?.length) return null;
+  if (recurringTaskInBlock(task, date, block)) return null;
   const d = parseISO(date);
   for (let i = 1; i <= 7; i++) {
     const prev = new Date(d);
     prev.setDate(prev.getDate() - i);
     if (task.days_of_week.includes(prev.getDay())) {
-      const prevStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-      return !lastDone || lastDone < prevStr;
+      return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
     }
   }
-  return false;
+  return null;
+}
+// A task scheduled on specific days that was not checked on its day stays visible
+// on the following days until it is completed.
+export function recurringTaskVisible(task: { active: boolean; block_key: string; days_of_week: number[] | null }, date: string, block: string, lastDone: string | null) {
+  if (recurringTaskInBlock(task, date, block)) return true;
+  const missed = recurringTaskCarryover(task, date, block);
+  return !!missed && (!lastDone || lastDone < missed);
 }
 export function occursOn(item: Schedule, date: string) {
   if (!item.active || date < item.start_date || (item.end_date && date > item.end_date)) return false;
