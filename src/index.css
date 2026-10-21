@@ -148,6 +148,11 @@
     background: hsl(var(--schedule-rose) / 0.12);
     border-color: hsl(var(--schedule-rose) / 0.35);
   }
+  .carryover-note {
+    color: hsl(var(--status-partial));
+    background: hsl(var(--status-partial) / 0.14);
+    border: 1px solid hsl(var(--status-partial) / 0.35);
+  }
   .glass-card {
     @apply bg-card border border-border shadow-sm;
   }

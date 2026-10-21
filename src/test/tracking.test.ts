@@ -1,5 +1,5 @@
 import { describe,it,expect } from 'vitest';
-import { recurringTaskInBlock, recurringTaskVisible } from '@/lib/tracking';
+import { recurringTaskInBlock, recurringTaskVisible, recurringTaskCarryover } from '@/lib/tracking';
 import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
@@ -15,6 +15,8 @@ describe('Tracking rules',()=>{
  it('Annual responsibilities repeat on month and day',()=>{const r={...base,frequency:'annual'};expect(occursOn(r,'2027-10-18')).toBe(true);expect(occursOn(r,'2027-09-18')).toBe(false)});
  it('A Tuesday task not checked reappears Wednesday until done',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskVisible(task,'2026-10-21','asr_maghrib',null)).toBe(true);expect(recurringTaskVisible(task,'2026-10-22','asr_maghrib',null)).toBe(true)});
  it('Once checked, a carried-over task stops reappearing',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskVisible(task,'2026-10-22','asr_maghrib','2026-10-21')).toBe(false);expect(recurringTaskVisible(task,'2026-10-28','asr_maghrib','2026-10-21')).toBe(true)});
+ it('A carried-over task says which day it was missed',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskCarryover(task,'2026-10-21','asr_maghrib')).toBe('2026-10-20');expect(recurringTaskCarryover(task,'2026-10-22','asr_maghrib')).toBe('2026-10-20');expect(recurringTaskCarryover(task,'2026-10-20','asr_maghrib')).toBeNull();expect(recurringTaskCarryover(task,'2026-10-21','fajr_dhuhr')).toBeNull();expect(recurringTaskCarryover({active:true,block_key:'asr_maghrib',days_of_week:null},'2026-10-21','asr_maghrib')).toBeNull()});
+ it('A task checked on its own day is not shown as reported',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[2]};expect(recurringTaskVisible(task,'2026-10-22','asr_maghrib','2026-10-21')).toBe(false);expect(recurringTaskCarryover(task,'2026-10-22','asr_maghrib')).toBe('2026-10-20')});
  it('Recurring tasks stop at end date',()=>expect(occursOn({...base,end_date:'2026-10-24'},'2026-10-25')).toBe(false));
  it('Calories retain the established 2000 kcal base',()=>expect(calorieBalance(1800,300)).toBe(-500));
  it('Only explicitly logged calorie days count, including zero entries',()=>{expect(hasCalorieEntry({kcal_logged:true})).toBe(true);expect(hasCalorieEntry({kcal_logged:false})).toBe(false);expect(hasCalorieEntry(undefined)).toBe(false)});

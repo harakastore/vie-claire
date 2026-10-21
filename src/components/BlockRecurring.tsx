@@ -5,9 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, Trash2, Plus, Search, Check, X } from "lucide-react";
+import { Lock, Trash2, Plus, Search, Check, X, CornerDownRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { recurringTaskCarryover } from "@/lib/tracking";
+import { recurringTaskCarryover, recurringTaskVisible } from "@/lib/tracking";
 import { format, startOfWeek, endOfWeek, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
