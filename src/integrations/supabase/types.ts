@@ -1256,6 +1256,7 @@ export type Database = {
         Row: {
           active: boolean
           block_key: string
+          category: string
           color: string
           created_at: string
           days_of_week: number[]
@@ -1272,6 +1273,7 @@ export type Database = {
         Insert: {
           active?: boolean
           block_key?: string
+          category?: string
           color?: string
           created_at?: string
           days_of_week?: number[]
@@ -1288,6 +1290,7 @@ export type Database = {
         Update: {
           active?: boolean
           block_key?: string
+          category?: string
           color?: string
           created_at?: string
           days_of_week?: number[]

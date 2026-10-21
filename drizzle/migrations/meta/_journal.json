@@ -43,6 +43,13 @@
       "when": 1792353886410,
       "tag": "0005_mission_board_checklist_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792615393404,
+      "tag": "0006_responsibility_categories",
+      "breakpoints": true
     }
   ]
 }
