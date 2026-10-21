@@ -1,8 +1,16 @@
 import { describe,it,expect } from 'vitest';
+import { matchesResponsibilityCategory } from '@/lib/tracking';
 import { recurringTaskInBlock, recurringTaskVisible, recurringTaskCarryover } from '@/lib/tracking';
 import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass,parsePastedLines } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
+ it('A category filter shows only responsibilities assigned to that category',()=>{
+   const items=[{title:'Dîner',category:'Couple'},{title:'Appeler',category:'Famille'},{title:'Courses',category:''}];
+   expect(items.filter(i=>matchesResponsibilityCategory(i.category,'category:Couple')).map(i=>i.title)).toEqual(['Dîner']);
+   expect(items.filter(i=>matchesResponsibilityCategory(i.category,'none')).map(i=>i.title)).toEqual(['Courses']);
+   expect(items.filter(i=>matchesResponsibilityCategory(i.category,'all'))).toHaveLength(3);
+   expect(matchesResponsibilityCategory('all','category:all')).toBe(true);
+ });
  it('Recurring tasks appear only on their scheduled date and assigned block',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[0]};expect(recurringTaskInBlock(task,'2026-10-18','asr_maghrib')).toBe(true);expect(recurringTaskInBlock(task,'2026-10-19','asr_maghrib')).toBe(false);expect(recurringTaskInBlock(task,'2026-10-18','fajr_dhuhr')).toBe(false)});
  it('Everyday recurring tasks appear on any selected day unless paused',()=>{const task={active:true,block_key:'fajr_dhuhr',days_of_week:null};expect(recurringTaskInBlock(task,'2026-10-19','fajr_dhuhr')).toBe(true);expect(recurringTaskInBlock(task,'2026-07-01','fajr_dhuhr')).toBe(true);expect(recurringTaskInBlock({...task,active:false},'2026-10-19','fajr_dhuhr')).toBe(false)});
  it('Correcting 2000 to 1500 on a 5000 credit leaves 3500',()=>expect(remainingCredit(5000,correctedCreditPaid(5000,2000,2000,1500))).toBe(3500));
