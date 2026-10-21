@@ -73,6 +73,9 @@
     --kpi-habits: 220 60% 42%;
     --schedule-violet: 275 55% 48%;
     --schedule-rose: 340 65% 45%;
+    --carryover: 30 85% 32%;
+    --carryover-bg: 38 80% 93%;
+    --carryover-border: 35 60% 76%;
   }
 
   .dark {
@@ -112,6 +115,9 @@
     --kpi-habits: 220 55% 55%;
     --schedule-violet: 275 65% 75%;
     --schedule-rose: 340 70% 72%;
+    --carryover: 38 90% 66%;
+    --carryover-bg: 38 60% 16%;
+    --carryover-border: 38 55% 34%;
   }
 }
 
