@@ -1,6 +1,6 @@
 import { describe,it,expect } from 'vitest';
 import { recurringTaskInBlock, recurringTaskVisible, recurringTaskCarryover } from '@/lib/tracking';
-import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass } from '@/lib/tracking';
+import { correctedCreditPaid,remainingCredit,occursOn,calorieBalance,paymentSchema,hasCalorieEntry,creditPaymentState,creditStateClass,parsePastedLines } from '@/lib/tracking';
 const base={active:true,start_date:'2026-10-18',end_date:null,selected_dates:[],frequency:'weekly',days_of_week:[0]};
 describe('Tracking rules',()=>{
  it('Recurring tasks appear only on their scheduled date and assigned block',()=>{const task={active:true,block_key:'asr_maghrib',days_of_week:[0]};expect(recurringTaskInBlock(task,'2026-10-18','asr_maghrib')).toBe(true);expect(recurringTaskInBlock(task,'2026-10-19','asr_maghrib')).toBe(false);expect(recurringTaskInBlock(task,'2026-10-18','fajr_dhuhr')).toBe(false)});
