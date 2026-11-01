@@ -33,3 +33,15 @@ describe('Tracking rules',()=>{
  it('A credit partly paid is orange, fully repaid is green',()=>{expect(creditPaymentState(5000,2000)).toBe('partial');expect(creditStateClass.partial).toBe('credit-partial');expect(creditPaymentState(5000,5000)).toBe('settled');expect(creditStateClass.settled).toBe('credit-settled')});
  it('Pasted text becomes one list item per line, bullets and numbering stripped',()=>{expect(parsePastedLines("-hamdolah je suis en bonne santé\n- j'ai pas d'handicap dans ma vie hamdolah\n1. Je construis chaque jour\n2) Je pense comme un CEO\n• Je transforme\n\n   ")).toEqual(["hamdolah je suis en bonne santé","j'ai pas d'handicap dans ma vie hamdolah","Je construis chaque jour","Je pense comme un CEO","Je transforme"])});
 });
+
+import { responsibilityCarryover } from '@/lib/tracking';
+describe('responsibility carryover', () => {
+  const item = { active: true, start_date: '2026-10-01', end_date: null, selected_dates: [], frequency: 'weekly', days_of_week: [6] } as any; // Saturdays
+  it('reappears days later, even in the next month, until checked', () => {
+    expect(responsibilityCarryover(item, '2026-11-01', [])).toBe('2026-10-31');
+    expect(responsibilityCarryover(item, '2026-11-05', [])).toBe('2026-10-31');
+  });
+  it('disappears once checked on or after the missed day', () => {
+    expect(responsibilityCarryover(item, '2026-11-03', ['2026-11-02'])).toBeNull();
+  });
+});
