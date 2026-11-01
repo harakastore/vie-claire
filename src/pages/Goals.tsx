@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, EyeOff, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays, Check, Shield, Copy } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, ChevronRight, Target, Calendar, Star, Pencil, ChevronDown, ChevronUp, Eye, Clock, Settings2, Dumbbell, BarChart3, Maximize2, Minimize2, CheckSquare, ListTodo, Trophy, Sparkles, CalendarDays, Check, Shield, Copy } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, subDays, addDays, parseISO } from "date-fns";
@@ -25,6 +25,7 @@ import { ResponsibilityTasks } from "@/components/tracking/ResponsibilityTasks";
 import { BlockRecurringList, useBlockRecurring } from "@/components/BlockRecurring";
 import { MissionBoards } from "@/components/MissionBoards";
 import { GoalChecklistButton } from "@/components/GoalChecklistButton";
+import { useHiddenSections, HideButton, HiddenBar } from "@/components/SectionHide";
 
 const DAY_NAMES = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -78,15 +79,7 @@ export default function Goals() {
   const [showAllDays, setShowAllDays] = useState(false);
   const [hideFirst3, setHideFirst3] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
-  const WEEKLY_HIDE_KEY = "vie-claire:weekly-goals-hidden";
-  const [weeklyHidden, setWeeklyHidden] = useState(() => {
-    try { return localStorage.getItem(WEEKLY_HIDE_KEY) === "1"; } catch { return false; }
-  });
-  const toggleWeeklyHidden = () => {
-    const next = !weeklyHidden;
-    setWeeklyHidden(next);
-    try { localStorage.setItem(WEEKLY_HIDE_KEY, next ? "1" : "0"); } catch { /* stockage indisponible */ }
-  };
+  const sections = useHiddenSections();
 
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
@@ -1482,10 +1475,13 @@ export default function Goals() {
 
   return (
     <div className={cn("space-y-6 animate-fade-in", focusTasksOnly && "space-y-3")}>
-      {!focusTasksOnly && <MissionBoards />}
+      {!focusTasksOnly && (sections.isHidden("mission")
+        ? <HiddenBar label="Mission de vie & boutons" onClick={() => sections.toggle("mission")} />
+        : <MissionBoards onHide={() => sections.toggle("mission")} />
+      )}
       {!focusTasksOnly && (
               <div className="flex flex-wrap gap-2">
-                <GoalChecklistButton title={`Objectifs ${currentYear}`} completed={goalsYearly.filter(g => g.status === "achieved").length} total={goalsYearly.length}>
+                {!sections.isHidden("yearly") && <GoalChecklistButton title={`Objectifs ${currentYear}`} completed={goalsYearly.filter(g => g.status === "achieved").length} total={goalsYearly.length} onHide={() => sections.toggle("yearly")}>
                   {goalsYearly.map((g: any) => (
                     <div key={g.id} className="flex items-start gap-2 group">
                       <Checkbox aria-label={`Fait : ${g.title}`} checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "todo")} />
@@ -1499,8 +1495,11 @@ export default function Goals() {
                       onKeyDown={(e) => e.key === "Enter" && addGoal("yearly", newYearly, () => setNewYearly(""))} className="h-8 text-sm" />
                     <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("yearly", newYearly, () => setNewYearly(""))}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
-                </GoalChecklistButton>
-                <GoalChecklistButton title="Objectifs 90 jours" completed={goals90.filter(g => g.status === "achieved").length} total={goals90.length}>
+                </GoalChecklistButton>}
+                {sections.isHidden("yearly") && (
+                  <HiddenBar className="flex-1 min-w-[240px]" label={`Objectifs ${currentYear}`} onClick={() => sections.toggle("yearly")} />
+                )}
+                {!sections.isHidden("90day") && <GoalChecklistButton title="Objectifs 90 jours" completed={goals90.filter(g => g.status === "achieved").length} total={goals90.length} onHide={() => sections.toggle("90day")}>
                   {goals90.map((g: any) => {
                     const remaining = get90DayRemaining(g);
                     const expired = is90DayExpired(g);
@@ -1545,7 +1544,10 @@ export default function Goals() {
                       onKeyDown={(e) => e.key === "Enter" && addGoal("90day", new90, () => setNew90(""))} className="h-8 text-sm" />
                     <Button size="sm" variant="outline" className="h-8" onClick={() => addGoal("90day", new90, () => setNew90(""))}><Plus className="h-3.5 w-3.5" /></Button>
                   </div>
-                </GoalChecklistButton>
+                </GoalChecklistButton>}
+                {sections.isHidden("90day") && (
+                  <HiddenBar className="flex-1 min-w-[240px]" label="Objectifs 90 jours" onClick={() => sections.toggle("90day")} />
+                )}
               </div>
 
       )}
@@ -1563,6 +1565,12 @@ export default function Goals() {
           <ListTodo className="h-4 w-4" />
           <span className="font-medium">{focusTasksOnly ? "Quitter plein écran" : "Plein écran tâches"}</span>
         </Button>
+        {sections.hiddenCount > 0 && (
+          <Button variant="outline" size="sm" className="h-9 gap-2" onClick={sections.showAll}>
+            <Eye className="h-4 w-4" /> Tout afficher
+            <span className="text-xs text-muted-foreground tabular-nums">({sections.hiddenCount})</span>
+          </Button>
+        )}
       </div>
 
       {!focusTasksOnly && (
@@ -1594,6 +1602,7 @@ export default function Goals() {
           {showGoals && (
             <>
               {/* Monthly goals - 4 sections */}
+              {!sections.isHidden("monthly") && (
               <Card className="glass-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
@@ -1601,9 +1610,12 @@ export default function Goals() {
                       <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
                       Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
                     </CardTitle>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateMonthlyToNext}>
-                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → mois prochain
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <HideButton label="Objectifs du mois" onClick={() => sections.toggle("monthly")} />
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateMonthlyToNext}>
+                        <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → mois prochain
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
@@ -1611,9 +1623,14 @@ export default function Goals() {
                     {[{ key: "priority", label: "⭐ PRIORITÉ DU MOIS", color: "hsl(0, 70%, 50%)" }, ...GOAL_SECTIONS].map((section) => {
                       const sectionGoals = goalsMonthly.filter((g: any) => (g.category || "islam") === section.key);
                       const inputKey = `monthly_${section.key}`;
+                      const sid = `monthly:${section.key}`;
+                      if (sections.isHidden(sid)) return <HiddenBar key={sid} compact className={section.key === "priority" ? "md:col-span-2 lg:col-span-4" : ""} label={section.label} onClick={() => sections.toggle(sid)} />;
                       return (
                         <div key={section.key} className={`rounded-lg border p-3 space-y-2 ${section.key === "priority" ? "md:col-span-2 lg:col-span-4" : ""}`} style={{ borderColor: `${section.color}40` }}>
-                          <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                            <HideButton compact label={section.label} onClick={() => sections.toggle(sid)} />
+                          </div>
                           {sectionGoals.map((g: any) => (
                             <div key={g.id} className="flex items-center gap-1.5 group">
                               <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
@@ -1638,6 +1655,10 @@ export default function Goals() {
                   </div>
                 </CardContent>
               </Card>
+              )}
+              {sections.isHidden("monthly") && (
+                <HiddenBar label={`Objectifs du mois (${format(now, "MMMM", { locale: fr })})`} onClick={() => sections.toggle("monthly")} />
+              )}
 
               {/* Weekly goals - 4 sections */}
               {!sections.isHidden("weekly") && (
