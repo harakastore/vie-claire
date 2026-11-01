@@ -78,6 +78,16 @@ export default function Goals() {
   const [showAllDays, setShowAllDays] = useState(false);
   const [hideFirst3, setHideFirst3] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
+  const WEEKLY_HIDE_KEY = "vie-claire:weekly-goals-hidden";
+  const [weeklyHidden, setWeeklyHidden] = useState(() => {
+    try { return localStorage.getItem(WEEKLY_HIDE_KEY) === "1"; } catch { return false; }
+  });
+  const toggleWeeklyHidden = () => {
+    const next = !weeklyHidden;
+    setWeeklyHidden(next);
+    try { localStorage.setItem(WEEKLY_HIDE_KEY, next ? "1" : "0"); } catch { /* stockage indisponible */ }
+  };
+
   const [showSports, setShowSports] = useState(false);
   const [showDiscipline, setShowDiscipline] = useState(false);
   const [expandedDay, setExpandedDay] = useState<string | null>(() => format(new Date(), "yyyy-MM-dd"));
@@ -1630,7 +1640,9 @@ export default function Goals() {
               </Card>
 
               {/* Weekly goals - 4 sections */}
+              {!weeklyHidden && (
               <Card className="glass-card">
+
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
                     <div>
@@ -1642,9 +1654,15 @@ export default function Goals() {
                         Semaine du {format(currentWeekStart, "d", { locale: fr })} au {format(weekEnd, "d MMMM", { locale: fr })}
                       </p>
                     </div>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateWeeklyToNext}>
-                      <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → semaine prochaine
-                    </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="outline" className="h-7 px-2" aria-label="Masquer les objectifs et priorités de la semaine" title="Masquer cette partie" onClick={toggleWeeklyHidden}>
+                        <EyeOff className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateWeeklyToNext}>
+                        <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → semaine prochaine
+                      </Button>
+                    </div>
+
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-0">
@@ -1703,6 +1721,15 @@ export default function Goals() {
                   </div>
                 </CardContent>
               </Card>
+              )}
+              {weeklyHidden && (
+                <Button variant="outline" className="w-full justify-start gap-2 h-11 rounded-xl border-dashed" onClick={toggleWeeklyHidden}>
+                  <Eye className="h-4 w-4" />
+                  <span className="font-semibold">Objectifs & priorités de la semaine</span>
+                  <span className="text-xs text-muted-foreground">masqués — cliquer pour afficher</span>
+                </Button>
+              )}
+
             </>
           )}
 
