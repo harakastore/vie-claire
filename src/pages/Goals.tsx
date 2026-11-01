@@ -777,7 +777,7 @@ export default function Goals() {
             const priorities = dayTasks.filter((t: any) => t.block === "day_priority");
             return (
               <div className="px-4 py-2.5 border-b" style={{ backgroundColor: "hsl(45, 90%, 95%)" }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ 2 Priorités du jour</p>
+                <p className="vc-label mb-1.5" style={{ color: "hsl(45, 80%, 35%)" }}>⭐ 2 Priorités du jour</p>
                 {priorities.map((t: any) => (
                   <div key={t.id} className="flex items-center gap-2 py-0.5 group">
                     <Checkbox checked={t.completed} onCheckedChange={() => toggleDailyTask(t.id, t.completed)} className="h-4 w-4" />
@@ -820,7 +820,7 @@ export default function Goals() {
                 <div className="px-4 py-2 flex items-center justify-between gap-2 flex-wrap" style={{ backgroundColor: `${block.color}15` }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: block.color }} />
-                    <span className="text-xs font-semibold" style={{ color: block.color }}>{block.label}</span>
+                    <span className="vc-label" style={{ color: block.color }}>{block.label}</span>
                     {bt.custom && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">PERSO</span>}
                   </div>
                   {isEditing ? (
@@ -1155,7 +1155,7 @@ export default function Goals() {
                     <div className="h-7 w-7 rounded-lg bg-sky-500 flex items-center justify-center shadow-sm">
                       <Shield className="h-4 w-4 text-white" />
                     </div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-sky-900 dark:text-sky-200">Discipline — Checklist du jour</h3>
+                    <h3 className="vc-label text-sky-900 dark:text-sky-200">Discipline — Checklist du jour</h3>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
