@@ -1598,7 +1598,7 @@ export default function Goals() {
                 </CardHeader>
                 <CardContent className="space-y-0">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {GOAL_SECTIONS.map((section) => {
+                    {[{ key: "priority", label: "⭐ PRIORITÉ DU MOIS", color: "hsl(0, 70%, 50%)" }, ...GOAL_SECTIONS].map((section) => {
                       const sectionGoals = goalsMonthly.filter((g: any) => (g.category || "islam") === section.key);
                       const inputKey = `monthly_${section.key}`;
                       return (
