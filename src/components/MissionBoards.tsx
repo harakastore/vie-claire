@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route, CheckSquare, ClipboardPaste } from "lucide-react";
+import { Plus, Trash2, Pencil, List, Table2, Check, X, Trophy, Sparkles, Route, CheckSquare, ClipboardPaste, EyeOff } from "lucide-react";
 import { parsePastedLines } from "@/lib/tracking";
 
 type Item = { id: string; text: string; detail?: string; color: string; completed?: boolean };
@@ -31,7 +31,7 @@ function ColorPick({ value, onChange }: { value: string; onChange: (c: string) =
   ))}</div>;
 }
 
-export function MissionBoards() {
+export function MissionBoards({ onHide }: { onHide?: () => void } = {}) {
   const { user } = useAuth();
   const [mission, setMission] = useState(DEFAULT_MISSION);
   const [editingMission, setEditingMission] = useState(false);
@@ -140,6 +140,11 @@ export function MissionBoards() {
             )}
           </div>
         </div>
+        {onHide && (
+          <Button size="sm" variant="ghost" className="h-7 px-2 shrink-0" aria-label="Masquer Mission de vie" title="Masquer Mission de vie" onClick={onHide}>
+            <EyeOff className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
       {open && <BoardDialog board={open} onClose={() => setOpenId(null)} onUpdate={p => updateBoard(open.id, p)} onDelete={() => deleteBoard(open.id)} />}
     </div>

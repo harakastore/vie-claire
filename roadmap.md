@@ -19,3 +19,4 @@
 - [x] Gratiudes : coller les 6 sections du fichier déposé (couple, parcours, argent, santé, développement, foi)
 - [x] Boutons « Les 30 regrets… » et « Vie a 30ans… » : coller les deux fichiers déposés en sections colorées
 - [x] Objectifs : bouton pour masquer/afficher « Objectifs de la semaine » et « 3 Priorités de la semaine » (choix mémorisé)
+- [x] Objectifs : bouton « masquer » pour chaque partie (mission, annuel, 90j, mois, semaine, chaque priorité, chaque colonne, tâches quotidiennes) + « Tout afficher »

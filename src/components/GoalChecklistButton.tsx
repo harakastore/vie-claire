@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { CheckSquare, ChevronRight } from "lucide-react";
+import { CheckSquare, ChevronRight, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
-export function GoalChecklistButton({ title, completed, total, children }: {
-  title: string; completed: number; total: number; children: ReactNode;
+export function GoalChecklistButton({ title, completed, total, onHide, children }: {
+  title: string; completed: number; total: number; children: ReactNode; onHide?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   return <>
@@ -17,7 +17,17 @@ export function GoalChecklistButton({ title, completed, total, children }: {
     </Button>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-2 pr-8">
+            <DialogTitle>{title}</DialogTitle>
+            {onHide && (
+              <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" aria-label={`Masquer ${title}`} title={`Masquer ${title}`}
+                onClick={() => { setOpen(false); onHide(); }}>
+                <EyeOff className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </DialogHeader>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">{completed} / {total} faits</p>
           <Progress value={total ? completed / total * 100 : 0} className="h-2" />
