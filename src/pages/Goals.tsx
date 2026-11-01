@@ -1640,7 +1640,7 @@ export default function Goals() {
               </Card>
 
               {/* Weekly goals - 4 sections */}
-              {!weeklyHidden && (
+              {!sections.isHidden("weekly") && (
               <Card className="glass-card">
 
                 <CardHeader className="pb-3">
@@ -1655,9 +1655,7 @@ export default function Goals() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Button size="sm" variant="outline" className="h-7 px-2" aria-label="Masquer les objectifs et priorités de la semaine" title="Masquer cette partie" onClick={toggleWeeklyHidden}>
-                        <EyeOff className="h-3.5 w-3.5" />
-                      </Button>
+                      <HideButton label="Objectifs & priorités de la semaine" onClick={() => sections.toggle("weekly")} />
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={duplicateWeeklyToNext}>
                         <ChevronRight className="h-3 w-3 mr-1" /> Dupliquer → semaine prochaine
                       </Button>
@@ -1669,9 +1667,13 @@ export default function Goals() {
                   {/* 3 Priorités de la semaine */}
                   {(() => {
                     const priorities = goalsWeekly.filter((g: any) => (g.category || "") === "priority");
+                    if (sections.isHidden("weekly:priority")) return <HiddenBar compact className="mb-4" label="⭐ 3 Priorités de la semaine" onClick={() => sections.toggle("weekly:priority")} />;
                     return (
                       <div className="rounded-lg border-2 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10 p-3 mb-4 space-y-2">
-                        <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">⭐ 3 Priorités de la semaine</p>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">⭐ 3 Priorités de la semaine</p>
+                          <HideButton compact label="3 Priorités de la semaine" onClick={() => sections.toggle("weekly:priority")} />
+                        </div>
                         {priorities.map((g: any, idx: number) => (
                           <div key={g.id} className="flex items-center gap-2 group">
                             <span className="text-xs font-bold text-amber-500 w-5">{idx + 1}.</span>
@@ -1694,9 +1696,14 @@ export default function Goals() {
                     {GOAL_SECTIONS.map((section) => {
                       const sectionGoals = goalsWeekly.filter((g: any) => (g.category || "islam") === section.key);
                       const inputKey = `weekly_${section.key}`;
+                      const sid = `weekly:${section.key}`;
+                      if (sections.isHidden(sid)) return <HiddenBar key={sid} compact label={section.label} onClick={() => sections.toggle(sid)} />;
                       return (
                         <div key={section.key} className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${section.color}40` }}>
-                          <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                            <HideButton compact label={section.label} onClick={() => sections.toggle(sid)} />
+                          </div>
                           {sectionGoals.map((g: any) => (
                             <div key={g.id} className="flex items-center gap-1.5 group">
                               <Select value={g.status} onValueChange={(v) => updateGoalStatus(g.id, v)}>
@@ -1722,12 +1729,8 @@ export default function Goals() {
                 </CardContent>
               </Card>
               )}
-              {weeklyHidden && (
-                <Button variant="outline" className="w-full justify-start gap-2 h-11 rounded-xl border-dashed" onClick={toggleWeeklyHidden}>
-                  <Eye className="h-4 w-4" />
-                  <span className="font-semibold">Objectifs & priorités de la semaine</span>
-                  <span className="text-xs text-muted-foreground">masqués — cliquer pour afficher</span>
-                </Button>
+              {sections.isHidden("weekly") && (
+                <HiddenBar label="Objectifs & priorités de la semaine" onClick={() => sections.toggle("weekly")} />
               )}
 
             </>
@@ -1738,6 +1741,7 @@ export default function Goals() {
       )}
 
       {/* Daily tasks */}
+      {!sections.isHidden("daily") && (
       <Card className="glass-card overflow-hidden border-primary/20">
         {(() => {
           const weekDateStrs = weekDays.map((d) => format(d, "yyyy-MM-dd"));
@@ -1761,6 +1765,7 @@ export default function Goals() {
                       {doneTasks}/{totalTasks} accomplies cette semaine
                     </p>
                   </div>
+                  <HideButton label="Tâches quotidiennes" onClick={() => sections.toggle("daily")} />
                 </div>
                 <div className="flex items-center gap-1 rounded-lg border bg-background/60 backdrop-blur px-1 py-1">
                   <Input aria-label="Date des tâches quotidiennes" type="date" value={expandedDay || format(currentWeekStart, "yyyy-MM-dd")} onChange={(e) => selectDailyDate(e.target.value)} className="h-8 w-40 text-xs" />
@@ -1937,6 +1942,10 @@ export default function Goals() {
           )}
         </CardContent>
       </Card>
+      )}
+      {sections.isHidden("daily") && (
+        <HiddenBar label="Tâches quotidiennes" onClick={() => sections.toggle("daily")} />
+      )}
 
       {/* Salat times sheet */}
       <Sheet open={salatSheetOpen} onOpenChange={setSalatSheetOpen}>
