@@ -100,7 +100,7 @@ export function MissionBoards({ onHide }: { onHide?: () => void } = {}) {
           <Trophy className="h-6 w-6 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+          <p className="vc-label text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" /> Mission de vie
           </p>
           {editingMission ? (
@@ -113,7 +113,7 @@ export function MissionBoards({ onHide }: { onHide?: () => void } = {}) {
           ) : (
             <div className="group flex items-start gap-2">
               <p onDoubleClick={() => { setDraft(mission); setEditingMission(true); }} title="Double-cliquez pour modifier"
-                className="text-sm sm:text-base font-bold leading-snug text-foreground cursor-pointer whitespace-pre-wrap">{mission}</p>
+                className="text-sm sm:text-base font-extrabold leading-snug text-foreground cursor-pointer whitespace-pre-wrap">{mission}</p>
               <button aria-label="Modifier la mission" onClick={() => { setDraft(mission); setEditingMission(true); }}
                 className="opacity-60 hover:opacity-100 shrink-0 mt-0.5"><Pencil className="h-3.5 w-3.5" /></button>
             </div>
@@ -121,7 +121,7 @@ export function MissionBoards({ onHide }: { onHide?: () => void } = {}) {
           <div className="flex flex-wrap items-center gap-2 mt-3">
             {boards.map(b => (
               <Button key={b.id} variant="outline" size="sm" onClick={() => setOpenId(b.id)}
-                className={cn("h-auto max-w-full px-3 py-1.5 rounded-full text-xs font-bold uppercase whitespace-normal break-words", COLORS[b.color]?.chip)}>
+                className={cn("h-auto max-w-full px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wide whitespace-normal break-words", COLORS[b.color]?.chip)}>
                 {b.display === "checklist" && <CheckSquare className="h-3.5 w-3.5 mr-1 shrink-0" />}
                 {b.title} <span className="opacity-60 font-medium">· {b.display === "checklist" ? `${b.items.filter(i => i.completed).length}/` : ""}{b.items.length}</span>
               </Button>
@@ -208,7 +208,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
                     <div className="flex items-start gap-3">
                       <Checkbox className="mt-1 shrink-0" aria-label={`Fait : ${i.text}`} checked={Boolean(i.completed)} onCheckedChange={checked => patchItem(i.id, { completed: checked === true })} />
                       <div className="flex-1 min-w-0 break-words">
-                        <p className={cn("font-semibold whitespace-pre-wrap", i.completed && "line-through text-muted-foreground")}>{i.text}</p>
+                        <p className={cn("vc-line-strong whitespace-pre-wrap", i.completed && "line-through text-muted-foreground")}>{i.text}</p>
                         <p className="text-xs text-muted-foreground mt-1">{i.completed ? "Fait" : "Pas fait"}</p>
                         {i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}
                       </div>
@@ -227,7 +227,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
                 <div className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
                   {editItem === i.id ? <ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /> : (
                     <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0 break-words"><p className="font-semibold whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}</div>
+                      <div className="flex-1 min-w-0 break-words"><p className="vc-line-strong whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{i.detail}</p>}</div>
                       {edit && <ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} />}
                     </div>
                   )}
@@ -241,7 +241,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
               <li key={i.id} className={cn("rounded-lg border-l-4 px-4 py-3", COLORS[i.color]?.row)}>
                 {editItem === i.id ? <ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /> : (
                   <div className="flex items-start gap-2">
-                    <div className="flex-1"><p className="font-semibold text-base whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">{i.detail}</p>}</div>
+                    <div className="flex-1"><p className="vc-line-strong text-base whitespace-pre-wrap">{i.text}</p>{i.detail && <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">{i.detail}</p>}</div>
                     {edit && <ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} />}
                   </div>
                 )}
@@ -256,7 +256,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
                 <tr key={i.id} className={cn("border-t border-l-4", COLORS[i.color]?.row)}>
                   {editItem === i.id ? <td colSpan={4} className="p-3"><ItemEditor item={i} onSave={p => { patchItem(i.id, p); setEditItem(null); }} onCancel={() => setEditItem(null)} /></td> : <>
                     <td className="px-3 py-2 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="px-3 py-2 font-semibold whitespace-pre-wrap">{i.text}</td>
+                    <td className="px-3 py-2 vc-line-strong whitespace-pre-wrap">{i.text}</td>
                     <td className="px-3 py-2 text-muted-foreground whitespace-pre-wrap">{i.detail}</td>
                     {edit && <td className="px-2"><ItemActions onEdit={() => setEditItem(i.id)} onDelete={() => setItems(board.items.filter(x => x.id !== i.id))} /></td>}
                   </>}
@@ -273,7 +273,7 @@ function BoardDialog({ board, onClose, onUpdate, onDelete }: { board: Board; onC
             <div className="flex items-center justify-between"><ColorPick value={color} onChange={setColor} /><Button size="sm" onClick={add}><Plus className="h-3.5 w-3.5 mr-1" />Ajouter</Button></div>
           </div>
           <div className="rounded-lg border border-dashed p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Coller un texte</p>
+            <p className="vc-label text-muted-foreground">Coller un texte</p>
             <Textarea value={paste} onChange={e => setPaste(e.target.value)} rows={5}
               placeholder="Collez votre texte ici — chaque ligne devient un élément de la liste" />
             <div className="flex items-center justify-between gap-2">

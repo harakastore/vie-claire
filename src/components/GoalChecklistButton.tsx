@@ -11,15 +11,15 @@ export function GoalChecklistButton({ title, completed, total, onHide, children 
   return <>
     <Button variant="outline" className="h-11 gap-2 bg-card" onClick={() => setOpen(true)}>
       <CheckSquare className="h-4 w-4 text-primary" />
-      <span>{title}</span>
-      <span className="text-xs text-muted-foreground tabular-nums">{completed}/{total}</span>
+      <span className="font-extrabold tracking-tight">{title}</span>
+      <span className="text-xs font-bold text-muted-foreground tabular-nums">{completed}/{total}</span>
       <ChevronRight className="h-4 w-4 text-muted-foreground" />
     </Button>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between gap-2 pr-8">
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className="text-lg font-extrabold tracking-tight">{title}</DialogTitle>
             {onHide && (
               <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" aria-label={`Masquer ${title}`} title={`Masquer ${title}`}
                 onClick={() => { setOpen(false); onHide(); }}>
@@ -29,7 +29,7 @@ export function GoalChecklistButton({ title, completed, total, onHide, children 
           </div>
         </DialogHeader>
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">{completed} / {total} faits</p>
+          <p className="text-sm font-bold text-muted-foreground">{completed} / {total} faits</p>
           <Progress value={total ? completed / total * 100 : 0} className="h-2" />
         </div>
         <div className="space-y-3 min-w-0">{children}</div>
