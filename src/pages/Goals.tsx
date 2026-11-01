@@ -1593,7 +1593,7 @@ export default function Goals() {
               )}>
                 <Target className="h-4 w-4" />
               </span>
-              <span className="font-semibold">Objectifs</span>
+              <span className="text-base font-extrabold tracking-tight">Objectifs</span>
               <span className="text-xs text-muted-foreground hidden sm:inline">Annuel · 90j · Mois · Semaine</span>
             </span>
             {showGoals ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -1606,7 +1606,7 @@ export default function Goals() {
               <Card className="glass-card">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CardTitle className="vc-title flex items-center gap-2">
                       <Calendar className="h-4 w-4" style={{ color: "hsl(var(--kpi-revenue))" }} />
                       Objectifs du mois ({format(now, "MMMM", { locale: fr })}) — {goalsMonthly.length}
                     </CardTitle>
@@ -1628,7 +1628,7 @@ export default function Goals() {
                       return (
                         <div key={section.key} className={`rounded-lg border p-3 space-y-2 ${section.key === "priority" ? "md:col-span-2 lg:col-span-4" : ""}`} style={{ borderColor: `${section.color}40` }}>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                            <p className="vc-label" style={{ color: section.color }}>{section.label}</p>
                             <HideButton compact label={section.label} onClick={() => sections.toggle(sid)} />
                           </div>
                           {sectionGoals.map((g: any) => (
@@ -1640,7 +1640,7 @@ export default function Goals() {
                                   <SelectItem value="achieved">Atteint</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")} />
+                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 vc-line", g.status === "achieved" && "line-through text-muted-foreground")} />
                               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           ))}
@@ -1667,7 +1667,7 @@ export default function Goals() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">
                     <div>
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <CardTitle className="vc-title flex items-center gap-2">
                         <Star className="h-4 w-4" style={{ color: "hsl(var(--kpi-suppliers))" }} />
                         Objectifs de la semaine — {goalsWeekly.length}
                       </CardTitle>
@@ -1692,14 +1692,14 @@ export default function Goals() {
                     return (
                       <div className="rounded-lg border-2 border-amber-400/50 bg-amber-50/30 dark:bg-amber-950/10 p-3 mb-4 space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">⭐ 3 Priorités de la semaine</p>
+                          <p className="vc-label text-amber-600 flex items-center gap-1.5">⭐ 3 Priorités de la semaine</p>
                           <HideButton compact label="3 Priorités de la semaine" onClick={() => sections.toggle("weekly:priority")} />
                         </div>
                         {priorities.map((g: any, idx: number) => (
                           <div key={g.id} className="flex items-center gap-2 group">
                             <span className="text-xs font-bold text-amber-500 w-5">{idx + 1}.</span>
                             <Checkbox checked={g.status === "achieved"} onCheckedChange={(checked) => updateGoalStatus(g.id, checked ? "achieved" : "in_progress")} className="h-4 w-4" />
-                            <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-sm font-medium", g.status === "achieved" && "line-through text-muted-foreground")} />
+                            <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 vc-line-strong", g.status === "achieved" && "line-through text-muted-foreground")} />
                             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                           </div>
                         ))}
@@ -1722,7 +1722,7 @@ export default function Goals() {
                       return (
                         <div key={section.key} className="rounded-lg border p-3 space-y-2" style={{ borderColor: `${section.color}40` }}>
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-bold" style={{ color: section.color }}>{section.label}</p>
+                            <p className="vc-label" style={{ color: section.color }}>{section.label}</p>
                             <HideButton compact label={section.label} onClick={() => sections.toggle(sid)} />
                           </div>
                           {sectionGoals.map((g: any) => (
@@ -1734,7 +1734,7 @@ export default function Goals() {
                                   <SelectItem value="achieved">Atteint</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 text-xs", g.status === "achieved" && "line-through text-muted-foreground")} />
+                              <EditableText value={g.title} onSave={(v) => renameGoal(g.id, v)} className={cn("flex-1 vc-line", g.status === "achieved" && "line-through text-muted-foreground")} />
                               <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteGoal(g.id)}><Trash2 className="h-3 w-3 text-destructive" /></Button>
                             </div>
                           ))}
@@ -1781,7 +1781,7 @@ export default function Goals() {
                     <CalendarDays className="h-5 w-5 text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold leading-tight">Tâches quotidiennes</h3>
+                    <h3 className="text-lg font-extrabold tracking-tight leading-tight">Tâches quotidiennes</h3>
                     <p className="text-[11px] text-muted-foreground leading-tight">
                       {doneTasks}/{totalTasks} accomplies cette semaine
                     </p>
