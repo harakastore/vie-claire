@@ -1058,7 +1058,7 @@ export default function Goals() {
                         <div className="flex items-center gap-1.5 min-w-0">
                           <button
                             onClick={() => setFocusedBlocks((p) => ({ ...p, [dateStr]: isFocused ? null : block.key }))}
-                            className="text-xs font-bold uppercase tracking-wide truncate hover:underline cursor-pointer text-left flex items-center gap-1"
+                            className="text-[11px] font-extrabold tracking-tight leading-tight truncate hover:underline cursor-pointer text-left flex items-center gap-1"
                             style={{ color: block.color }}
                             title={isFocused ? "Afficher tous les blocs" : "Voir uniquement ce bloc"}
                           >
