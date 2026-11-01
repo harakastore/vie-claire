@@ -62,3 +62,17 @@ export const scheduleSchema = z.object({ title: z.string().trim().min(1).max(200
 export function parsePastedLines(text: string): string[] {
   return text.split(/\r?\n/).map(l => l.replace(/^\s*(?:[-–•*]\s*|\d+[.)]\s+)/, '').trim()).filter(Boolean);
 }
+// A dated responsibility not checked on its latest scheduled day before `date`
+// carries over to every following day until a completion is logged on/after it.
+export function responsibilityCarryover(item: Schedule, date: string, completedDates: string[]): string | null {
+  if (!item.active) return null;
+  const floor = item.start_date;
+  let d = parseISO(date);
+  for (let n = 0; n < 400; n++) {
+    d = new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (s < floor) return null;
+    if (occursOn(item, s)) return completedDates.some(c => c >= s && c < date) ? null : s;
+  }
+  return null;
+}
