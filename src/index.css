@@ -159,6 +159,35 @@
     background: hsl(var(--carryover-bg));
     border: 1px solid hsl(var(--carryover-border));
   }
+  /* Hiérarchie typographique des textes en gras (pages Objectifs / missions) */
+  .vc-title {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.3;
+  }
+  .vc-label {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+  }
+  .vc-line {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .vc-line-strong {
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.45;
+  }
+  .vc-hidden-label {
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
   .glass-card {
     @apply bg-card border border-border shadow-sm;
   }

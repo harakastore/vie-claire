@@ -266,7 +266,7 @@ export function BlockRecurringList({ api, dateStr, blockKey }: { api: BlockRecur
               : { backgroundColor: `hsl(${c.hue} / 0.16)`, borderLeftColor: `hsl(${c.hue})` }}>
             <Checkbox aria-label={`${t.title} ${dateStr}`} checked={d} onCheckedChange={() => api.toggle(t.id, dateStr)} className="h-4 w-4" />
             {t.scheduled_time && <span className="text-[10px] font-black tabular-nums shrink-0" style={{ color: d ? "hsl(var(--muted-foreground))" : `hsl(${c.hue})` }}>{t.scheduled_time.slice(0, 5)}</span>}
-            <span className={cn("text-sm font-semibold flex-1 min-w-0 break-words leading-snug", d && "line-through text-muted-foreground")}>{t.title}</span>
+            <span className={cn("text-sm font-bold flex-1 min-w-0 break-words leading-snug", d && "line-through text-muted-foreground")}>{t.title}</span>
             {t.habit_id && <span className="order-last basis-full text-right text-[9px] font-bold uppercase px-1 rounded bg-primary/15 text-primary">Discipline</span>}
             {missed && <span className="order-last basis-full flex w-fit items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide carryover-note">
               <CornerDownRight className="h-3 w-3 shrink-0" /> Reporté de {format(parseISO(missed), "EEEE d/MM", { locale: fr })}

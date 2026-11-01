@@ -78,8 +78,8 @@ export function HiddenBar({ label, onClick, compact, className }: {
       onClick={onClick}
     >
       <Eye className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-      <span className={cn("font-semibold min-w-0 truncate", compact ? "text-xs" : "text-sm")}>{label}</span>
-      <span className={cn("text-xs text-muted-foreground", compact ? "shrink-0" : "whitespace-nowrap")}>
+      <span className={cn("vc-hidden-label min-w-0 truncate", compact ? "text-xs" : "text-sm")}>{label}</span>
+      <span className={cn("text-xs font-medium text-muted-foreground", compact ? "shrink-0" : "whitespace-nowrap")}>
         {compact ? "masqué" : "masqué — cliquer pour afficher"}
       </span>
     </Button>
