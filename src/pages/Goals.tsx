@@ -88,7 +88,7 @@ function DayThemeEditor({ value, onSave, hero = false }: { value: string; onSave
       aria-label="Thème du jour"
       value={draft}
       maxLength={200}
-      placeholder="🎯 Thème du jour (ex. Business, Sport…)"
+      placeholder="🎯 Thème du jour…"
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
