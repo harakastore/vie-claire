@@ -468,6 +468,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_day_themes: {
+        Row: {
+          created_at: string
+          day_date: string
+          id: string
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_date: string
+          id?: string
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_date?: string
+          id?: string
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_habit_logs: {
         Row: {
           completed: boolean

@@ -71,6 +71,44 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
   );
 }
 
+function DayThemeEditor({ value, onSave, hero = false }: { value: string; onSave: (value: string) => Promise<boolean>; hero?: boolean }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => setDraft(value), [value]);
+
+  const commit = async () => {
+    const theme = draft.trim();
+    if (theme === value) return;
+    const saved = await onSave(theme);
+    if (!saved) setDraft(value);
+  };
+
+  return (
+    <Input
+      aria-label="Thème du jour"
+      value={draft}
+      maxLength={200}
+      placeholder="🎯 Thème du jour…"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setDraft(value);
+        }
+      }}
+      className={cn(
+        "h-8 text-xs font-bold border-dashed bg-background/80 text-foreground placeholder:font-medium placeholder:text-muted-foreground",
+        hero && "h-9 text-sm bg-background/90 border-primary-foreground/30"
+      )}
+    />
+  );
+}
+
 export default function Goals() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -112,6 +150,7 @@ export default function Goals() {
   const [goalsMonthly, setGoalsMonthly] = useState<any[]>([]);
   const [goalsWeekly, setGoalsWeekly] = useState<any[]>([]);
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
+  const [dayThemes, setDayThemes] = useState<Record<string, string>>({});
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
   const [copyFrom, setCopyFrom] = useState("");
@@ -167,7 +206,7 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes, thRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
@@ -178,12 +217,14 @@ export default function Goals() {
       (supabase.from("weekly_sports" as any) as any).select("*").eq("week_start", wsStr),
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
       (supabase.from("daily_block_overrides" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
+      (supabase.from("daily_day_themes" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
     ]);
     setGoals90(g90.data || []);
     setGoalsYearly(gy.data || []);
     setGoalsMonthly(gm.data || []);
     setGoalsWeekly(gw.data || []);
     setDailyTasks(dt.data || []);
+    setDayThemes(Object.fromEntries((thRes.data || []).map((row: any) => [row.day_date, row.theme])));
     setDailyHabits(dh.data || []);
     setWeeklySports(spRes.data || []);
     setHabitLogs(hlRes.data || []);
@@ -237,6 +278,39 @@ export default function Goals() {
     setBlockOverrides((prev) => { const n = { ...prev }; delete n[key]; return n; });
     setEditingBlock(null);
     await (supabase.from("daily_block_overrides" as any) as any).delete().eq("user_id", user.id).eq("day_date", dateStr).eq("block_key", blockKey);
+  };
+
+  const saveDayTheme = async (dateStr: string, rawTheme: string): Promise<boolean> => {
+    if (!user) return false;
+    const theme = rawTheme.trim();
+    const previous = dayThemes[dateStr] || "";
+    setDayThemes((prev) => {
+      const next = { ...prev };
+      if (theme) next[dateStr] = theme;
+      else delete next[dateStr];
+      return next;
+    });
+
+    const { error } = theme
+      ? await (supabase.from("daily_day_themes" as any) as any).upsert(
+          { user_id: user.id, day_date: dateStr, theme },
+          { onConflict: "user_id,day_date" }
+        )
+      : await (supabase.from("daily_day_themes" as any) as any).delete()
+          .eq("user_id", user.id)
+          .eq("day_date", dateStr);
+
+    if (error) {
+      setDayThemes((prev) => {
+        const next = { ...prev };
+        if (previous) next[dateStr] = previous;
+        else delete next[dateStr];
+        return next;
+      });
+      toast({ title: "Erreur", description: "Le thème du jour n’a pas pu être enregistré.", variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
 
@@ -750,25 +824,28 @@ export default function Goals() {
         isToday ? "border-primary border-2 shadow-lg" : "border-border/50"
       )}>
         <div className={cn(
-          "px-4 py-3 flex items-center justify-between",
+          "px-4 py-3 space-y-2",
           isToday ? "bg-primary/10" : "bg-muted/30"
         )}>
-          <div className="flex items-center gap-2">
-            <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
-              {DAY_NAMES[dayIndex]}
-            </span>
-            <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            {isToday && (
-              <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                Aujourd'hui
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className={cn("text-base font-bold", isToday ? "text-primary" : "text-foreground")}>
+                {DAY_NAMES[dayIndex]}
               </span>
-            )}
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpandedDay(expandedDay === dateStr ? null : dateStr)}>
-              {expandedDay === dateStr ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
+              <span className="text-lg font-bold tabular-nums">{format(day, "d", { locale: fr })}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {isToday && (
+                <span className="text-[10px] font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                  Aujourd'hui
+                </span>
+              )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setExpandedDay(expandedDay === dateStr ? null : dateStr)}>
+                {expandedDay === dateStr ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
+          <DayThemeEditor value={dayThemes[dateStr] || ""} onSave={(value) => saveDayTheme(dateStr, value)} />
         </div>
 
         <CardContent className="p-0">
@@ -937,6 +1014,10 @@ export default function Goals() {
                     <Minimize2 className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              <div className="mt-4 max-w-2xl">
+                <DayThemeEditor hero value={dayThemes[dateStr] || ""} onSave={(value) => saveDayTheme(dateStr, value)} />
               </div>
 
               {/* === Stats bar === */}
@@ -1299,6 +1380,10 @@ export default function Goals() {
             </div>
           )}
         </button>
+
+        <div className={cn("px-3 py-2 border-b border-border/40", isToday ? "bg-primary/5" : "bg-muted/20")}>
+          <DayThemeEditor value={dayThemes[dateStr] || ""} onSave={(value) => saveDayTheme(dateStr, value)} />
+        </div>
 
         <CardContent className="p-2.5 flex-1 flex flex-col gap-2.5">
           {/* Priorités — premium, minimal */}
