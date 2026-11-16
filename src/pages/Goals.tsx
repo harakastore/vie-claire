@@ -71,6 +71,44 @@ function TaskTitle({ title, completed, onRename }: { title: string; completed: b
   );
 }
 
+function DayThemeEditor({ value, onSave, hero = false }: { value: string; onSave: (value: string) => Promise<boolean>; hero?: boolean }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => setDraft(value), [value]);
+
+  const commit = async () => {
+    const theme = draft.trim();
+    if (theme === value) return;
+    const saved = await onSave(theme);
+    if (!saved) setDraft(value);
+  };
+
+  return (
+    <Input
+      aria-label="Thème du jour"
+      value={draft}
+      maxLength={200}
+      placeholder="🎯 Thème du jour (ex. Business, Sport…)"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setDraft(value);
+        }
+      }}
+      className={cn(
+        "h-8 text-xs font-bold border-dashed bg-background/80 text-foreground placeholder:font-medium placeholder:text-muted-foreground",
+        hero && "h-9 text-sm bg-background/90 border-primary-foreground/30"
+      )}
+    />
+  );
+}
+
 export default function Goals() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
@@ -112,6 +150,7 @@ export default function Goals() {
   const [goalsMonthly, setGoalsMonthly] = useState<any[]>([]);
   const [goalsWeekly, setGoalsWeekly] = useState<any[]>([]);
   const [dailyTasks, setDailyTasks] = useState<any[]>([]);
+  const [dayThemes, setDayThemes] = useState<Record<string, string>>({});
   const [dailyHabits, setDailyHabits] = useState<any[]>([]);
   const [salatTimes, setSalatTimes] = useState<any>(null);
   const [copyFrom, setCopyFrom] = useState("");
@@ -167,7 +206,7 @@ export default function Goals() {
     const wsStr = format(currentWeekStart, "yyyy-MM-dd");
     const weStr = format(weekEnd, "yyyy-MM-dd");
 
-    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes] = await Promise.all([
+    const [g90, gy, gm, gw, dt, dh, stRes, spRes, hlRes, boRes, thRes] = await Promise.all([
       (supabase.from("goals" as any) as any).select("*").eq("type", "90day").order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "yearly").eq("year", currentYear).order("created_at"),
       (supabase.from("goals" as any) as any).select("*").eq("type", "monthly").eq("month", currentMonth).eq("year", currentYear).order("created_at"),
@@ -178,12 +217,14 @@ export default function Goals() {
       (supabase.from("weekly_sports" as any) as any).select("*").eq("week_start", wsStr),
       (supabase.from("daily_habit_logs" as any) as any).select("*").gte("day_date", disciplineFrom).lte("day_date", disciplineTo),
       (supabase.from("daily_block_overrides" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
+      (supabase.from("daily_day_themes" as any) as any).select("*").gte("day_date", wsStr).lte("day_date", weStr),
     ]);
     setGoals90(g90.data || []);
     setGoalsYearly(gy.data || []);
     setGoalsMonthly(gm.data || []);
     setGoalsWeekly(gw.data || []);
     setDailyTasks(dt.data || []);
+    setDayThemes(Object.fromEntries((thRes.data || []).map((row: any) => [row.day_date, row.theme])));
     setDailyHabits(dh.data || []);
     setWeeklySports(spRes.data || []);
     setHabitLogs(hlRes.data || []);
